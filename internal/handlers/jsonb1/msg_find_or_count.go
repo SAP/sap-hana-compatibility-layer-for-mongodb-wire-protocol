@@ -17,11 +17,10 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pgx/v4"
+	"github.com/FerretDB/FerretDB/internal/pg"
 
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
+
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 	"github.com/FerretDB/FerretDB/internal/wire"
@@ -55,23 +54,26 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 		collection = m["find"].(string)
 		filter, _ = m["filter"].(types.Document)
-		sql = fmt.Sprintf(`SELECT %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
+		//sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
+		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
 	} else {
 		collection = m["count"].(string)
 		filter, _ = m["query"].(types.Document)
-		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s`, pgx.Identifier{db, collection}.Sanitize())
+		//sql = fmt.Sprintf(`select COUNT(*) FROM %s`, pgx.Identifier{db, collection}.Sanitize())
+		sql = fmt.Sprintf(`select COUNT(*) FROM %s`, collection)
 	}
 
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
 
-	whereSQL, whereArgs, err := where(filter, &placeholder)
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	args = append(args, whereArgs...)
+	//no where so far
+	//whereSQL, whereArgs, err := where(filter, &placeholder)
+	//if err != nil {
+	//	return nil, lazyerrors.Error(err)
+	//}
+	//args = append(args, whereArgs...)
 
-	sql += whereSQL
+	//sql += whereSQL
 
 	sortMap := sort.Map()
 	if len(sortMap) != 0 {
@@ -105,12 +107,11 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 
-	rows, err := h.pgPool.Query(ctx, sql, args...)
+	rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
 	defer rows.Close()
-
 	var reply wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint
 		var docs types.Array

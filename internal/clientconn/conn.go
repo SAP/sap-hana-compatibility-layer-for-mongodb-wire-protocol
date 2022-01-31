@@ -29,7 +29,8 @@ import (
 	"github.com/FerretDB/FerretDB/internal/handlers/jsonb1"
 	"github.com/FerretDB/FerretDB/internal/handlers/proxy"
 	"github.com/FerretDB/FerretDB/internal/handlers/sql"
-	"github.com/FerretDB/FerretDB/internal/pg"
+	//"github.com/FerretDB/FerretDB/internal/pg"
+	"github.com/FerretDB/FerretDB/internal/hana"
 	"github.com/FerretDB/FerretDB/internal/wire"
 )
 
@@ -62,9 +63,17 @@ type conn struct {
 }
 
 // newConnOpts represents newConn options.
+//type newConnOpts struct {
+//	netConn         net.Conn
+//	pgPool          *pg.Pool
+//	proxyAddr       string
+//	mode            Mode
+//	handlersMetrics *handlers.Metrics
+//}
+
 type newConnOpts struct {
 	netConn         net.Conn
-	pgPool          *pg.Pool
+	hanaPool        *hana.Hpool
 	proxyAddr       string
 	mode            Mode
 	handlersMetrics *handlers.Metrics
@@ -76,8 +85,10 @@ func newConn(opts *newConnOpts) (*conn, error) {
 	l := zap.L().Named(prefix)
 
 	peerAddr := opts.netConn.RemoteAddr().String()
-	sqlH := sql.NewStorage(opts.pgPool, l.Sugar())
-	jsonb1H := jsonb1.NewStorage(opts.pgPool, l)
+	//sqlH := sql.NewStorage(opts.pgPool, l.Sugar())
+	sqlH := sql.NewStorage(opts.hanaPool, l.Sugar())
+	//jsonb1H := jsonb1.NewStorage(opts.pgPool, l)
+	jsonb1H := jsonb1.NewStorage(opts.hanaPool, l)
 
 	var p *proxy.Handler
 	if opts.mode != NormalMode {
@@ -87,14 +98,24 @@ func newConn(opts *newConnOpts) (*conn, error) {
 		}
 	}
 
+	//handlerOpts := &handlers.NewOpts{
+	//	PgPool:        opts.pgPool,
+	//	Logger:        l,
+	//	PeerAddr:      peerAddr,
+	//	SQLStorage:    sqlH,
+	//	JSONB1Storage: jsonb1H,
+	//	Metrics:       opts.handlersMetrics,
+	//}
+
 	handlerOpts := &handlers.NewOpts{
-		PgPool:        opts.pgPool,
+		HanaPool:      opts.hanaPool,
 		Logger:        l,
 		PeerAddr:      peerAddr,
 		SQLStorage:    sqlH,
 		JSONB1Storage: jsonb1H,
 		Metrics:       opts.handlersMetrics,
 	}
+
 	return &conn{
 		netConn: opts.netConn,
 		mode:    opts.mode,

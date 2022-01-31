@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	//"github.com/FerretDB/FerretDB/internal/pg"
 	"os"
 	"os/signal"
 
@@ -27,8 +28,8 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/FerretDB/FerretDB/internal/clientconn"
+	"github.com/FerretDB/FerretDB/internal/hana"
 	"github.com/FerretDB/FerretDB/internal/handlers"
-	"github.com/FerretDB/FerretDB/internal/pg"
 	"github.com/FerretDB/FerretDB/internal/util/debug"
 	"github.com/FerretDB/FerretDB/internal/util/logging"
 	"github.com/FerretDB/FerretDB/internal/util/version"
@@ -39,11 +40,12 @@ var (
 	debugAddrF       = flag.String("debug-addr", "127.0.0.1:8088", "debug address")
 	listenAddrF      = flag.String("listen-addr", "127.0.0.1:27017", "listen address")
 	modeF            = flag.String("mode", string(clientconn.AllModes[0]), fmt.Sprintf("operation mode: %v", clientconn.AllModes))
-	postgresqlURLF   = flag.String("postgresql-url", "postgres://postgres@127.0.0.1:5432/ferretdb", "PostgreSQL URL")
+	postgresqlURLF   = flag.String("postgresql-url", "postgres://postgres:1234password@127.0.0.1:5433/ferretdb", "PostgreSQL URL")
 	proxyAddrF       = flag.String("proxy-addr", "127.0.0.1:37017", "")
 	tlsF             = flag.Bool("tls", false, "enable insecure TLS")
 	versionF         = flag.Bool("version", false, "print version to stdout (full version, commit, branch, dirty flag) and exit")
 	testConnTimeoutF = flag.Duration("test-conn-timeout", 0, "test: set connection timeout")
+	saphanaURL       = flag.String("saphana-url", "hdb://User1:Password1@999deec0-ccb7-4a5e-b317-d419e19be648.hana.prod-us10.hanacloud.ondemand.com:443?encrypt=true&sslValidateCertificate=false", "SAP HANA URL")
 )
 
 func main() {
@@ -93,22 +95,36 @@ func main() {
 
 	go debug.RunHandler(ctx, *debugAddrF, logger.Named("debug"))
 
-	pgPool, err := pg.NewPool(*postgresqlURLF, logger, false)
+	//pgPool, err := pg.NewPool(*postgresqlURLF, logger, false)
+	hanaPool, err := hana.CreatePool(*saphanaURL, logger, false)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	defer pgPool.Close()
+	//defer pgPool.Close()
+	defer hanaPool.Close()
 
 	listenerMetrics := clientconn.NewListenerMetrics()
 	handlersMetrics := handlers.NewMetrics()
 	prometheus.DefaultRegisterer.MustRegister(listenerMetrics, handlersMetrics)
+
+	//l := clientconn.NewListener(&clientconn.NewListenerOpts{
+	//	ListenAddr:      *listenAddrF,
+	//	TLS:             *tlsF,
+	//	ProxyAddr:       *proxyAddrF,
+	//	Mode:            clientconn.Mode(*modeF),
+	//	PgPool:          pgPool,
+	//	Logger:          logger.Named("listener"),
+	//	Metrics:         listenerMetrics,
+	//	HandlersMetrics: handlersMetrics,
+	//	TestConnTimeout: *testConnTimeoutF,
+	//})
 
 	l := clientconn.NewListener(&clientconn.NewListenerOpts{
 		ListenAddr:      *listenAddrF,
 		TLS:             *tlsF,
 		ProxyAddr:       *proxyAddrF,
 		Mode:            clientconn.Mode(*modeF),
-		PgPool:          pgPool,
+		HanaPool:        hanaPool,
 		Logger:          logger.Named("listener"),
 		Metrics:         listenerMetrics,
 		HandlersMetrics: handlersMetrics,

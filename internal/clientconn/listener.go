@@ -26,7 +26,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/FerretDB/FerretDB/internal/handlers"
-	"github.com/FerretDB/FerretDB/internal/pg"
+	//"github.com/FerretDB/FerretDB/internal/pg"
+	"github.com/FerretDB/FerretDB/internal/hana"
 	"github.com/FerretDB/FerretDB/internal/util/ctxutil"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 )
@@ -37,12 +38,24 @@ type Listener struct {
 }
 
 // NewListenerOpts represents listener configuration.
+//type NewListenerOpts struct {
+//	ListenAddr      string
+//	TLS             bool
+//	ProxyAddr       string
+//	Mode            Mode
+//	PgPool          *pg.Pool
+//	Logger          *zap.Logger
+//	Metrics         *ListenerMetrics
+//	HandlersMetrics *handlers.Metrics
+//	TestConnTimeout time.Duration
+//}
+
 type NewListenerOpts struct {
 	ListenAddr      string
 	TLS             bool
 	ProxyAddr       string
 	Mode            Mode
-	PgPool          *pg.Pool
+	HanaPool        *hana.Hpool
 	Logger          *zap.Logger
 	Metrics         *ListenerMetrics
 	HandlersMetrics *handlers.Metrics
@@ -115,8 +128,9 @@ func (l *Listener) Run(ctx context.Context) error {
 			}()
 
 			opts := &newConnOpts{
-				netConn:         netConn,
-				pgPool:          l.opts.PgPool,
+				netConn: netConn,
+				//pgPool:          l.opts.PgPool,
+				hanaPool:        l.opts.HanaPool,
 				proxyAddr:       l.opts.ProxyAddr,
 				mode:            l.opts.Mode,
 				handlersMetrics: l.opts.HandlersMetrics,

@@ -15,14 +15,13 @@
 package jsonb1
 
 import (
-	"github.com/jackc/pgx/v4"
-
+	"database/sql"
 	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 )
 
-func nextRow(rows pgx.Rows) (*types.Document, error) {
+func nextRow(rows *sql.Rows) (*types.Document, error) {
 	if !rows.Next() {
 		err := rows.Err()
 		if err != nil {

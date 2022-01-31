@@ -106,7 +106,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 
-	rows, err := h.pgPool.Query(ctx, sql, args...)
+	rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
@@ -114,12 +114,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	var res wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint
-		rowInfo := extractRowInfo(rows)
+		//rowInfo := extractRowInfo(rows)
 
 		var docs types.Array
 
 		for {
-			doc, err := nextRow(rows, rowInfo)
+			//doc, err := nextRow(rows, rowInfo)
+			doc, err := nextRow(rows)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}

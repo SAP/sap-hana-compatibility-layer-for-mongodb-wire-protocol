@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	//"github.com/jackc/pgx/v4"
 
 	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/types"
@@ -35,7 +35,7 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	m := document.Map()
 	collection := m[document.Command()].(string)
-	db := m["$db"].(string)
+	//db := m["$db"].(string)
 	docs, _ := m["documents"].(*types.Array)
 
 	var inserted int32
@@ -46,13 +46,13 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		}
 
 		d := doc.(types.Document)
-		sql := fmt.Sprintf("INSERT INTO %s (_jsonb) VALUES ($1)", pgx.Identifier{db, collection}.Sanitize())
+		sql := fmt.Sprintf("insert INTO %s VALUES ($1)", collection)
 		b, err := bson.MustConvertDocument(d).MarshalJSON()
 		if err != nil {
 			return nil, err
 		}
 
-		if _, err = h.pgPool.Exec(ctx, sql, b); err != nil {
+		if _, err = h.hanaPool.ExecContext(ctx, sql, b); err != nil {
 			return nil, err
 		}
 

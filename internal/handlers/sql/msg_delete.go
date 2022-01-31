@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	//"github.com/jackc/pgx/v4"
 
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
 	"github.com/FerretDB/FerretDB/internal/pg"
@@ -36,7 +36,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	m := document.Map()
 	collection := m[document.Command()].(string)
-	db := m["$db"].(string)
+	//db := m["$db"].(string)
 	docs, _ := m["deletes"].(*types.Array)
 
 	var deleted int32
@@ -48,7 +48,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		d := doc.(types.Document).Map()
 
-		sql := fmt.Sprintf(`DELETE FROM %s`, pgx.Identifier{db, collection}.Sanitize())
+		sql := fmt.Sprintf(`DELETE FROM %s`, collection)
 		var placeholder pg.Placeholder
 
 		elSQL, args, err := where(d["q"].(types.Document), &placeholder)
@@ -60,19 +60,19 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if limit != 0 {
 			sql += fmt.Sprintf(
 				"WHERE %s IN (SELECT %s FROM %s LIMIT 1)",
-				placeholder.Next(), placeholder.Next(), pgx.Identifier{db, collection}.Sanitize(),
+				placeholder.Next(), placeholder.Next(), collection,
 			)
 		} else {
 			sql += elSQL
 		}
 
-		tag, err := h.pgPool.Exec(ctx, sql, args...)
+		tag, err := h.hanaPool.ExecContext(ctx, sql, args...)
 		if err != nil {
 			// TODO check error code
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "MsgDelete: ns not found: %w", err)
 		}
 
-		deleted += int32(tag.RowsAffected())
+		//deleted += int32(tag.RowsAffected())
 	}
 
 	var reply wire.OpMsg

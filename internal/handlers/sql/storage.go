@@ -15,20 +15,33 @@
 package sql
 
 import (
+	"github.com/FerretDB/FerretDB/internal/hana"
 	"go.uber.org/zap"
 
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
+	//"github.com/FerretDB/FerretDB/internal/pg"
 )
 
+//type storage struct {
+//	pgPool *pg.Pool
+//	l      *zap.SugaredLogger
+//}
+
 type storage struct {
-	pgPool *pg.Pool
-	l      *zap.SugaredLogger
+	hanaPool *hana.Hpool
+	l        *zap.SugaredLogger
 }
 
-func NewStorage(pgPool *pg.Pool, l *zap.SugaredLogger) common.Storage {
+func NewStorage(hanaPool *hana.Hpool, l *zap.SugaredLogger) common.Storage {
 	return &storage{
-		pgPool: pgPool,
-		l:      l,
+		hanaPool: hanaPool,
+		l:        l,
 	}
 }
+
+//func NewStorage(pgPool *pg.Pool, l *zap.SugaredLogger) common.Storage {
+//	return &storage{
+//		pgPool: pgPool,
+//		l:      l,
+//	}
+//}

@@ -15,20 +15,34 @@
 package jsonb1
 
 import (
+	"github.com/FerretDB/FerretDB/internal/hana"
+	//"github.com/FerretDB/FerretDB/internal/pg"
 	"go.uber.org/zap"
 
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
+	//"github.com/FerretDB/FerretDB/internal/pg"
 )
 
+//type storage struct {
+//	pgPool *pg.Pool
+//	l      *zap.Logger
+//}
+//
+//func NewStorage(pgPool *pg.Pool, l *zap.Logger) common.Storage {
+//	return &storage{
+//		pgPool: pgPool,
+//		l:      l,
+//	}
+//}
+
 type storage struct {
-	pgPool *pg.Pool
-	l      *zap.Logger
+	hanaPool *hana.Hpool
+	l        *zap.Logger
 }
 
-func NewStorage(pgPool *pg.Pool, l *zap.Logger) common.Storage {
+func NewStorage(hanaPool *hana.Hpool, l *zap.Logger) common.Storage {
 	return &storage{
-		pgPool: pgPool,
-		l:      l,
+		hanaPool: hanaPool,
+		l:        l,
 	}
 }

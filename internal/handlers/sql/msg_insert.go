@@ -84,7 +84,7 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		sql += ")"
 
-		_, err = h.pgPool.Exec(ctx, sql, args...)
+		_, err = h.hanaPool.ExecContext(ctx, sql, args...)
 		if err != nil {
 			return nil, err
 		}

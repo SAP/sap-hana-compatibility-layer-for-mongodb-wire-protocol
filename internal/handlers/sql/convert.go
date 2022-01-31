@@ -15,46 +15,71 @@
 package sql
 
 import (
-	"github.com/jackc/pgx/v4"
-
+	"database/sql"
+	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/types"
+	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 )
 
 type rowInfo struct {
 	names []string
 }
 
-func extractRowInfo(rows pgx.Rows) *rowInfo {
-	fields := rows.FieldDescriptions()
-	ri := &rowInfo{
-		names: make([]string, len(fields)),
-	}
+//func extractRowInfo(rows *sql.Rows) *rowInfo {
+//
+//	fields := rows.FieldDescriptions()
+//	ri := &rowInfo{
+//		names: make([]string, len(fields)),
+//	}
+//
+//	// TODO get table info field.TableOID, check constraints, return a single-column PK as _id
+//
+//	for i, field := range fields {
+//		ri.names[i] = string(field.Name)
+//	}
+//
+//	return ri
+//}
+//
+//func nextRow(rows pgx.Rows, rowInfo *rowInfo) (*types.Document, error) {
+//	if !rows.Next() {
+//		return nil, rows.Err()
+//	}
+//
+//	values, err := rows.Values()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	pairs := make([]any, len(values)*2)
+//	for i, v := range values {
+//		pairs[i*2] = rowInfo.names[i]
+//		pairs[i*2+1] = v
+//	}
+//
+//	doc := types.MustMakeDocument(pairs...)
+//	return &doc, nil
+//}
 
-	// TODO get table info field.TableOID, check constraints, return a single-column PK as _id
-
-	for i, field := range fields {
-		ri.names[i] = string(field.Name)
-	}
-
-	return ri
-}
-
-func nextRow(rows pgx.Rows, rowInfo *rowInfo) (*types.Document, error) {
+func nextRow(rows *sql.Rows) (*types.Document, error) {
 	if !rows.Next() {
-		return nil, rows.Err()
-	}
-
-	values, err := rows.Values()
-	if err != nil {
+		err := rows.Err()
+		if err != nil {
+			err = lazyerrors.Error(err)
+		}
 		return nil, err
 	}
 
-	pairs := make([]any, len(values)*2)
-	for i, v := range values {
-		pairs[i*2] = rowInfo.names[i]
-		pairs[i*2+1] = v
+	var b []byte
+	if err := rows.Scan(&b); err != nil {
+		return nil, lazyerrors.Error(err)
 	}
 
-	doc := types.MustMakeDocument(pairs...)
-	return &doc, nil
+	var doc bson.Document
+	if err := doc.UnmarshalJSON(b); err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+
+	d := types.MustConvertDocument(&doc)
+	return &d, nil
 }
