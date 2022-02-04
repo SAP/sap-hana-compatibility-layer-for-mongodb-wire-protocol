@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
@@ -28,9 +29,12 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("databaseNames:")
+	fmt.Println(databaseNames)
 	databases := types.MakeArray(len(databaseNames))
 	for _, databaseName := range databaseNames {
+		fmt.Println("databaseName:")
+		fmt.Println(databaseName)
 		tables, err := h.hanaPool.Tables(ctx, databaseName)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
@@ -40,8 +44,8 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 		var sizeOnDisk int64
 		for _, name := range tables {
 			var tableSize int64
-			fullName := databaseName + "." + name
-			err = h.hanaPool.QueryRowContext(ctx, "ELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER' AND TABLE_NAME = '$1';", fullName).Scan(&tableSize)
+			//fullName := databaseName + "." + name
+			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER' AND TABLE_NAME = $1;", name).Scan(&tableSize)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
