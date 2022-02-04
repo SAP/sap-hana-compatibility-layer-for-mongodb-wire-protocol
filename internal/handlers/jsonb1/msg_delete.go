@@ -65,13 +65,15 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			sql += elSQL
 		}
 
-		tag, err := h.pgPool.Exec(ctx, sql, args...)
+		tag, err := h.hanaPool.ExecContext(ctx, sql, args...)
 		if err != nil {
 			// TODO check error code
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "MsgDelete: ns not found: %w", err)
 		}
 
-		deleted += int32(tag.RowsAffected())
+		rowsaffected, err := tag.RowsAffected()
+
+		deleted += int32(rowsaffected)
 	}
 
 	var reply wire.OpMsg

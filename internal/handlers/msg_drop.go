@@ -35,7 +35,7 @@ func (h *Handler) MsgDrop(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, er
 	collection := m[document.Command()].(string)
 	db := m["$db"].(string)
 
-	if err = h.pgPool.DropTable(ctx, db, collection); err != nil {
+	if err = h.hanaPool.DropTable(ctx, db, collection); err != nil {
 		if err == pg.ErrNotExist {
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "ns not found")
 		}

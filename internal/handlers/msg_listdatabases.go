@@ -24,14 +24,14 @@ import (
 
 // MsgListDatabases command provides a list of all existing databases along with basic statistics about them.
 func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	databaseNames, err := h.pgPool.Schemas(ctx)
+	databaseNames, err := h.hanaPool.Schemas(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	databases := types.MakeArray(len(databaseNames))
 	for _, databaseName := range databaseNames {
-		tables, err := h.pgPool.Tables(ctx, databaseName)
+		tables, err := h.hanaPool.Tables(ctx, databaseName)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -41,7 +41,7 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 		for _, name := range tables {
 			var tableSize int64
 			fullName := databaseName + "." + name
-			err = h.pgPool.QueryRow(ctx, "SELECT pg_total_relation_size($1)", fullName).Scan(&tableSize)
+			err = h.hanaPool.QueryRowContext(ctx, "ELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER' AND TABLE_NAME = '$1';", fullName).Scan(&tableSize)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
@@ -60,11 +60,11 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 	}
 
 	var totalSize int64
-	err = h.pgPool.QueryRow(ctx, "SELECT pg_database_size(current_database())").Scan(&totalSize)
-	if err != nil {
-		return nil, err
-	}
-
+	//err = h.hanaPool.QueryRowContext(ctx, "SELECT pg_database_size(current_database())").Scan(&totalSize)
+	//if err != nil {
+	//	return nil, err
+	//}
+	totalSize = 30
 	var reply wire.OpMsg
 	err = reply.SetSections(wire.OpMsgSection{
 		Documents: []types.Document{types.MustMakeDocument(

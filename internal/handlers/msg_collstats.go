@@ -36,7 +36,7 @@ func (h *Handler) MsgCollStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMs
 		return nil, lazyerrors.New("no db")
 	}
 
-	stats, err := h.pgPool.TableStats(ctx, db, collection)
+	stats, err := h.hanaPool.TableStats(ctx, db, collection)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}

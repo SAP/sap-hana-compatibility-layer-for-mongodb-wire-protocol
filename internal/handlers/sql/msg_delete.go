@@ -72,7 +72,9 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "MsgDelete: ns not found: %w", err)
 		}
 
-		//deleted += int32(tag.RowsAffected())
+		rowsaffected, err := tag.RowsAffected()
+
+		deleted += int32(rowsaffected)
 	}
 
 	var reply wire.OpMsg

@@ -44,6 +44,10 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	_, isFindOp := m["find"].(string)
 	db := m["$db"].(string)
 
+	fmt.Println("In SQL:")
+
+	fmt.Println(document)
+
 	projection, ok := m["projection"].(types.Document)
 	projectionStr := "*"
 	if ok && len(projection.Map()) != 0 {

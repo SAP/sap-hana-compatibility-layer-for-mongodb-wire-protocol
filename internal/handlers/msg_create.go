@@ -35,11 +35,11 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	collection := m[document.Command()].(string)
 	db := m["$db"].(string)
 
-	if err := h.pgPool.CreateSchema(ctx, db); err != nil && err != pg.ErrAlreadyExist {
+	if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != pg.ErrAlreadyExist {
 		return nil, lazyerrors.Error(err)
 	}
 
-	if err = h.pgPool.CreateTable(ctx, db, collection); err != nil {
+	if err = h.hanaPool.CreateTable(ctx, db, collection); err != nil {
 		if err == pg.ErrAlreadyExist {
 			return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: %s.%s", db, collection)
 		}

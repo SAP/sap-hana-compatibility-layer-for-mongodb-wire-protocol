@@ -58,7 +58,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		sql += whereSQL
 
-		rows, err := h.pgPool.Query(ctx, sql, args...)
+		rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -125,12 +125,14 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			if err != nil {
 				return nil, err
 			}
-			tag, err := h.pgPool.Exec(ctx, sql, db, idb)
+			tag, err := h.hanaPool.ExecContext(ctx, sql, db, idb)
 			if err != nil {
 				return nil, err
 			}
 
-			updated += int32(tag.RowsAffected())
+			rowsaffected, err := tag.RowsAffected()
+
+			updated += int32(rowsaffected)
 		}
 	}
 

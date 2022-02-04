@@ -17,6 +17,7 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
@@ -45,34 +46,55 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	b, ok := rawMessages["$k"]
-	if !ok {
-		return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing $k")
-	}
+	fmt.Println("RawMessage:")
+	fmt.Println(rawMessages)
 
-	var keys []string
-	if err := json.Unmarshal(b, &keys); err != nil {
-		return lazyerrors.Error(err)
-	}
-	if len(keys)+1 != len(rawMessages) {
-		return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: %d elements in $k, %d in total", len(keys), len(rawMessages))
-	}
+	//b, ok := rawMessages["$k"]
+	//if !ok {
+	//	return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing $k")
+	//}
 
+	//var keys []string
+	//if err := json.Unmarshal(b, &keys); err != nil {
+	//	return lazyerrors.Error(err)
+	//}
+	//if len(keys)+1 != len(rawMessages) {
+	//	return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: %d elements in $k, %d in total", len(keys), len(rawMessages))
+	//}
+
+	//td := types.MustMakeDocument()
+	//for _, key := range keys {
+	//	b, ok = rawMessages[key]
+	//	if !ok {
+	//		return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing key %q", key)
+	//	}
+	//	v, err := Unmarshal(b)
+	//	if err != nil {
+	//		return lazyerrors.Error(err)
+	//	}
+	//	if err = td.Set(key, v); err != nil {
+	//		return lazyerrors.Error(err)
+	//	}
+	//}
 	td := types.MustMakeDocument()
-	for _, key := range keys {
-		b, ok = rawMessages[key]
-		if !ok {
-			return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing key %q", key)
-		}
-		v, err := Unmarshal(b)
+	fmt.Println("Loop:")
+	for key, value := range rawMessages {
+		fmt.Println("Key:")
+		fmt.Println(key)
+		fmt.Println("value")
+		fmt.Println(value)
+		unValue, err := Unmarshal(value)
 		if err != nil {
 			return lazyerrors.Error(err)
 		}
-		if err = td.Set(key, v); err != nil {
+		fmt.Println("un_value")
+		fmt.Println(unValue)
+		if err = td.Set(key, unValue); err != nil {
 			return lazyerrors.Error(err)
 		}
 	}
-
+	fmt.Println("td:")
+	fmt.Println(td)
 	*doc = Document(td)
 	return nil
 }

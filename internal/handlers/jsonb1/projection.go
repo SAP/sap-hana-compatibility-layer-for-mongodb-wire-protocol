@@ -22,7 +22,7 @@ import (
 func projection(projection types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
 	projectionMap := projection.Map()
 	if len(projectionMap) == 0 {
-		sql = "_jsonb"
+		sql = "*"
 		return
 	}
 

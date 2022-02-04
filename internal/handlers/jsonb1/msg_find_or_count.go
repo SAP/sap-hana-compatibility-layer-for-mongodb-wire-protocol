@@ -34,7 +34,9 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, lazyerrors.Error(err)
 	}
 
-	var filter types.Document
+	fmt.Println(document)
+
+	//var filter types.Document
 	var sql, collection string
 
 	var args []any
@@ -43,6 +45,9 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	m := document.Map()
 	_, isFindOp := m["find"].(string)
 	db := m["$db"].(string)
+
+	fmt.Println(m)
+	fmt.Println(m["projection"])
 
 	if isFindOp {
 		projectionIn, _ := m["projection"].(types.Document)
@@ -53,12 +58,12 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		args = append(args, projectionArgs...)
 
 		collection = m["find"].(string)
-		filter, _ = m["filter"].(types.Document)
+		//filter, _ = m["filter"].(types.Document)
 		//sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
 	} else {
 		collection = m["count"].(string)
-		filter, _ = m["query"].(types.Document)
+		//filter, _ = m["query"].(types.Document)
 		//sql = fmt.Sprintf(`select COUNT(*) FROM %s`, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select COUNT(*) FROM %s`, collection)
 	}
@@ -106,11 +111,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		// TODO https://github.com/FerretDB/FerretDB/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
+	fmt.Println(sql)
 
 	rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
+	fmt.Println(rows)
 	defer rows.Close()
 	var reply wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint

@@ -17,7 +17,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
@@ -38,18 +37,18 @@ func (h *Handler) MsgGetLog(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgGetLog: unhandled getLog value %q", l)
 	}
 
-	var pv string
-	err = h.pgPool.QueryRow(ctx, "SHOW server_version").Scan(&pv)
+	var hv string
+	err = h.hanaPool.QueryRowContext(ctx, "Select VERSION from \"SYS\".\"M_DATABASE\";").Scan(&hv)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
 
-	pv = strings.Split(pv, " ")[0]
+	//hv = strings.Split(hv, ".")[0]
 	mv := version.Get()
 
 	var log types.Array
 	for _, line := range []string{
-		"Powered by 🥭 FerretDB " + mv.Version + " and PostgreSQL " + pv + ".",
+		"Powered by 🥭 FerretDB " + mv.Version + " and SAP HANA " + hv + ".",
 		"Please star us on GitHub: https://github.com/FerretDB/FerretDB",
 	} {
 		b, err := json.Marshal(map[string]any{

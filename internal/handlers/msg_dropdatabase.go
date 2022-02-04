@@ -37,7 +37,7 @@ func (h *Handler) MsgDropDatabase(ctx context.Context, msg *wire.OpMsg) (*wire.O
 	}
 
 	res := types.MustMakeDocument()
-	err = h.pgPool.DropSchema(ctx, db)
+	err = h.hanaPool.DropSchema(ctx, db)
 	switch err {
 	case nil:
 		res.Set("dropped", db)

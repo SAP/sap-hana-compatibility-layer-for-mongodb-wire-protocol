@@ -69,7 +69,7 @@ func (h *Handler) MsgDataSize(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg
 	db, collection := targets[0], targets[1]
 
 	started := time.Now()
-	stats, err := h.pgPool.TableStats(ctx, db, collection)
+	stats, err := h.hanaPool.TableStats(ctx, db, collection)
 	elapses := time.Now().Sub(started)
 	millis := int32(elapses.Milliseconds())
 	if err != nil {

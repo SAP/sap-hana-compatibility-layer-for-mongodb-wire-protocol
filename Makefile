@@ -80,11 +80,11 @@ psql:                                  ## Run psql
 	docker-compose exec postgres psql -U postgres -d ferretdb
 
 mongosh:                               ## Run mongosh
-	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/monila?heartbeatFrequencyMS=300000 \
+	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/BOJER?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
 mongo:                                 ## Run (legacy) mongo shell
-	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/monila?heartbeatFrequencyMS=300000 \
+	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/BOJER?heartbeatFrequencyMS=300000 \
 		--verbose
 
 docker-init:
