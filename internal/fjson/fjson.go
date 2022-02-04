@@ -241,3 +241,16 @@ func Marshal(v any) ([]byte, error) {
 
 	return b, nil
 }
+
+//func MarshalHANA(v amy) ([]byte, error) {
+//	if v == nil {
+//		return []byte("null"), nil
+//	}
+//
+//	b, err := v.MarshalJSONHANA()
+//	if err != nil {
+//		return nil, lazyerrors.Error(err)
+//	}
+//
+//	return b, nil
+//}

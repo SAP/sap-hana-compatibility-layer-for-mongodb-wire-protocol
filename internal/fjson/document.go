@@ -102,7 +102,8 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 // MarshalJSON implements fjsontype interface.
 func (doc *Document) MarshalJSON() ([]byte, error) {
 	td := types.Document(*doc)
-
+	//fmt.Println("marshal Document:")
+	//fmt.Println(td)
 	var buf bytes.Buffer
 
 	buf.WriteString(`{"$k":`)
@@ -110,14 +111,21 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
+	//fmt.Println("b")
+	//fmt.Println(b)
+
 	buf.Write(b)
 
 	for _, key := range td.Keys() {
 		buf.WriteByte(',')
-
+		//fmt.Println("key")
+		//fmt.Println(key)
 		if b, err = json.Marshal(key); err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+		//fmt.Println("second b")
+		//fmt.Println(b)
+
 		buf.Write(b)
 		buf.WriteByte(':')
 
@@ -130,7 +138,52 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 			return nil, lazyerrors.Error(err)
 		}
 
+		//fmt.Println("third b")
+		//fmt.Println(b)
+
 		buf.Write(b)
+	}
+
+	buf.WriteByte('}')
+	return buf.Bytes(), nil
+}
+
+func MarshalJSONHANA(doc types.Document) ([]byte, error) {
+	fmt.Println("marshal Document:")
+	fmt.Println(doc)
+	var buf bytes.Buffer
+	var b []byte
+	var err error
+	buf.WriteByte('{')
+	i := 0
+	for _, key := range doc.Keys() {
+		if key == "_id" {
+			continue
+		}
+
+		if i != 0 {
+			buf.WriteByte(',')
+		}
+
+		if b, err = json.Marshal(key); err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		buf.WriteByte(':')
+
+		value, err := doc.Get(key)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		b, err := Marshal(value)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		i = 1
 	}
 
 	buf.WriteByte('}')
