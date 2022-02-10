@@ -48,6 +48,35 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 
 	fmt.Println("RawMessage:")
 	fmt.Println(rawMessages)
+	//-----WOrks for collection TEST----
+	bKeys, ok := rawMessages["keys"]
+	if !ok {
+		return lazyerrors.Errorf("fjson.Document.Unmarshal: missing keys")
+	}
+
+	var keys []string
+	if err := json.Unmarshal(bKeys, &keys); err != nil {
+		return lazyerrors.Error(err)
+	}
+
+	td := types.MustMakeDocument()
+
+	for _, key := range keys {
+		bValue, ok := rawMessages[key]
+		if !ok {
+			return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing key %q", key)
+		}
+
+		value, err := Unmarshal(bValue)
+		if err != nil {
+			return lazyerrors.Error(err)
+		}
+		if err = td.Set(key, value); err != nil {
+			return lazyerrors.Error(err)
+		}
+
+	}
+	//-----WOrks for collection TEST----
 
 	//b, ok := rawMessages["$k"]
 	//if !ok {
@@ -76,23 +105,26 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	//		return lazyerrors.Error(err)
 	//	}
 	//}
-	td := types.MustMakeDocument()
-	fmt.Println("Loop:")
-	for key, value := range rawMessages {
-		fmt.Println("Key:")
-		fmt.Println(key)
-		fmt.Println("value")
-		fmt.Println(value)
-		unValue, err := Unmarshal(value)
-		if err != nil {
-			return lazyerrors.Error(err)
-		}
-		fmt.Println("un_value")
-		fmt.Println(unValue)
-		if err = td.Set(key, unValue); err != nil {
-			return lazyerrors.Error(err)
-		}
-	}
+
+	////-----------WORKING--------
+	//td := types.MustMakeDocument()
+	//fmt.Println("Loop:")
+	//for key, value := range rawMessages {
+	//	fmt.Println("Key:")
+	//	fmt.Println(key)
+	//	fmt.Println("value")
+	//	fmt.Println(value)
+	//	unValue, err := Unmarshal(value)
+	//	if err != nil {
+	//		return lazyerrors.Error(err)
+	//	}
+	//	fmt.Println("un_value")
+	//	fmt.Println(unValue)
+	//	if err = td.Set(key, unValue); err != nil {
+	//		return lazyerrors.Error(err)
+	//	}
+	//}
+
 	fmt.Println("td:")
 	fmt.Println(td)
 	*doc = Document(td)
