@@ -15,6 +15,7 @@
 package jsonb1
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/FerretDB/FerretDB/internal/bson"
@@ -234,11 +235,16 @@ func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, er
 	if len(filterMap) == 0 {
 		return
 	}
-
+	fmt.Println("Filtermap")
+	fmt.Println(filterMap)
 	sql = " WHERE"
 
 	for i, key := range filter.Keys() {
 		value := filterMap[key]
+		fmt.Println("valueWhere")
+		fmt.Println(value)
+		fmt.Println("i")
+		fmt.Println(i)
 
 		if i != 0 {
 			sql += " AND"

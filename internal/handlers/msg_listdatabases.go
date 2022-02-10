@@ -41,6 +41,8 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 		}
 
 		// iterate over result to collect sizes
+		// IMPLEMENT: Catch errors when size is NULL because tables not in memory
+		// but on disk.
 		var sizeOnDisk int64
 		for _, name := range tables {
 			var tableSize int64

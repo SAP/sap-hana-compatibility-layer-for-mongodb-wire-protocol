@@ -17,9 +17,8 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-	"github.com/FerretDB/FerretDB/internal/pg"
-
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
+	"github.com/FerretDB/FerretDB/internal/pg"
 
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
@@ -36,7 +35,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	fmt.Println(document)
 
-	//var filter types.Document
+	var filter types.Document
 	var sql, collection string
 
 	var args []any
@@ -58,7 +57,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		args = append(args, projectionArgs...)
 
 		collection = m["find"].(string)
-		//filter, _ = m["filter"].(types.Document)
+		filter, _ = m["filter"].(types.Document)
 		//sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
 	} else {
@@ -70,6 +69,41 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
+	fmt.Println("Filter:")
+	fmt.Println(filter)
+	fmt.Println(filter.Keys())
+	fmt.Println(filter)
+	fmt.Println(filter.Map())
+	for key := range filter.Map() {
+		fmt.Println("key:")
+		fmt.Println(key)
+		fmt.Println(filter.Map()[key])
+		sql += " WHERE "
+		sql += "\"" + key + "\""
+		sql += " = "
+		//sql += placeholder.Next()
+		value, _ := filter.Get(key)
+		switch value := value.(type) {
+		case string:
+			args = append(args, value)
+			sql += "'%s'"
+		case int:
+			fmt.Println("Here")
+		case int64:
+			fmt.Println("is Int")
+			args = append(args, value)
+		case int32:
+			fmt.Println("int32")
+			sql += "%d"
+			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
+			//if errorV != nil {
+			//	fmt.Println("error")
+			//}
+			args = append(args, value)
+		default:
+			fmt.Println("Nothing")
+		}
+	}
 
 	//no where so far
 	//whereSQL, whereArgs, err := where(filter, &placeholder)
@@ -78,7 +112,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	//}
 	//args = append(args, whereArgs...)
 
+	fmt.Println("args:")
+	fmt.Println(args)
+
 	//sql += whereSQL
+	sqln := fmt.Sprintf(sql, args...)
+	fmt.Println("sqln:")
+	fmt.Println(sqln)
 
 	sortMap := sort.Map()
 	if len(sortMap) != 0 {
@@ -112,8 +152,9 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 	fmt.Println(sql)
-
-	rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
+	fmt.Println(sql, args)
+	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
+	//rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
