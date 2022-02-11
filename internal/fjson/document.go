@@ -60,13 +60,13 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	}
 
 	td := types.MustMakeDocument()
-
+	fmt.Println("hey")
 	for _, key := range keys {
 		bValue, ok := rawMessages[key]
 		if !ok {
 			return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing key %q", key)
 		}
-
+		fmt.Println(key)
 		value, err := Unmarshal(bValue)
 		if err != nil {
 			return lazyerrors.Error(err)
@@ -186,38 +186,105 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 	var buf bytes.Buffer
 	var b []byte
 	var err error
-	buf.WriteByte('{')
-	i := 0
+
+	buf.WriteString("{\"keys\":")
+	b, err = json.Marshal(doc.Keys())
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+	buf.Write(b)
+
 	for _, key := range doc.Keys() {
-		if key == "_id" {
-			continue
-		}
-
-		if i != 0 {
-			buf.WriteByte(',')
-		}
-
+		//if key == "_id" {
+		//	continue
+		//}
+		buf.WriteByte(',')
+		//fmt.Println("key")
+		//fmt.Println(key)
 		if b, err = json.Marshal(key); err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+		fmt.Println("second b")
+		fmt.Println(b)
 
 		buf.Write(b)
 		buf.WriteByte(':')
 
 		value, err := doc.Get(key)
+
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+		b, err = Marshal(value)
+		c := []byte{123, 34, 36, 111, 34}
+		fmt.Println(c)
+		res := bytes.Contains(b, c)
+		if res {
+			fmt.Println("YAY")
+			cAdd := []byte{123, 34, 111, 105, 100, 34}
+			b = append(cAdd, b[5:]...)
+			fmt.Println(cAdd)
+			//fmt.Println(bNew)
+		}
+		//fmt.Println(c)
+		fmt.Println(b)
+		fmt.Println(b[0:5])
+		////fmt.Println(b)
+		////var bAdd []byte
+		////bAdd := b[5 : len(b)-1]
+		//fmt.Println(len(c))
+		//i := len(c)
+		//fmt.Println(i)
+		//fmt.Println(len(c))
+		//i = i - 1
+		//fmt.Println(i)
+		//fmt.Println(c[5:i])
+		//cAdd := []byte{123, 34, 111, 105, 100, 34}
+		//cAdd = append(cAdd, b[5:]...)
 
-		b, err := Marshal(value)
+		//fmt.Println("cAdd")
+		//fmt.Println(cAdd)
+
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		buf.Write(b)
-		i = 1
 	}
 
+	//-----WORKING------
+	//buf.WriteByte('{')
+	//i := 0
+	//for _, key := range doc.Keys() {
+	//	if key == "_id" {
+	//		continue
+	//	}
+	//
+	//	if i != 0 {
+	//		buf.WriteByte(',')
+	//	}
+	//
+	//	if b, err = json.Marshal(key); err != nil {
+	//		return nil, lazyerrors.Error(err)
+	//	}
+	//
+	//	buf.Write(b)
+	//	buf.WriteByte(':')
+	//
+	//	value, err := doc.Get(key)
+	//	if err != nil {
+	//		return nil, lazyerrors.Error(err)
+	//	}
+	//
+	//	b, err := Marshal(value)
+	//	if err != nil {
+	//		return nil, lazyerrors.Error(err)
+	//	}
+	//
+	//	buf.Write(b)
+	//	i = 1
+	//}
+	//-----WORKING------
 	buf.WriteByte('}')
 	return buf.Bytes(), nil
 }

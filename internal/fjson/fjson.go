@@ -46,6 +46,7 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -178,7 +179,8 @@ func Unmarshal(data []byte) (any, error) {
 			var o Binary
 			err = o.UnmarshalJSON(data)
 			res = &o
-		case v["$o"] != nil:
+		case v["oid"] != nil:
+			fmt.Println("fjson.Unmarshal")
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o

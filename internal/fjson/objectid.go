@@ -30,7 +30,7 @@ type ObjectID types.ObjectID
 func (obj *ObjectID) fjsontype() {}
 
 type objectIDJSON struct {
-	O string `json:"$o"`
+	O string `json:"oid"`
 }
 
 // UnmarshalJSON implements fjsontype interface.
