@@ -264,3 +264,76 @@ func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, er
 
 	return
 }
+
+func whereDocument(document types.Document) (sql string) {
+
+	var args []any
+	sqlKeys := "{\"keys\": ["
+	count := 0
+	fmt.Println(len(document.Map()))
+	for key := range document.Map() {
+		fmt.Println(count)
+
+		if count != 0 && (len(document.Map())-1) == count {
+			sql += ","
+			sqlKeys += ","
+		}
+		sqlKeys += "'" + key + "'"
+		count += 1
+		fmt.Println(key)
+
+		sql += "\"" + key + "\":"
+
+		value, _ := document.Get(key)
+
+		switch value := value.(type) {
+		case string:
+			args = append(args, value)
+			sql += "'%s'"
+		case int:
+			fmt.Println("Here")
+		case int64:
+			fmt.Println("is Int")
+			args = append(args, value)
+		case int32:
+			fmt.Println("int32")
+			sql += "%d"
+			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
+			//if errorV != nil {
+			//	fmt.Println("error")
+			//}
+			args = append(args, value)
+		case types.Document:
+			fmt.Println("is a document")
+			fmt.Println(value)
+
+		case types.ObjectID:
+			fmt.Println("is an Object")
+			sql += "%s"
+			var bOBJ []byte
+			var err error
+			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+			fmt.Println("bObject")
+			fmt.Println(bOBJ)
+			//byt := make([]byte, hex.EncodedLen(len(value[:])))
+			//fmt.Println("byt")
+			//fmt.Println(byt)
+			//fmt.Println(string(byt))
+			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
+			//fmt.Println("bstring")
+			//fmt.Println(bstring)
+			args = append(args, string(bOBJ))
+		default:
+			fmt.Println("Nothing")
+		}
+
+	}
+	sqlKeys += "],"
+	sqlnew := fmt.Sprintf(sql, args...)
+	sqlnew += "}"
+	sql = sqlKeys + sqlnew
+
+	return sql
+}

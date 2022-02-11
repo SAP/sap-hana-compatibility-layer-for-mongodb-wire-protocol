@@ -20,6 +20,7 @@ import (
 	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
 	"github.com/FerretDB/FerretDB/internal/pg"
+	"strings"
 
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
@@ -80,7 +81,21 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		fmt.Println(key)
 		fmt.Println(filter.Map()[key])
 		sql += " WHERE "
-		sql += "\"" + key + "\""
+		if strings.Contains(key, ".") {
+			split := strings.Split(key, ".")
+			count := 0
+			for _, s := range split {
+				if (len(split) - 1) == count {
+					sql += "\"" + s + "\""
+				} else {
+					sql += "\"" + s + "\"."
+				}
+				count += 1
+			}
+		} else {
+			sql += "\"" + key + "\""
+		}
+
 		sql += " = "
 		//sql += placeholder.Next()
 		value, _ := filter.Get(key)
@@ -103,6 +118,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 			//	fmt.Println("error")
 			//}
 			args = append(args, value)
+		case types.Document:
+			fmt.Println("is a document")
+			fmt.Println(value)
+			sql += "%s"
+			argDoc := whereDocument(value)
+
+			args = append(args, argDoc)
 		case types.ObjectID:
 			fmt.Println("is an Object")
 			sql += "%s"
