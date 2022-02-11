@@ -145,7 +145,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	}
 	//fmt.Println("b")
 	//fmt.Println(b)
-
+	fmt.Println("OYOYOYOY")
 	buf.Write(b)
 
 	for _, key := range td.Keys() {
@@ -215,7 +215,14 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-		b, err = Marshal(value)
+
+		switch value := value.(type) {
+		case types.Document:
+			b, err = MarshalHANA(value)
+		default:
+			b, err = Marshal(value)
+		}
+		//b, err = Marshal(value)
 		c := []byte{123, 34, 36, 111, 34}
 		fmt.Println(c)
 		res := bytes.Contains(b, c)

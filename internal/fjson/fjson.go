@@ -175,6 +175,10 @@ func Unmarshal(data []byte) (any, error) {
 			var o Document
 			err = o.UnmarshalJSON(data)
 			res = &o
+		case v["keys"] != nil:
+			var o Document
+			err = o.UnmarshalJSON(data)
+			res = &o
 		case v["$b"] != nil:
 			var o Binary
 			err = o.UnmarshalJSON(data)
@@ -256,6 +260,8 @@ func MarshalHANA(v any) ([]byte, error) {
 			return nil, lazyerrors.Error(err)
 		}
 		return b, nil
+	case types.Document:
+		return MarshalJSONHANA(v)
 	default:
 		return []byte("null"), nil
 	}
