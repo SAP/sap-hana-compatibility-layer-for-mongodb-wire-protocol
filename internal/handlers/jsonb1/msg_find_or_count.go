@@ -17,6 +17,7 @@ package jsonb1
 import (
 	"context"
 	"fmt"
+	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
 	"github.com/FerretDB/FerretDB/internal/pg"
 
@@ -83,6 +84,8 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql += " = "
 		//sql += placeholder.Next()
 		value, _ := filter.Get(key)
+		fmt.Println("value")
+		fmt.Println(value)
 		switch value := value.(type) {
 		case string:
 			args = append(args, value)
@@ -100,6 +103,23 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 			//	fmt.Println("error")
 			//}
 			args = append(args, value)
+		case types.ObjectID:
+			fmt.Println("is an Object")
+			sql += "%s"
+			var bOBJ []byte
+			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+			fmt.Println("bObject")
+			fmt.Println(bOBJ)
+			//byt := make([]byte, hex.EncodedLen(len(value[:])))
+			//fmt.Println("byt")
+			//fmt.Println(byt)
+			//fmt.Println(string(byt))
+			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
+			//fmt.Println("bstring")
+			//fmt.Println(bstring)
+			args = append(args, string(bOBJ))
 		default:
 			fmt.Println("Nothing")
 		}

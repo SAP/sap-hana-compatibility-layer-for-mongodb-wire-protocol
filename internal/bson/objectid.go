@@ -75,6 +75,11 @@ func (obj ObjectID) MarshalJSON() ([]byte, error) {
 	return fjson.Marshal(fromBSON(&obj))
 }
 
+// MarshalJSONHANA implements bsontype interface.
+func (obj ObjectID) MarshalJSONHANA() ([]byte, error) {
+	return fjson.MarshalHANA(fromBSON(&obj))
+}
+
 // check interfaces
 var (
 	_ bsontype = (*ObjectID)(nil)

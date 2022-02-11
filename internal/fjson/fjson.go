@@ -244,6 +244,24 @@ func Marshal(v any) ([]byte, error) {
 	return b, nil
 }
 
+func MarshalHANA(v any) ([]byte, error) {
+	if v == nil {
+		return []byte("null"), nil
+	}
+
+	switch v := v.(type) {
+	case types.ObjectID:
+		b, err := MarshalJSONObjectHANA(v)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+		return b, nil
+	default:
+		return []byte("null"), nil
+	}
+
+}
+
 //func MarshalHANA(v amy) ([]byte, error) {
 //	if v == nil {
 //		return []byte("null"), nil
