@@ -285,7 +285,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		//}
 
 		// create table
-		if err := h.hanaPool.CreateTable(ctx, db, collection); err != nil {
+		if err := h.hanaPool.CreateTable(ctx, collection); err != nil {
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 
