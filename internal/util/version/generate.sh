@@ -2,5 +2,5 @@
 
 set -e
 
-git describe --tags --dirty > version.txt
+git describe --tags --dirty --always > version.txt
 git branch --show-current > branch.txt
