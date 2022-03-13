@@ -122,8 +122,11 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 			fmt.Println("is a document")
 			fmt.Println(value)
 			sql += "%s"
-			argDoc := whereDocument(value)
+			argDoc, err := whereDocument(value)
 
+			if err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
 			args = append(args, argDoc)
 		case types.ObjectID:
 			fmt.Println("is an Object")

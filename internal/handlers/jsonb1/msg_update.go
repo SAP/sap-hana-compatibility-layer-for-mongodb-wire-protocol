@@ -17,14 +17,11 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pgx/v4"
-
 	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/pg"
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 	"github.com/FerretDB/FerretDB/internal/wire"
+	"strings"
 )
 
 // MsgUpdate modifies an existing document or documents in a collection.
@@ -39,27 +36,39 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	docs, _ := m["updates"].(*types.Array)
 	db := m["$db"].(string)
 
+	fmt.Println(document)   // {map,,.
+	fmt.Println(m)          // map,,.
+	fmt.Println(collection) // test
+	fmt.Println(docs)       // &{[{map[q:
+	fmt.Println(db)         // BOJER
+	fmt.Println(docs.Len()) // often 1
+
 	var selected, updated int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
+		fmt.Println(doc)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		docM := doc.(types.Document).Map()
+		fmt.Println(docM)      // {map[q:{map[
+		fmt.Println(docM["q"]) // {map[first:first] [first]}
+		fmt.Println(docM["u"]) //{map[$set:{map[second:somesecodn] [second]}] [$set]}
 
-		sql := fmt.Sprintf(`select _jsonb FROM %s`, pgx.Identifier{db, collection}.Sanitize())
-		var placeholder pg.Placeholder
+		sql := fmt.Sprintf(`select * FROM %s`, collection)
+		//var placeholder pg.Placeholder
 
-		whereSQL, args, err := where(docM["q"].(types.Document), &placeholder)
+		whereSQL, args, err := whereHANA(docM["q"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-
+		fmt.Println(args)
 		sql += whereSQL
-
-		rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
+		fmt.Println(sql)
+		rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
 		if err != nil {
+			fmt.Println("fail")
 			return nil, err
 		}
 		defer rows.Close()
@@ -67,7 +76,10 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		var updateDocs types.Array
 
 		for {
-			updateDoc, err := nextRow(rows)
+			fmt.Println("hey1")
+			updateDoc, err := nextRow(rows) // returns the row as a map
+			fmt.Println("hey2")
+			fmt.Println(updateDoc)
 			if err != nil {
 				return nil, err
 			}
@@ -82,58 +94,77 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		selected += int32(updateDocs.Len())
 
-		for i := 0; i < updateDocs.Len(); i++ {
-			updateDoc, err := updateDocs.Get(i)
-			if err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		sql = fmt.Sprintf("UPDATE %s SET ", collection)
 
-			d := updateDoc.(types.Document)
+		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
 
-			for updateOp, updateV := range docM["u"].(types.Document).Map() {
-				switch updateOp {
-				case "$set":
-					for k, v := range updateV.(types.Document).Map() {
-						if err := d.Set(k, v); err != nil {
-							return nil, lazyerrors.Error(err)
-						}
-					}
-				default:
-					return nil, lazyerrors.Errorf("unhandled operation %q", updateOp)
-				}
-			}
-
-			if err = updateDocs.Set(i, d); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		sql += fmt.Sprintf(updateSQL, updateargs...) + " " + fmt.Sprintf(whereSQL, args...)
+		fmt.Println(sql)
+		tag, err := h.hanaPool.ExecContext(ctx, sql)
+		if err != nil {
+			return nil, err
 		}
 
-		for i := 0; i < updateDocs.Len(); i++ {
-			updateDoc, err := updateDocs.Get(i)
-			if err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		rowsaffected, err := tag.RowsAffected()
 
-			sql = fmt.Sprintf("UPDATE %s SET _jsonb = $1 WHERE _jsonb->'_id' = $2", pgx.Identifier{db, collection}.Sanitize())
-			d := updateDoc.(types.Document)
-			db, err := bson.MustConvertDocument(d).MarshalJSON()
-			if err != nil {
-				return nil, err
-			}
+		updated += int32(rowsaffected)
 
-			idb, err := bson.ObjectID(d.Map()["_id"].(types.ObjectID)).MarshalJSON()
-			if err != nil {
-				return nil, err
-			}
-			tag, err := h.hanaPool.ExecContext(ctx, sql, db, idb)
-			if err != nil {
-				return nil, err
-			}
-
-			rowsaffected, err := tag.RowsAffected()
-
-			updated += int32(rowsaffected)
-		}
+		//for i := 0; i < updateDocs.Len(); i++ {
+		//	updateDoc, err := updateDocs.Get(i)
+		//	if err != nil {
+		//		return nil, lazyerrors.Error(err)
+		//	}
+		//
+		//	d := updateDoc.(types.Document)
+		//
+		//	for updateOp, updateV := range docM["u"].(types.Document).Map() {
+		//		switch updateOp {
+		//		case "$set":
+		//			for k, v := range updateV.(types.Document).Map() {
+		//				if err := d.Set(k, v); err != nil {
+		//					return nil, lazyerrors.Error(err)
+		//				}
+		//			}
+		//		default:
+		//			return nil, lazyerrors.Errorf("unhandled operation %q", updateOp)
+		//		}
+		//	}
+		//
+		//	if err = updateDocs.Set(i, d); err != nil {
+		//		return nil, lazyerrors.Error(err)
+		//	}
+		//}
+		//
+		//for i := 0; i < updateDocs.Len(); i++ {
+		//	updateDoc, err := updateDocs.Get(i)
+		//	if err != nil {
+		//		return nil, lazyerrors.Error(err)
+		//	}
+		//
+		//	sql = fmt.Sprintf("UPDATE %s SET _jsonb = $1 WHERE _jsonb->'_id' = $2", pgx.Identifier{db, collection}.Sanitize())
+		//	d := updateDoc.(types.Document)
+		//	db, err := bson.MustConvertDocument(d).MarshalJSON()
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//
+		//	idb, err := bson.ObjectID(d.Map()["_id"].(types.ObjectID)).MarshalJSON()
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	fmt.Println("update SQL")
+		//	fmt.Println(sql)
+		//	fmt.Println(db)
+		//	fmt.Println(idb)
+		//	tag, err := h.hanaPool.ExecContext(ctx, sql, db, idb)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//
+		//	rowsaffected, err := tag.RowsAffected()
+		//
+		//	updated += int32(rowsaffected)
+		//}
 	}
 
 	var reply wire.OpMsg
@@ -149,4 +180,85 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	}
 
 	return &reply, nil
+}
+
+func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
+
+	fmt.Println(updateVal.Map()["$set"])
+	updateVal = updateVal.Map()["$set"].(types.Document)
+	for key := range updateVal.Map() {
+		fmt.Println("key:")
+		fmt.Println(key)
+		fmt.Println(updateVal.Map()[key])
+		if strings.Contains(key, ".") {
+			split := strings.Split(key, ".")
+			count := 0
+			for _, s := range split {
+				if (len(split) - 1) == count {
+					updateSQL += "\"" + s + "\""
+				} else {
+					updateSQL += "\"" + s + "\"."
+				}
+				count += 1
+			}
+		} else {
+			updateSQL += "\"" + key + "\""
+		}
+
+		updateSQL += " = "
+		//sql += placeholder.Next()
+		value, _ := updateVal.Get(key)
+		fmt.Println("value")
+		fmt.Println(value)
+		switch value := value.(type) {
+		case string:
+			updateargs = append(updateargs, value)
+			updateSQL += "'%s'"
+		case int:
+			fmt.Println("Here")
+		case int64:
+			fmt.Println("is Int")
+			updateargs = append(updateargs, value)
+		case int32:
+			fmt.Println("int32")
+			updateSQL += "%d"
+			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
+			//if errorV != nil {
+			//	fmt.Println("error")
+			//}
+			updateargs = append(updateargs, value)
+		case types.Document:
+			fmt.Println("is a document")
+			fmt.Println(value)
+			updateSQL += "%s"
+			argDoc, err := whereDocument(value)
+
+			if err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+
+			updateargs = append(updateargs, argDoc)
+		case types.ObjectID:
+			fmt.Println("is an Object")
+			updateSQL += "%s"
+			var bOBJ []byte
+			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+			fmt.Println("bObject")
+			fmt.Println(bOBJ)
+			//byt := make([]byte, hex.EncodedLen(len(value[:])))
+			//fmt.Println("byt")
+			//fmt.Println(byt)
+			//fmt.Println(string(byt))
+			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
+			//fmt.Println("bstring")
+			//fmt.Println(bstring)
+			updateargs = append(updateargs, string(bOBJ))
+		default:
+			fmt.Println("Nothing")
+		}
+	}
+
+	return
 }
