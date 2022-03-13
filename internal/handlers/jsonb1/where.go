@@ -265,7 +265,7 @@ func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, er
 	return
 }
 
-func whereDocument(document types.Document) (sql string) {
+func whereDocument(document types.Document) (sql string, err error) {
 
 	var args []any
 	sqlKeys := "{\"keys\": ["
@@ -335,5 +335,85 @@ func whereDocument(document types.Document) (sql string) {
 	sqlnew += "}"
 	sql = sqlKeys + sqlnew
 
-	return sql
+	return
+}
+
+func whereHANA(filter types.Document) (sql string, args []any, err error) {
+
+	for key := range filter.Map() {
+		fmt.Println("key:")
+		fmt.Println(key)
+		fmt.Println(filter.Map()[key])
+		sql += " WHERE "
+		if strings.Contains(key, ".") {
+			split := strings.Split(key, ".")
+			count := 0
+			for _, s := range split {
+				if (len(split) - 1) == count {
+					sql += "\"" + s + "\""
+				} else {
+					sql += "\"" + s + "\"."
+				}
+				count += 1
+			}
+		} else {
+			sql += "\"" + key + "\""
+		}
+
+		sql += " = "
+		//sql += placeholder.Next()
+		value, _ := filter.Get(key)
+		fmt.Println("value")
+		fmt.Println(value)
+		switch value := value.(type) {
+		case string:
+			args = append(args, value)
+			sql += "'%s'"
+		case int:
+			fmt.Println("Here")
+		case int64:
+			fmt.Println("is Int")
+			args = append(args, value)
+		case int32:
+			fmt.Println("int32")
+			sql += "%d"
+			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
+			//if errorV != nil {
+			//	fmt.Println("error")
+			//}
+			args = append(args, value)
+		case types.Document:
+			fmt.Println("is a document")
+			fmt.Println(value)
+			sql += "%s"
+			argDoc, err := whereDocument(value)
+
+			if err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+
+			args = append(args, argDoc)
+		case types.ObjectID:
+			fmt.Println("is an Object")
+			sql += "%s"
+			var bOBJ []byte
+			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+			fmt.Println("bObject")
+			fmt.Println(bOBJ)
+			//byt := make([]byte, hex.EncodedLen(len(value[:])))
+			//fmt.Println("byt")
+			//fmt.Println(byt)
+			//fmt.Println(string(byt))
+			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
+			//fmt.Println("bstring")
+			//fmt.Println(bstring)
+			args = append(args, string(bOBJ))
+		default:
+			fmt.Println("Nothing")
+		}
+	}
+
+	return
 }
