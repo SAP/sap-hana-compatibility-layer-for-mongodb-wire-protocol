@@ -395,6 +395,7 @@ func whereHANA(filter types.Document) (sql string, args []any, err error) {
 			args = append(args, argDoc)
 		case types.ObjectID:
 			fmt.Println("is an Object")
+			fmt.Println(value)
 			sql += "%s"
 			var bOBJ []byte
 			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
