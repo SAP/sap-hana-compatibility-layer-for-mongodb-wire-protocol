@@ -39,26 +39,34 @@ func (obj *ObjectID) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte("null")) {
 		panic("null data")
 	}
-
+	fmt.Println("data")
+	fmt.Println(data)
 	r := bytes.NewReader(data)
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
 	var o objectIDJSON
 	if err := dec.Decode(&o); err != nil {
+		fmt.Println("here1")
 		return lazyerrors.Error(err)
 	}
+	fmt.Println(o)
 	if err := checkConsumed(dec, r); err != nil {
+		fmt.Println("here2")
 		return lazyerrors.Error(err)
 	}
-
+	fmt.Println(o)
 	b, err := hex.DecodeString(o.O)
 	if err != nil {
+		fmt.Println("here3")
 		return lazyerrors.Error(err)
 	}
+	fmt.Println(o)
 	if len(b) != 12 {
+		fmt.Println("here4")
 		return lazyerrors.Errorf("fjson.ObjectID.UnmarshalJSON: %d bytes", len(b))
 	}
+	fmt.Println(o)
 	copy(obj[:], b)
 
 	return nil

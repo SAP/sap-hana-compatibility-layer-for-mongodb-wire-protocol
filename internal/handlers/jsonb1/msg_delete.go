@@ -17,11 +17,7 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pgx/v4"
-
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
 	"github.com/FerretDB/FerretDB/internal/types"
 	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
 	"github.com/FerretDB/FerretDB/internal/wire"
@@ -29,16 +25,19 @@ import (
 
 // MsgDelete deletes document.
 func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+
 	document, err := msg.Document()
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
 
 	m := document.Map()
-	collection := m[document.Command()].(string)
-	db := m["$db"].(string)
-	docs, _ := m["deletes"].(*types.Array)
 
+	collection := m[document.Command()].(string)
+
+	docs, _ := m["deletes"].(*types.Array)
+	fmt.Println(docs)
+	fmt.Println(docs.Len())
 	var deleted int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
@@ -48,24 +47,70 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		d := doc.(types.Document).Map()
 
-		sql := fmt.Sprintf(`delETE FROM %s`, pgx.Identifier{db, collection}.Sanitize())
-		var placeholder pg.Placeholder
-
-		elSQL, args, err := where(d["q"].(types.Document), &placeholder)
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
+		sql := fmt.Sprintf(`DELETE FROM %s`, collection)
 
 		limit, _ := d["limit"].(int32)
+
+		var delSQL string
+		var args []any
 		if limit != 0 {
-			sql += fmt.Sprintf(" WHERE _jsonb->'_id' IN (SELECT _jsonb->'_id' FROM %s", pgx.Identifier{db, collection}.Sanitize())
-			sql += elSQL
-			sql += " LIMIT 1)"
+			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s", collection)
+			fmt.Println(qSQL)
+			whereSQL, whereArgs, err := whereHANA(d["q"].(types.Document))
+			qSQL += fmt.Sprintf(whereSQL, whereArgs...) + " LIMIT 1"
+			fmt.Println(qSQL)
+			rows, err := h.hanaPool.QueryContext(ctx, qSQL)
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
+			fmt.Println(rows)
+			defer rows.Close()
+			var objectID string
+			for rows.Next() {
+				err = rows.Scan(&objectID)
+				fmt.Println(objectID)
+
+			}
+			fmt.Println(args)
+			args = append(args, objectID)
+			fmt.Println(args)
+			delSQL = " WHERE \"_id\".\"oid\" = '%s'"
+
+			//objectIDstring = "{\"oid\": \"" + objectIDstring + "\"}"
+			//objectID := []byte(objectIDstring)
+			//var od fjson.ObjectID
+			//
+			//err = od.UnmarshalJSON(objectID)
+			//if err != nil {
+			//	fmt.Println("OH NO")
+			//	return nil, lazyerrors.Error(err)
+			//}
+			//fmt.Println(od)
+			//qdocu := types.MustMakeDocument("_id", od)
+			//fmt.Println(qdocu)
+			//dSQL, args, err := whereHANA(qdocu.(types.ObjectID))
+			//fmt.Println(dSQL)
+			//fSQL := fmt.Sprintf(dSQL, args...)
+			//fmt.Println(fSQL)
+
 		} else {
-			sql += elSQL
+
+			fmt.Println(d["q"])
+			delSQL, args, err = whereHANA(d["q"].(types.Document))
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
 		}
 
-		tag, err := h.hanaPool.ExecContext(ctx, sql, args...)
+		sql += delSQL
+
+		fmt.Println("SQL")
+		fmt.Println(sql)
+		fmt.Println(args)
+		sqlExec := fmt.Sprintf(sql, args...)
+		fmt.Println("sqlExec")
+		fmt.Println(sqlExec)
+		tag, err := h.hanaPool.ExecContext(ctx, sqlExec)
 		if err != nil {
 			// TODO check error code
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "MsgDelete: ns not found: %w", err)
