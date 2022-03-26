@@ -46,15 +46,17 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	var selected, updated int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
+		fmt.Println("DOCC")
 		fmt.Println(doc)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		docM := doc.(types.Document).Map()
-		fmt.Println(docM)      // {map[q:{map[
-		fmt.Println(docM["q"]) // {map[first:first] [first]}
-		fmt.Println(docM["u"]) //{map[$set:{map[second:somesecodn] [second]}] [$set]}
+		fmt.Println(docM)          // {map[q:{map[
+		fmt.Println(docM["q"])     // {map[first:first] [first]}
+		fmt.Println(docM["u"])     //{map[$set:{map[second:somesecodn] [second]}] [$set]}
+		fmt.Println(docM["multi"]) // either true for updatemany or nil for updateOne
 
 		sql := fmt.Sprintf(`select * FROM %s`, collection)
 		//var placeholder pg.Placeholder
@@ -63,36 +65,78 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-		fmt.Println(args)
-		sql += whereSQL
-		fmt.Println(sql)
-		rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
-		if err != nil {
-			fmt.Println("fail")
-			return nil, err
+		//fmt.Println(args)
+		//sql += whereSQL
+		//fmt.Println(sql)
+
+		if docM["multi"] != true {
+			fmt.Println("in ONE")
+			sql := fmt.Sprintf("select \"_id\".\"oid\" FROM %s", collection)
+			sql += whereSQL + " limit 1"
+			fmt.Println("sql limit 1 in ONE")
+			fmt.Println(sql)
+			fmt.Println("args")
+			fmt.Println(args)
+			row := h.hanaPool.QueryRowContext(ctx, fmt.Sprintf(sql, args...))
+			//if err != nil {
+			//	fmt.Println("fail")
+			//	return nil, err
+			//}
+			//defer row.Close()
+
+			var objectID string
+
+			err = row.Scan(&objectID)
+			//for rows.Next() {
+			//	err = rows.Scan(&objectID)
+			//}
+			fmt.Println("objectID")
+			fmt.Println(objectID)
+			countSQL := fmt.Sprintf("SELECT count(*) FROM %s", collection) + whereSQL
+			fmt.Println("countSQL")
+			fmt.Println(countSQL)
+			countRow := h.hanaPool.QueryRowContext(ctx, fmt.Sprintf(countSQL, args...))
+
+			//for countRow.Next() {
+			//	err = countRow.Scan(&selected)
+			//
+			//}
+			err = countRow.Scan(&selected)
+			fmt.Println("selected")
+			fmt.Println(selected)
+			whereSQL = "WHERE \"_id\".\"oid\" = '%s'"
+			var emptySlice []any
+			args = append(emptySlice, objectID)
+			fmt.Println("ONE args ")
+
 		}
-		defer rows.Close()
 
-		var updateDocs types.Array
+		//rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
+		//if err != nil {
+		//	fmt.Println("fail")
+		//	return nil, err
+		//}
 
-		for {
-			fmt.Println("hey1")
-			updateDoc, err := nextRow(rows) // returns the row as a map
-			fmt.Println("hey2")
-			fmt.Println(updateDoc)
-			if err != nil {
-				return nil, err
-			}
-			if updateDoc == nil {
-				break
-			}
+		//var updateDocs types.Array
+		//
+		//for {
+		//	fmt.Println("hey1")
+		//	updateDoc, err := nextRow(rows) // returns the row as a map
+		//	fmt.Println("hey2")
+		//	fmt.Println(updateDoc)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	if updateDoc == nil {
+		//		break
+		//	}
+		//
+		//	if err = updateDocs.Append(*updateDoc); err != nil {
+		//		return nil, lazyerrors.Error(err)
+		//	}
+		//}
 
-			if err = updateDocs.Append(*updateDoc); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-		}
-
-		selected += int32(updateDocs.Len())
+		//selected += int32(updateDocs.Len())
 
 		sql = fmt.Sprintf("UPDATE %s SET ", collection)
 
@@ -105,9 +149,14 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			return nil, err
 		}
 
-		rowsaffected, err := tag.RowsAffected()
+		if docM["multi"] != true {
+			updated = 1
+		} else {
+			rowsaffected, _ := tag.RowsAffected()
 
-		updated += int32(rowsaffected)
+			updated += int32(rowsaffected)
+			selected = updated
+		}
 
 		//for i := 0; i < updateDocs.Len(); i++ {
 		//	updateDoc, err := updateDocs.Get(i)
