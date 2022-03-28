@@ -65,6 +65,9 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+
+		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
+
 		//fmt.Println(args)
 		//sql += whereSQL
 		//fmt.Println(sql)
@@ -72,7 +75,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if docM["multi"] != true {
 			fmt.Println("in ONE")
 			sql := fmt.Sprintf("select \"_id\".\"oid\" FROM %s", collection)
-			sql += whereSQL + " limit 1"
+			sql += whereSQL + "AND NOT (" + fmt.Sprintf(updateSQL, updateargs...) + ")" + " limit 1"
 			fmt.Println("sql limit 1 in ONE")
 			fmt.Println(sql)
 			fmt.Println("args")
@@ -139,8 +142,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		//selected += int32(updateDocs.Len())
 
 		sql = fmt.Sprintf("UPDATE %s SET ", collection)
-
-		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
 
 		sql += fmt.Sprintf(updateSQL, updateargs...) + " " + fmt.Sprintf(whereSQL, args...)
 		fmt.Println(sql)
