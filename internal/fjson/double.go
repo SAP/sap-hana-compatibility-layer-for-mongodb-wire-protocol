@@ -29,7 +29,7 @@ type Double float64
 func (d *Double) fjsontype() {}
 
 type doubleJSON struct {
-	F any `json:"$f"`
+	F any `json:"ft"`
 }
 
 // UnmarshalJSON implements fjsontype interface.

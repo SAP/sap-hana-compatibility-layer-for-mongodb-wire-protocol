@@ -28,7 +28,7 @@
 //  Document:   {"$k": ["<key 1>", "<key 2>", ...], "<key 1>": <value 1>, "<key 2>": <value 2>, ...}
 //  Array:      JSON array
 // Scalar/value types
-//  Double:     {"$f": JSON number} or {"$f": "Infinity|-Infinity|NaN"}
+//  Double:     {"tf": JSON number} or {"tf": "Infinity|-Infinity|NaN"}
 //  String:     JSON string
 //  Binary:     {"$b": "<base 64 string>", "s": <subtype number>}
 //  ObjectID:   {"$o": "<ObjectID as 24 character hex string"}
@@ -37,7 +37,7 @@
 //  nil:        JSON null
 //  Regex:      {"$r": "<string without terminating 0x0>", "o": "<string without terminating 0x0>"}
 //  Int32:      JSON number
-//  Timestamp:  {"$t": "<number as string>"}
+//  Timestamp:  {"ts": "<number as string>"}
 //  Int64:      {"$l": "<number as string>"}
 //  Decimal128: {"$n": "<number as string>"}
 //  CString:    {"$c": "<string without terminating 0x0>"}
@@ -167,7 +167,7 @@ func Unmarshal(data []byte) (any, error) {
 	switch v := v.(type) {
 	case map[string]any:
 		switch {
-		case v["$f"] != nil:
+		case v["ft"] != nil:
 			var o Double
 			err = o.UnmarshalJSON(data)
 			res = &o
@@ -188,7 +188,7 @@ func Unmarshal(data []byte) (any, error) {
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
-		case v["$d"] != nil:
+		case v["da"] != nil:
 			var o DateTime
 			err = o.UnmarshalJSON(data)
 			res = &o
@@ -196,7 +196,7 @@ func Unmarshal(data []byte) (any, error) {
 			var o Regex
 			err = o.UnmarshalJSON(data)
 			res = &o
-		case v["$t"] != nil:
+		case v["ts"] != nil:
 			var o Timestamp
 			err = o.UnmarshalJSON(data)
 			res = &o

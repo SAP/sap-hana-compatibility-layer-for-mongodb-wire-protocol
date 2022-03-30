@@ -50,7 +50,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	fmt.Println(m)
 	fmt.Println(m["projection"])
 
-	if isFindOp {
+	if isFindOp { //enters here if find
 		projectionIn, _ := m["projection"].(types.Document)
 		projectionSQL, projectionArgs, err := projection(projectionIn, &placeholder)
 		if err != nil {
@@ -62,7 +62,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		filter, _ = m["filter"].(types.Document)
 		//sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
-	} else {
+	} else { // enters here if count
 		collection = m["count"].(string)
 		//filter, _ = m["query"].(types.Document)
 		//sql = fmt.Sprintf(`select COUNT(*) FROM %s`, pgx.Identifier{db, collection}.Sanitize())

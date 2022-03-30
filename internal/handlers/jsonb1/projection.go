@@ -15,6 +15,7 @@
 package jsonb1
 
 import (
+	"fmt"
 	"github.com/FerretDB/FerretDB/internal/pg"
 	"github.com/FerretDB/FerretDB/internal/types"
 )
@@ -25,24 +26,37 @@ func projection(projection types.Document, p *pg.Placeholder) (sql string, args 
 		sql = "*"
 		return
 	}
+	sql = "{\"keys\": '[\"_id\", \"fifth\"]'"
+	sql += ", \"_id\": \"_id\""
 
-	ks := ""
-	for i, k := range projection.Keys() {
-		if i != 0 {
-			ks += ", "
-		}
-		ks += p.Next()
-		args = append(args, k)
+	//for i, k := range projection.Keys() {
+	//	if i != 0 {
+	//		ks += ", "
+	//	}
+	//	ks += p.Next()
+	//	args = append(args, k)
+	//}
+
+	for _, k := range projection.Keys() {
+		sql += ", \"" + k + "\": \"" + k + "\""
+		fmt.Println("sql so far")
+		fmt.Println(sql)
+
 	}
-	sql = "json_build_object('$k', array[" + ks + "],"
-	for i, k := range projection.Keys() {
-		if i != 0 {
-			sql += ", "
-		}
-		sql += p.Next() + "::text, _jsonb->" + p.Next()
-		args = append(args, k, k)
-	}
-	sql += ")"
+
+	//sql = "json_build_object('$k', array[" + ks + "],"
+	//for i, k := range projection.Keys() {
+	//	if i != 0 {
+	//		sql += ", "
+	//	}
+	//	sql += p.Next() + "::text, _jsonb->" + p.Next()
+	//	args = append(args, k, k)
+	//}
+
+	sql += "}"
+
+	fmt.Println("finished projection SQL")
+	fmt.Println(sql)
 
 	return
 }

@@ -53,12 +53,23 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	if !ok {
 		return lazyerrors.Errorf("fjson.Document.Unmarshal: missing keys")
 	}
-
+	fmt.Println("Im here1")
 	var keys []string
+	fmt.Println("Im here2")
+	fmt.Println(bKeys)
 	if err := json.Unmarshal(bKeys, &keys); err != nil {
-		return lazyerrors.Error(err)
-	}
+		if err.Error() == "json: cannot unmarshal string into Go value of type []string" {
+			fmt.Println("was here")
+			fmt.Println(bKeys[1:(len(bKeys) - 1)])
+			if err := json.Unmarshal(bKeys[1:(len(bKeys)-1)], &keys); err != nil {
+				return lazyerrors.Error(err)
+			}
+		} else {
+			return lazyerrors.Error(err)
+		}
 
+	}
+	fmt.Println("Im here3")
 	td := types.MustMakeDocument()
 	fmt.Println("hey")
 	for _, key := range keys {

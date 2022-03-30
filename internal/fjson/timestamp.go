@@ -29,7 +29,7 @@ type Timestamp types.Timestamp
 func (ts *Timestamp) fjsontype() {}
 
 type timestampJSON struct {
-	T uint64 `json:"$t,string"`
+	T uint64 `json:"ts,string"`
 }
 
 // UnmarshalJSON implements fjsontype interface.

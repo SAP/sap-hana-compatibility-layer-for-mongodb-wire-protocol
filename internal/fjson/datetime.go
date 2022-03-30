@@ -34,7 +34,7 @@ func (dt *DateTime) String() string {
 }
 
 type dateTimeJSON struct {
-	D int64 `json:"$d"`
+	D int64 `json:"da"`
 }
 
 // UnmarshalJSON implements fjsontype interface.
