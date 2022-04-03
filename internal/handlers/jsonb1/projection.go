@@ -98,7 +98,10 @@ func inclusionProjection(projection types.Document) (sql string) {
 	sql = ", \"_id\": \"_id\""
 
 	for _, k := range projection.Keys() {
-
+		
+		if k == "_id" {
+			continue
+		}
 		keysSQL += ", \"" + k + "\""
 		sql += ", \"" + k + "\": \"" + k + "\""
 		fmt.Println("sql so far")
