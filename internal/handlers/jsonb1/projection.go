@@ -51,22 +51,22 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 			}
 
 		case int32, int64, float64:
-			//if compareScalars(v, int32(0)) == equal {
-			//	if inclusion {
-			//		err = lazyerrors.Errorf("Cannot do exclusion on field #{k} in inclusion projection")
-			//
-			//		return
-			//	}
-			//	exclusion = true
-			//} else {
-			//	if exclusion {
-			//		err = lazyerrors.Errorf("Cannot do inclusion on field #{k} in exclusion projection")
-			//		return
-			//	}
-			//	inclusion = true
-			//}
-			err = lazyerrors.Errorf("Is int32, int64, float64")
-			return
+			var equal types.CompareResult
+			equal = 0
+			if types.CompareScalars(v, int32(0)) == equal {
+				if inclusion {
+					err = lazyerrors.Errorf("Cannot do exclusion on field #{k} in inclusion projection")
+
+					return
+				}
+				exclusion = true
+			} else {
+				if exclusion {
+					err = lazyerrors.Errorf("Cannot do inclusion on field #{k} in exclusion projection")
+					return
+				}
+				inclusion = true
+			}
 
 		//case *types.Document:
 		//	for _, projectionType := range v.Keys() {
@@ -98,7 +98,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 	sql = ", \"_id\": \"_id\""
 
 	for _, k := range projection.Keys() {
-		
+
 		if k == "_id" {
 			continue
 		}
@@ -277,11 +277,29 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 				}
 			}
 
-		//case int32, int64, float64: // field: number
-		//	if compareScalars(projectionVal, int32(0)) == equal {
-		//		doc.Remove(k1)
-		//	}
-		//
+		case int32, int64, float64: // field: number
+			var equal types.CompareResult
+			equal = 0
+			if types.CompareScalars(projectionVal, int32(0)) == equal {
+				doc.Remove(k1)
+			} else { // inclusion
+				docVal, _ := (doc.Map())[k1]
+				switch docVal.(type) {
+				case nil:
+					fmt.Println("NOW HERE 2")
+					valType, _ := (doc.Map())["ignoreKeys"]
+					switch keys := valType.(type) {
+					case *types.Array:
+						fmt.Println("made it")
+						if !keys.Contains(k1) {
+							fmt.Println("and again")
+							doc.Remove(k1)
+						}
+					}
+
+				}
+			}
+
 		//case *types.Document: // field: { $elemMatch: { field2: value }}
 		//	if err := applyComplexProjection(k1, doc, projectionVal); err != nil {
 		//		return err
