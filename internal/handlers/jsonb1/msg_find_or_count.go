@@ -50,13 +50,20 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	fmt.Println(m)
 	fmt.Println(m["projection"])
 
+	var exclusion, projectBool bool
+
 	if isFindOp { //enters here if find
+		var projectionSQL string
+
 		projectionIn, _ := m["projection"].(types.Document)
-		projectionSQL, projectionArgs, err := projection(projectionIn, &placeholder)
+		//projectionIn.Set("ignoreKeys", true)
+		fmt.Println("Projection")
+		fmt.Println(projectionIn)
+		projectionSQL, exclusion, projectBool, err = projection(projectionIn)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-		args = append(args, projectionArgs...)
+		//args = append(args, projectionArgs...)
 
 		collection = m["find"].(string)
 		filter, _ = m["filter"].(types.Document)
@@ -201,6 +208,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
 	//rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
+		fmt.Println("THE ERROR")
 		return nil, lazyerrors.Error(err)
 	}
 	fmt.Println(rows)
@@ -208,6 +216,8 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	var reply wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint
 		var docs types.Array
+		//docs := make([]types.Document, 0, 16)
+
 		for {
 			doc, err := nextRow(rows)
 			if err != nil {
@@ -217,10 +227,29 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 				break
 			}
 
+			//docs = append(docs, *doc)
+
 			if err = docs.Append(*doc); err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 		}
+		fmt.Println("IS PROHECTBOOL True")
+		if projectBool {
+			fmt.Println("projectBool = true")
+			err = projectDocuments(&docs, m["projection"].(types.Document), exclusion)
+		}
+		fmt.Println("DOCS")
+		fmt.Println(docs)
+		//firstBatch := types.MakeArray(len(docs))
+		//for _, doc := range docs {
+		//	if err = firstBatch.Append(doc); err != nil {
+		//		fmt.Println("YES ERROR")
+		//		return nil, err
+		//	}
+		//}
+		//fmt.Println("firstBatch")
+		//fmt.Println(firstBatch)
+
 		err = reply.SetSections(wire.OpMsgSection{
 			Documents: []types.Document{types.MustMakeDocument(
 				"cursor", types.MustMakeDocument(

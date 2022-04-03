@@ -61,7 +61,16 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 		if err.Error() == "json: cannot unmarshal string into Go value of type []string" {
 			fmt.Println("was here")
 			fmt.Println(bKeys[1:(len(bKeys) - 1)])
-			if err := json.Unmarshal(bKeys[1:(len(bKeys)-1)], &keys); err != nil {
+			var newbKeys []byte
+			for _, k := range bKeys {
+				if bytes.Equal([]byte{k}, []byte{92}) {
+					continue
+				}
+				newbKeys = append(newbKeys, k)
+				//fmt.Println(k)
+			}
+			fmt.Println(newbKeys)
+			if err := json.Unmarshal(newbKeys[1:(len(newbKeys)-1)], &keys); err != nil {
 				return lazyerrors.Error(err)
 			}
 		} else {
@@ -222,8 +231,9 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		buf.WriteByte(':')
 
 		value, err := doc.Get(key)
-
+		fmt.Println(value)
 		if err != nil {
+			fmt.Println("ERROR")
 			return nil, lazyerrors.Error(err)
 		}
 
@@ -231,6 +241,8 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		case types.Document:
 			b, err = MarshalHANA(value)
 		default:
+			fmt.Println("%T", value)
+			fmt.Println(value)
 			b, err = Marshal(value)
 		}
 		//b, err = Marshal(value)
@@ -246,7 +258,7 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		}
 		//fmt.Println(c)
 		fmt.Println(b)
-		fmt.Println(b[0:5])
+		//fmt.Println(b[0:5])
 		////fmt.Println(b)
 		////var bAdd []byte
 		////bAdd := b[5 : len(b)-1]

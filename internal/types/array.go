@@ -69,6 +69,14 @@ func (a *Array) Get(index int) (any, error) {
 	return a.s[index], nil
 }
 
+func (a *Array) GetPointer(index int) (*any, error) {
+	if l := a.Len(); index < 0 || index >= l {
+		return nil, fmt.Errorf("types.Array.Get: index %d is out of bounds [0-%d)", index, l)
+	}
+
+	return &(a.s[index]), nil
+}
+
 // GetByPath returns a value by path - a sequence of indexes and keys.
 func (a *Array) GetByPath(path ...string) (any, error) {
 	return getByPath(a, path...)
@@ -122,4 +130,17 @@ func (a *Array) Append(values ...any) error {
 
 	a.s = append(a.s, values...)
 	return nil
+}
+
+func (a *Array) Contains(key string) bool {
+
+	for _, value := range a.s {
+		switch value := value.(type) {
+		case string:
+			if key == value {
+				return true
+			}
+		}
+	}
+	return false
 }
