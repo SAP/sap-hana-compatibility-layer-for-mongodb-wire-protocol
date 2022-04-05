@@ -197,7 +197,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	case limit == 0:
 		// undefined or zero - no limit
 	case limit > 0:
-		sql += " LIMIT " + placeholder.Next()
+		sql += " LIMIT %d"
 		args = append(args, limit)
 	default:
 		// TODO https://github.com/FerretDB/FerretDB/issues/79
