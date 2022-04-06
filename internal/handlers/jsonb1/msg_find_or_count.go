@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/FerretDB/FerretDB/internal/bson"
 	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
 	"strings"
 
 	"github.com/FerretDB/FerretDB/internal/types"
@@ -41,7 +40,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	var sql, collection string
 
 	var args []any
-	var placeholder pg.Placeholder
 
 	m := document.Map()
 	_, isFindOp := m["find"].(string)
@@ -181,7 +179,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 				sql += ","
 			}
 
-			sql += " _jsonb->" + placeholder.Next()
+			sql += " \"%s\" "
 			args = append(args, k)
 
 			order := sortMap[k].(int32)
