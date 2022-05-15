@@ -75,7 +75,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if docM["multi"] != true {
 			fmt.Println("in ONE")
 			sql := fmt.Sprintf("select \"_id\".\"oid\" FROM %s", collection)
-			sql += whereSQL + "AND NOT (" + fmt.Sprintf(updateSQL, updateargs...) + ")" + " limit 1"
+			sql += whereSQL + " AND NOT (" + fmt.Sprintf(updateSQL, updateargs...) + ")" + " limit 1"
 			fmt.Println("sql limit 1 in ONE")
 			fmt.Println(sql)
 			fmt.Println("args")
