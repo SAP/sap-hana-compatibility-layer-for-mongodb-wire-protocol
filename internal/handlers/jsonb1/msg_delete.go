@@ -37,8 +37,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	collection := m[document.Command()].(string)
 
 	docs, _ := m["deletes"].(*types.Array)
-	fmt.Println(docs)
-	fmt.Println(docs.Len())
+
 	var deleted int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
@@ -56,47 +55,32 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		var args []any
 		if limit != 0 {
 			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s", collection)
-			fmt.Println(qSQL)
+
 			whereSQL, whereArgs, err := whereHANA(d["q"].(types.Document))
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
 			qSQL += fmt.Sprintf(whereSQL, whereArgs...) + " LIMIT 1"
-			fmt.Println(qSQL)
+
 			rows, err := h.hanaPool.QueryContext(ctx, qSQL)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
-			fmt.Println(rows)
+
 			defer rows.Close()
 			var objectID string
 			for rows.Next() {
 				err = rows.Scan(&objectID)
-				fmt.Println(objectID)
+				if err != nil {
+					return nil, lazyerrors.Error(err)
+				}
 
 			}
-			fmt.Println(args)
+
 			args = append(args, objectID)
-			fmt.Println(args)
 			delSQL = " WHERE \"_id\".\"oid\" = '%s'"
 
-			//objectIDstring = "{\"oid\": \"" + objectIDstring + "\"}"
-			//objectID := []byte(objectIDstring)
-			//var od fjson.ObjectID
-			//
-			//err = od.UnmarshalJSON(objectID)
-			//if err != nil {
-			//	fmt.Println("OH NO")
-			//	return nil, lazyerrors.Error(err)
-			//}
-			//fmt.Println(od)
-			//qdocu := types.MustMakeDocument("_id", od)
-			//fmt.Println(qdocu)
-			//dSQL, args, err := whereHANA(qdocu.(types.ObjectID))
-			//fmt.Println(dSQL)
-			//fSQL := fmt.Sprintf(dSQL, args...)
-			//fmt.Println(fSQL)
-
 		} else {
-
-			fmt.Println(d["q"])
 			delSQL, args, err = whereHANA(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
@@ -105,12 +89,8 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		sql += delSQL
 
-		fmt.Println("SQL")
-		fmt.Println(sql)
-		fmt.Println(args)
 		sqlExec := fmt.Sprintf(sql, args...)
-		fmt.Println("sqlExec")
-		fmt.Println(sqlExec)
+
 		tag, err := h.hanaPool.ExecContext(ctx, sqlExec)
 		if err != nil {
 			// TODO check error code
@@ -118,6 +98,9 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		}
 
 		rowsaffected, err := tag.RowsAffected()
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 
 		deleted += int32(rowsaffected)
 	}

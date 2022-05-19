@@ -17,7 +17,7 @@ package handlers
 import "github.com/prometheus/client_golang/prometheus"
 
 const (
-	namespace = "ferretdb"
+	namespace = "HANA_HWY"
 	subsystem = "handler"
 )
 

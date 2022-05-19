@@ -40,7 +40,7 @@ func (dt *DateTime) ReadFrom(r *bufio.Reader) error {
 		return lazyerrors.Errorf("bson.DateTime.ReadFrom (binary.Read): %w", err)
 	}
 
-	// TODO Use .UTC(): https://github.com/lucboj/FerretDB_SAP_HANA/issues/43
+	// TODO Use .UTC(): https://github.com/FerretDB/FerretDB/issues/43
 	*dt = DateTime(time.UnixMilli(ts))
 	return nil
 }

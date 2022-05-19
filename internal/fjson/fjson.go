@@ -46,7 +46,6 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
@@ -184,7 +183,6 @@ func Unmarshal(data []byte) (any, error) {
 			err = o.UnmarshalJSON(data)
 			res = &o
 		case v["oid"] != nil:
-			fmt.Println("fjson.Unmarshal")
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
@@ -267,16 +265,3 @@ func MarshalHANA(v any) ([]byte, error) {
 	}
 
 }
-
-//func MarshalHANA(v amy) ([]byte, error) {
-//	if v == nil {
-//		return []byte("null"), nil
-//	}
-//
-//	b, err := v.MarshalJSONHANA()
-//	if err != nil {
-//		return nil, lazyerrors.Error(err)
-//	}
-//
-//	return b, nil
-//}

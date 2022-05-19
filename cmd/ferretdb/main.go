@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 
-	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 	"os"
 	"os/signal"
 
@@ -41,7 +40,6 @@ var (
 	debugAddrF       = flag.String("debug-addr", "127.0.0.1:8088", "debug address")
 	listenAddrF      = flag.String("listen-addr", "127.0.0.1:27017", "listen address")
 	modeF            = flag.String("mode", string(clientconn.AllModes[0]), fmt.Sprintf("operation mode: %v", clientconn.AllModes))
-	postgresqlURLF   = flag.String("postgresql-url", "postgres://postgres:1234password@127.0.0.1:5433/ferretdb", "PostgreSQL URL")
 	proxyAddrF       = flag.String("proxy-addr", "127.0.0.1:37017", "")
 	tlsF             = flag.Bool("tls", false, "enable insecure TLS")
 	versionF         = flag.Bool("version", false, "print version to stdout (full version, commit, branch, dirty flag) and exit")
@@ -65,7 +63,7 @@ func main() {
 	}
 
 	logger.Info(
-		"Starting FerretDB "+info.Version+"...",
+		"Starting HANA HWY "+info.Version+"...",
 		zap.String("version", info.Version),
 		zap.String("commit", info.Commit),
 		zap.String("branch", info.Branch),
@@ -96,29 +94,16 @@ func main() {
 
 	go debug.RunHandler(ctx, *debugAddrF, logger.Named("debug"))
 
-	//pgPool, err := pg.NewPool(*postgresqlURLF, logger, false)
 	hanaPool, err := hana.CreatePool(*saphanaURL, logger, false)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	//defer pgPool.Close()
+
 	defer hanaPool.Close()
 
 	listenerMetrics := clientconn.NewListenerMetrics()
 	handlersMetrics := handlers.NewMetrics()
 	prometheus.DefaultRegisterer.MustRegister(listenerMetrics, handlersMetrics)
-
-	//l := clientconn.NewListener(&clientconn.NewListenerOpts{
-	//	ListenAddr:      *listenAddrF,
-	//	TLS:             *tlsF,
-	//	ProxyAddr:       *proxyAddrF,
-	//	Mode:            clientconn.Mode(*modeF),
-	//	PgPool:          pgPool,
-	//	Logger:          logger.Named("listener"),
-	//	Metrics:         listenerMetrics,
-	//	HandlersMetrics: handlersMetrics,
-	//	TestConnTimeout: *testConnTimeoutF,
-	//})
 
 	l := clientconn.NewListener(&clientconn.NewListenerOpts{
 		ListenAddr:      *listenAddrF,

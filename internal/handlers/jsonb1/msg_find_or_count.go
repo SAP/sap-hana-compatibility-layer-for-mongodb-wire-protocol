@@ -35,8 +35,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, lazyerrors.Error(err)
 	}
 
-	fmt.Println(document)
-
 	var filter types.Document
 	var sql, collection string
 
@@ -46,47 +44,36 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	_, isFindOp := m["find"].(string)
 	db := m["$db"].(string)
 
-	fmt.Println(m)
-	fmt.Println(m["projection"])
-
 	var exclusion, projectBool bool
 
 	if isFindOp { //enters here if find
 		var projectionSQL string
 
 		projectionIn, _ := m["projection"].(types.Document)
-		//projectionIn.Set("ignoreKeys", true)
-		fmt.Println("Projection")
-		fmt.Println(projectionIn)
 		projectionSQL, exclusion, projectBool, err = projection(projectionIn)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-		//args = append(args, projectionArgs...)
 
 		collection = m["find"].(string)
 		filter, _ = m["filter"].(types.Document)
-		//sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
 	} else { // enters here if count
 		collection = m["count"].(string)
-		//filter, _ = m["query"].(types.Document)
-		//sql = fmt.Sprintf(`select COUNT(*) FROM %s`, pgx.Identifier{db, collection}.Sanitize())
 		sql = fmt.Sprintf(`select COUNT(*) FROM %s`, collection)
 	}
 
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
-	fmt.Println("Filter:")
-	fmt.Println(filter)
-	fmt.Println(filter.Keys())
-	fmt.Println(filter)
-	fmt.Println(filter.Map())
+
+	i := 0
 	for key := range filter.Map() {
-		fmt.Println("key:")
-		fmt.Println(key)
-		fmt.Println(filter.Map()[key])
-		sql += " WHERE "
+		if i != 0 {
+			sql += " AND "
+		} else {
+			sql += " WHERE "
+		}
+		i++
 		if strings.Contains(key, ".") {
 			split := strings.Split(key, ".")
 			count := 0
@@ -103,73 +90,37 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		}
 
 		sql += " = "
-		//sql += placeholder.Next()
 		value, _ := filter.Get(key)
-		fmt.Println("value")
-		fmt.Println(value)
+
 		switch value := value.(type) {
 		case string:
 			args = append(args, value)
 			sql += "'%s'"
-		case int:
-			fmt.Println("Here")
 		case int64:
-			fmt.Println("is Int")
 			args = append(args, value)
 		case int32:
-			fmt.Println("int32")
 			sql += "%d"
-			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
-			//if errorV != nil {
-			//	fmt.Println("error")
-			//}
 			args = append(args, value)
 		case types.Document:
-			fmt.Println("is a document")
-			fmt.Println(value)
 			sql += "%s"
 			argDoc, err := whereDocument(value)
 
 			if err != nil {
-				err = lazyerrors.Errorf("scalar: %w", err)
+				return nil, lazyerrors.Errorf("scalar: %w", err)
 			}
 			args = append(args, argDoc)
 		case types.ObjectID:
-			fmt.Println("is an Object")
+
 			sql += "%s"
 			var bOBJ []byte
 			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
-				err = lazyerrors.Errorf("scalar: %w", err)
+				return nil, lazyerrors.Errorf("scalar: %w", err)
 			}
-			fmt.Println("bObject")
-			fmt.Println(bOBJ)
-			//byt := make([]byte, hex.EncodedLen(len(value[:])))
-			//fmt.Println("byt")
-			//fmt.Println(byt)
-			//fmt.Println(string(byt))
-			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
-			//fmt.Println("bstring")
-			//fmt.Println(bstring)
 			args = append(args, string(bOBJ))
 		default:
-			fmt.Println("Nothing")
+			return nil, lazyerrors.Errorf("scalar: %w does not fit any of the cases.")
 		}
 	}
-
-	//no where so far
-	//whereSQL, whereArgs, err := where(filter, &placeholder)
-	//if err != nil {
-	//	return nil, lazyerrors.Error(err)
-	//}
-	//args = append(args, whereArgs...)
-
-	fmt.Println("args:")
-	fmt.Println(args)
-
-	//sql += whereSQL
-	sqln := fmt.Sprintf(sql, args...)
-	fmt.Println("sqln:")
-	fmt.Println(sqln)
 
 	sortMap := sort.Map()
 	if len(sortMap) != 0 {
@@ -202,20 +153,15 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
-	fmt.Println(sql)
-	fmt.Println(sql, args)
 	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
-	//rows, err := h.hanaPool.QueryContext(ctx, sql, args...)
 	if err != nil {
-		fmt.Println("THE ERROR")
 		return nil, lazyerrors.Error(err)
 	}
-	fmt.Println(rows)
+
 	defer rows.Close()
 	var reply wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint
 		var docs types.Array
-		//docs := make([]types.Document, 0, 16)
 
 		for {
 			doc, err := nextRow(rows)
@@ -226,28 +172,17 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 				break
 			}
 
-			//docs = append(docs, *doc)
-
 			if err = docs.Append(*doc); err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 		}
-		fmt.Println("IS PROHECTBOOL True")
+
 		if projectBool {
-			fmt.Println("projectBool = true")
 			err = projectDocuments(&docs, m["projection"].(types.Document), exclusion)
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
 		}
-		fmt.Println("DOCS")
-		fmt.Println(docs)
-		//firstBatch := types.MakeArray(len(docs))
-		//for _, doc := range docs {
-		//	if err = firstBatch.Append(doc); err != nil {
-		//		fmt.Println("YES ERROR")
-		//		return nil, err
-		//	}
-		//}
-		//fmt.Println("firstBatch")
-		//fmt.Println(firstBatch)
 
 		err = reply.SetSections(wire.OpMsgSection{
 			Documents: []types.Document{types.MustMakeDocument(
@@ -267,8 +202,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 				return nil, lazyerrors.Error(err)
 			}
 		}
-		// in psql, the SELECT * FROM table limit `x` ignores the value of the limit,
-		// so, we need this `if` statement to support this kind of query `db.actor.find().limit(10).count()`
+
 		if count > limit && limit != 0 {
 			count = limit
 		}

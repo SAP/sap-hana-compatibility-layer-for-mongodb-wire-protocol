@@ -16,24 +16,11 @@ package jsonb1
 
 import (
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
-	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+
 	"go.uber.org/zap"
 
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
-	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 )
-
-//type storage struct {
-//	pgPool *pg.Pool
-//	l      *zap.Logger
-//}
-//
-//func NewStorage(pgPool *pg.Pool, l *zap.Logger) common.Storage {
-//	return &storage{
-//		pgPool: pgPool,
-//		l:      l,
-//	}
-//}
 
 type storage struct {
 	hanaPool *hana.Hpool

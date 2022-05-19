@@ -48,8 +48,7 @@ func (h *Handler) MsgGetLog(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	var log types.Array
 	for _, line := range []string{
-		"Powered by 🥭 FerretDB " + mv.Version + " and SAP HANA " + hv + ".",
-		"Please star us on GitHub: https://github.com/lucboj/FerretDB_SAP_HANA",
+		"Powered by HANA HWY " + mv.Version + " and SAP HANA " + hv + ".",
 	} {
 		b, err := json.Marshal(map[string]any{
 			"msg":  line,

@@ -15,8 +15,6 @@
 package jsonb1
 
 import (
-	"fmt"
-
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
@@ -68,22 +66,6 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 				}
 				inclusion = true
 			}
-
-		//case *types.Document:
-		//	for _, projectionType := range v.Keys() {
-		//		supportedProjectionTypes := []string{"$elemMatch"}
-		//		if !slices.Contains(supportedProjectionTypes, projectionType) {
-		//			err = lazyerrors.Errorf("projecion of %s is not supported", projectionType)
-		//			return
-		//		}
-		//
-		//		switch projectionType {
-		//		case "$elemMatch":
-		//			inclusion = true
-		//		default:
-		//			panic(projectionType + " not supported")
-		//		}
-		//	}
 		default:
 			err = lazyerrors.Errorf("unsupported operation %s %v (%T)", k, v, v)
 			return
@@ -105,15 +87,11 @@ func inclusionProjection(projection types.Document) (sql string) {
 		}
 		keysSQL += ", \"" + k + "\""
 		sql += ", \"" + k + "\": \"" + k + "\""
-		fmt.Println("sql so far")
-		fmt.Println(sql)
 
 	}
 
 	keysSQL += "]'"
 	sql = keysSQL + sql + "}"
-	fmt.Println("finished projection SQL")
-	fmt.Println(sql)
 
 	return
 }
@@ -140,101 +118,35 @@ func projection(projection types.Document) (sql string, exclusion bool, projectB
 		sql = "*"
 		return
 	}
-	//
-	//keysSQL := "{\"keys\": '[\"_id\" "
-	//sql = ", \"_id\": \"_id\""
-	//
-	////for i, k := range projection.Keys() {
-	////	if i != 0 {
-	////		ks += ", "
-	////	}
-	////	ks += p.Next()
-	////	args = append(args, k)
-	////}
-	//
-	//for _, k := range projection.Keys() {
-	//
-	//	keysSQL += ", \"" + k + "\""
-	//	sql += ", \"" + k + "\": \"" + k + "\""
-	//	fmt.Println("sql so far")
-	//	fmt.Println(sql)
-	//
-	//}
-	//
-	////sql = "json_build_object('$k', array[" + ks + "],"
-	////for i, k := range projection.Keys() {
-	////	if i != 0 {
-	////		sql += ", "
-	////	}
-	////	sql += p.Next() + "::text, _jsonb->" + p.Next()
-	////	args = append(args, k, k)
-	////}
-	//keysSQL += "]'"
-	//sql = keysSQL + sql + "}"
-	//fmt.Println("finished projection SQL")
-	//fmt.Println(sql)
-
 }
 
 func projectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
-	fmt.Println("PROJECTIONDOCUMENTS1")
 
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
-		fmt.Println("PROJECTIONDOCUMENTS2")
-		fmt.Println(doc)
-		fmt.Println(&doc)
-		fmt.Println("HERE")
-		fmt.Println(*doc)
 		if errGet != nil {
 			return errGet
 		}
 		switch docv := (*doc).(type) {
 		case types.Document:
-
 			err = projectDocument(&docv, projection, exclusion)
 			*doc = docv
-
-			fmt.Println("newwer DOC")
-			fmt.Println(doc)
-			fmt.Println(&doc)
 		default:
 			err = lazyerrors.Errorf("Array contains a type not being types.Document")
 		}
 		if err != nil {
 			return
 		}
-		fmt.Println("newest")
-		fmt.Println(doc)
 	}
-
-	//for i := 0; i < len(*docs); i++ {
-	//
-	//	err = projectDocument(&(*docs)[i], projection, exclusion)
-	//	if err != nil {
-	//		return
-	//	}
-	//}
-
 	return nil
 }
 
 func projectDocument(doc *types.Document, projection types.Document, exclusion bool) (err error) {
 
 	projectionMap := projection.Map()
-	fmt.Println("IGNOREKEYS")
-	d, _ := (doc.Map())["ignoreKeys"]
-	fmt.Println(d)
-	fmt.Printf("%T\n", d)
-	fmt.Println((doc.Map())["ignoreKeys"])
+
 	for k1 := range doc.Map() {
 		projectionVal, ok := projectionMap[k1]
-		fmt.Println("k1")
-		fmt.Println(k1)
-		fmt.Println(projectionVal)
-		fmt.Printf("%T\n", projectionVal)
-		fmt.Println((doc.Map())[k1])
-		fmt.Printf("%T\n", (doc.Map())[k1])
 
 		if !ok {
 			if k1 == "_id" { // if _id is not in projection map, do not do anything with it
@@ -247,34 +159,25 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 				continue
 			}
 			//inclusion
-			fmt.Println("1")
 			doc.Remove(k1)
 			continue
 		}
 
 		switch projectionVal := projectionVal.(type) { // found in the projection
 		case bool: // field: bool
-			fmt.Println("NOW HERE")
 			if !projectionVal {
-				fmt.Println("2")
 				doc.Remove(k1)
-				fmt.Println("new DOc")
-				fmt.Println(doc)
 			} else { // inclusion
-				docVal, _ := (doc.Map())[k1]
+				docVal := (doc.Map())[k1]
 				switch docVal.(type) {
 				case nil:
-					fmt.Println("NOW HERE 2")
-					valType, _ := (doc.Map())["ignoreKeys"]
+					valType := (doc.Map())["ignoreKeys"]
 					switch keys := valType.(type) {
 					case *types.Array:
-						fmt.Println("made it")
 						if !keys.Contains(k1) {
-							fmt.Println("and again")
 							doc.Remove(k1)
 						}
 					}
-
 				}
 			}
 
@@ -284,28 +187,18 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 			if types.CompareScalars(projectionVal, int32(0)) == equal {
 				doc.Remove(k1)
 			} else { // inclusion
-				docVal, _ := (doc.Map())[k1]
+				docVal := (doc.Map())[k1]
 				switch docVal.(type) {
 				case nil:
-					fmt.Println("NOW HERE 2")
-					valType, _ := (doc.Map())["ignoreKeys"]
+					valType := (doc.Map())["ignoreKeys"]
 					switch keys := valType.(type) {
 					case *types.Array:
-						fmt.Println("made it")
 						if !keys.Contains(k1) {
-							fmt.Println("and again")
 							doc.Remove(k1)
 						}
 					}
-
 				}
 			}
-
-		//case *types.Document: // field: { $elemMatch: { field2: value }}
-		//	if err := applyComplexProjection(k1, doc, projectionVal); err != nil {
-		//		return err
-		//	}
-
 		default:
 			return lazyerrors.Errorf("unsupported operation %s %v (%T)", k1, projectionVal, projectionVal)
 		}

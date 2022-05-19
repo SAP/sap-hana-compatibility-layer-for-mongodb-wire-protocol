@@ -23,7 +23,7 @@ import (
 )
 
 func (h *storage) MsgCreateIndexes(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/78
+	// TODO https://github.com/FerretDB/FerretDB/issues/78
 
 	var reply wire.OpMsg
 	err := reply.SetSections(wire.OpMsgSection{

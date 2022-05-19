@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
@@ -31,11 +30,8 @@ func (h *Handler) MsgListCollections(ctx context.Context, msg *wire.OpMsg) (*wir
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
-	fmt.Println("Document:")
-	fmt.Println(document)
+
 	m := document.Map()
-	fmt.Println("m:")
-	fmt.Println(m)
 	filter, ok := m["filter"].(types.Document)
 	if ok && len(filter.Map()) != 0 {
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgListCollections: filter is not supported")

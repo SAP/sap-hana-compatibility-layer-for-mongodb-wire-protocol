@@ -30,18 +30,6 @@ import (
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
-// Handler data struct.
-//type Handler struct {
-//	// TODO replace those fields with opts *NewOpts
-//	pgPool        *pg.Pool
-//	peerAddr      string
-//	l             *zap.Logger
-//	sql           common.Storage
-//	jsonb1        common.Storage
-//	metrics       *Metrics
-//	lastRequestID int32
-//}
-
 type Handler struct {
 	// TODO replace those fields with opts *NewOpts
 	hanaPool      *hana.Hpool
@@ -53,16 +41,6 @@ type Handler struct {
 	lastRequestID int32
 }
 
-// NewOpts represents handler configuration.
-//type NewOpts struct {
-//	PgPool        *pg.Pool
-//	Logger        *zap.Logger
-//	SQLStorage    common.Storage
-//	JSONB1Storage common.Storage
-//	Metrics       *Metrics
-//	PeerAddr      string
-//}
-
 type NewOpts struct {
 	HanaPool      *hana.Hpool
 	Logger        *zap.Logger
@@ -71,18 +49,6 @@ type NewOpts struct {
 	Metrics       *Metrics
 	PeerAddr      string
 }
-
-// New returns a new handler.
-//func New(opts *NewOpts) *Handler {
-//	return &Handler{
-//		pgPool:   opts.PgPool,
-//		l:        opts.Logger,
-//		sql:      opts.SQLStorage,
-//		jsonb1:   opts.JSONB1Storage,
-//		metrics:  opts.Metrics,
-//		peerAddr: opts.PeerAddr,
-//	}
-//}
 
 func New(opts *NewOpts) *Handler {
 	return &Handler{
@@ -222,18 +188,13 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	command := document.Command()
 
 	if command == "createindexes" {
-		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/78
+		// TODO https://github.com/FerretDB/FerretDB/issues/78
 		return h.jsonb1, nil
 	}
 
 	collection := m[command].(string)
 	db := m["$db"].(string)
 
-	//var jsonbTableExist bool
-	//sql := `SELECT COUNT(*) > 0 FROM information_schema.columns WHERE column_name = $1 AND table_schema = $2 AND table_name = $3`
-	//if err := h.pgPool.QueryRow(ctx, sql, "_jsonb", db, collection).Scan(&jsonbTableExist); err != nil {
-	//	return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-	//}
 	var jsonbTableExist bool
 	sql := "SELECT count(*) FROM PUBLIC.M_TABLES"
 	rows, err := h.hanaPool.Query(sql)
@@ -269,7 +230,6 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		}
 
 		// check if SQL table exist
-		//tables, err := h.pgPool.Tables(ctx, db)
 		tables, err := h.hanaPool.Tables(ctx, db)
 		if err != nil {
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)

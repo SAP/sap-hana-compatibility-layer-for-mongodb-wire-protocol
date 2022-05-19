@@ -38,7 +38,7 @@ var commands = map[string]command{
 		handler: (*Handler).MsgBuildInfo,
 	},
 	"collstats": {
-		// This command implements the follow database methods:
+		// This command implements the following database methods:
 		// 	- db.collection.stats()
 		// 	- db.collection.dataSize()
 		name:    "collStats",

@@ -30,7 +30,6 @@ import (
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/proxy"
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/sql"
 
-	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
 	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
@@ -63,15 +62,6 @@ type conn struct {
 	l       *zap.SugaredLogger
 }
 
-// newConnOpts represents newConn options.
-//type newConnOpts struct {
-//	netConn         net.Conn
-//	pgPool          *pg.Pool
-//	proxyAddr       string
-//	mode            Mode
-//	handlersMetrics *handlers.Metrics
-//}
-
 type newConnOpts struct {
 	netConn         net.Conn
 	hanaPool        *hana.Hpool
@@ -86,9 +76,9 @@ func newConn(opts *newConnOpts) (*conn, error) {
 	l := zap.L().Named(prefix)
 
 	peerAddr := opts.netConn.RemoteAddr().String()
-	//sqlH := sql.NewStorage(opts.pgPool, l.Sugar())
+
 	sqlH := sql.NewStorage(opts.hanaPool, l.Sugar())
-	//jsonb1H := jsonb1.NewStorage(opts.pgPool, l)
+
 	jsonb1H := jsonb1.NewStorage(opts.hanaPool, l)
 
 	var p *proxy.Handler
@@ -98,15 +88,6 @@ func newConn(opts *newConnOpts) (*conn, error) {
 			return nil, err
 		}
 	}
-
-	//handlerOpts := &handlers.NewOpts{
-	//	PgPool:        opts.pgPool,
-	//	Logger:        l,
-	//	PeerAddr:      peerAddr,
-	//	SQLStorage:    sqlH,
-	//	JSONB1Storage: jsonb1H,
-	//	Metrics:       opts.handlersMetrics,
-	//}
 
 	handlerOpts := &handlers.NewOpts{
 		HanaPool:      opts.hanaPool,
