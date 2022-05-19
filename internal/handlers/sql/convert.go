@@ -16,9 +16,10 @@ package sql
 
 import (
 	"database/sql"
-	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 type rowInfo struct {

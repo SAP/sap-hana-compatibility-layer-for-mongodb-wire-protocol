@@ -17,7 +17,7 @@ package common
 import (
 	"context"
 
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 type Storage interface {

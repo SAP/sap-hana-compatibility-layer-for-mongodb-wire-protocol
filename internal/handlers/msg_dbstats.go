@@ -17,9 +17,9 @@ package handlers
 import (
 	"context"
 
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 func (h *Handler) MsgDBStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
@@ -45,7 +45,7 @@ func (h *Handler) MsgDBStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg,
 		Documents: []types.Document{types.MustMakeDocument(
 			"db", db,
 			"collections", stats.CountTables,
-			// TODO https://github.com/FerretDB/FerretDB/issues/176
+			// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/176
 			"views", int32(0),
 			"objects", stats.CountRows,
 			"avgObjSize", float64(stats.SizeSchema)/float64(stats.CountRows),

@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/util/version"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/version"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgGetLog is an administrative command that returns the most recent 1024 logged events.
@@ -49,7 +49,7 @@ func (h *Handler) MsgGetLog(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	var log types.Array
 	for _, line := range []string{
 		"Powered by 🥭 FerretDB " + mv.Version + " and SAP HANA " + hv + ".",
-		"Please star us on GitHub: https://github.com/FerretDB/FerretDB",
+		"Please star us on GitHub: https://github.com/lucboj/FerretDB_SAP_HANA",
 	} {
 		b, err := json.Marshal(map[string]any{
 			"msg":  line,

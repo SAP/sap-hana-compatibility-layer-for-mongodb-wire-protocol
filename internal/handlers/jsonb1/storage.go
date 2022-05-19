@@ -15,12 +15,12 @@
 package jsonb1
 
 import (
-	"github.com/FerretDB/FerretDB/internal/hana"
-	//"github.com/FerretDB/FerretDB/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
+	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 	"go.uber.org/zap"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	//"github.com/FerretDB/FerretDB/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 )
 
 //type storage struct {

@@ -26,7 +26,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 const (
@@ -83,7 +83,7 @@ func NewPool(connString string, logger *zap.Logger, lazy bool) (*Pool, error) {
 	// * https://github.com/jackc/pgx/issues/520
 	// * https://github.com/jackc/pgx/issues/789
 	// * https://github.com/jackc/pgx/issues/863
-	// * https://github.com/FerretDB/FerretDB/issues/43
+	// * https://github.com/lucboj/FerretDB_SAP_HANA/issues/43
 	config.ConnConfig.RuntimeParams["timezone"] = "UTC"
 
 	config.ConnConfig.RuntimeParams["application_name"] = "FerretDB"

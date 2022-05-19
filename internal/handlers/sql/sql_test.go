@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/util/testutil"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/testutil"
 )
 
 // All tests in this package should be fine running in parallel with tests from the handler package.

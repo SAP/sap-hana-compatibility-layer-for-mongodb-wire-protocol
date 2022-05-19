@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/FerretDB/FerretDB/internal/util/hex"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/hex"
 )
 
 func ParseDump(tb testing.TB, s string) []byte {

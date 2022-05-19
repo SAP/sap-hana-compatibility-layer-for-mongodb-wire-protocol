@@ -27,14 +27,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/handlers/jsonb1"
-	"github.com/FerretDB/FerretDB/internal/handlers/sql"
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/testutil"
-	"github.com/FerretDB/FerretDB/internal/util/version"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/jsonb1"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/sql"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/testutil"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/version"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 func setup(t *testing.T, poolOpts *testutil.PoolOpts) (context.Context, *Handler, *pg.Pool) {
@@ -889,7 +889,7 @@ func TestCreateListDropCollection(t *testing.T) {
 		assert.Equal(t, expected, actual)
 
 		// TODO test listCollections command once we have better cursor support
-		// https://github.com/FerretDB/FerretDB/issues/79
+		// https://github.com/lucboj/FerretDB_SAP_HANA/issues/79
 
 		tables, err := pool.Tables(ctx, db)
 		require.NoError(t, err)

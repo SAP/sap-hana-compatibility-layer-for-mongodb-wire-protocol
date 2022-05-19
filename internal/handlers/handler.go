@@ -17,16 +17,17 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/FerretDB/FerretDB/internal/hana"
 	"sort"
 	"sync/atomic"
 
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
+
 	"go.uber.org/zap"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // Handler data struct.
@@ -221,7 +222,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	command := document.Command()
 
 	if command == "createindexes" {
-		// TODO https://github.com/FerretDB/FerretDB/issues/78
+		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/78
 		return h.jsonb1, nil
 	}
 

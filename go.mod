@@ -1,4 +1,4 @@
-module github.com/FerretDB/FerretDB
+module github.com/lucboj/FerretDB_SAP_HANA
 
 go 1.18
 

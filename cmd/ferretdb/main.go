@@ -18,7 +18,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	//"github.com/FerretDB/FerretDB/internal/pg"
+
+	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 	"os"
 	"os/signal"
 
@@ -27,12 +28,12 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 
-	"github.com/FerretDB/FerretDB/internal/clientconn"
-	"github.com/FerretDB/FerretDB/internal/hana"
-	"github.com/FerretDB/FerretDB/internal/handlers"
-	"github.com/FerretDB/FerretDB/internal/util/debug"
-	"github.com/FerretDB/FerretDB/internal/util/logging"
-	"github.com/FerretDB/FerretDB/internal/util/version"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/clientconn"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/debug"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/logging"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/version"
 )
 
 //nolint:gochecknoglobals // flags are defined there to be visible in `bin/ferretdb-testcover -h` output

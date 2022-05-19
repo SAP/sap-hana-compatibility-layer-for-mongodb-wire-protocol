@@ -17,13 +17,14 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
 	"strings"
 
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
@@ -198,7 +199,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql += " LIMIT %d"
 		args = append(args, limit)
 	default:
-		// TODO https://github.com/FerretDB/FerretDB/issues/79
+		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 	fmt.Println(sql)

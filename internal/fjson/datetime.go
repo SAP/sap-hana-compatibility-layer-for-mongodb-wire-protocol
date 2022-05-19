@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 // DateTime represents BSON DateTime data type.
@@ -55,7 +55,7 @@ func (dt *DateTime) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	// TODO Use .UTC(): https://github.com/FerretDB/FerretDB/issues/43
+	// TODO Use .UTC(): https://github.com/lucboj/FerretDB_SAP_HANA/issues/43
 	*dt = DateTime(time.UnixMilli(o.D))
 	return nil
 }

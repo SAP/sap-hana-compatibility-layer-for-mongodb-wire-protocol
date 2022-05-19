@@ -15,11 +15,11 @@
 package sql
 
 import (
-	"github.com/FerretDB/FerretDB/internal/hana"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
 	"go.uber.org/zap"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	//"github.com/FerretDB/FerretDB/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	//"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
 )
 
 //type storage struct {
