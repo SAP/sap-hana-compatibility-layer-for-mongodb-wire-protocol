@@ -15,9 +15,9 @@
 package common
 
 import (
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 type wherePair func(key string, value any, p *pg.Placeholder) (sql string, args []any, err error)

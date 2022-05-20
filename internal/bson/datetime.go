@@ -20,8 +20,8 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/fjson"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/fjson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 // DateTime represents BSON DateTime data type.

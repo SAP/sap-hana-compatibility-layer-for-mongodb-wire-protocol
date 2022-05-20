@@ -18,10 +18,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgHello returns a document that describes the role of the instance.

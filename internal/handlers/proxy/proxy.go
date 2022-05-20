@@ -20,8 +20,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // Handler "handles" messages by sending them to another wire protocol compatible service.

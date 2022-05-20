@@ -22,9 +22,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/fjson"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/fjson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 const (

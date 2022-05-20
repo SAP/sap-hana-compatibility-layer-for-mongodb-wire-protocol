@@ -17,11 +17,11 @@ package handlers
 import (
 	"context"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgDrop removes a collection or view from the database.

@@ -32,7 +32,7 @@ linters-settings:
       See the License for the specific language governing permissions and
       limitations under the License.
   goimports:
-    local-prefixes: github.com/FerretDB/FerretDB
+    local-prefixes: github.com/lucboj/FerretDB_SAP_HANA
   gosimple:
     go: "1.18"
     checks: ["all"]

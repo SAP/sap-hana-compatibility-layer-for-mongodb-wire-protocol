@@ -16,11 +16,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgListDatabases command provides a list of all existing databases along with basic statistics about them.
@@ -29,12 +28,8 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("databaseNames:")
-	fmt.Println(databaseNames)
 	databases := types.MakeArray(len(databaseNames))
 	for _, databaseName := range databaseNames {
-		fmt.Println("databaseName:")
-		fmt.Println(databaseName)
 		tables, err := h.hanaPool.Tables(ctx, databaseName)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
@@ -46,7 +41,6 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 		var sizeOnDisk int64
 		for _, name := range tables {
 			var tableSize int64
-			//fullName := databaseName + "." + name
 			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER' AND TABLE_NAME = $1;", name).Scan(&tableSize)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
@@ -66,10 +60,6 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 	}
 
 	var totalSize int64
-	//err = h.hanaPool.QueryRowContext(ctx, "SELECT pg_database_size(current_database())").Scan(&totalSize)
-	//if err != nil {
-	//	return nil, err
-	//}
 	totalSize = 30
 	var reply wire.OpMsg
 	err = reply.SetSections(wire.OpMsgSection{

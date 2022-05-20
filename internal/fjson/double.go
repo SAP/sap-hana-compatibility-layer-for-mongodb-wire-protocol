@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"math"
 
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 // Double represents BSON Double data type.

@@ -19,8 +19,8 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/FerretDB/FerretDB/internal/fjson"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/fjson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 // Int32 represents BSON Int32 data type.

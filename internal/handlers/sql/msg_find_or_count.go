@@ -20,11 +20,11 @@ import (
 
 	"github.com/jackc/pgx/v4"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
@@ -43,10 +43,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	m := document.Map()
 	_, isFindOp := m["find"].(string)
 	db := m["$db"].(string)
-
-	fmt.Println("In SQL:")
-
-	fmt.Println(document)
 
 	projection, ok := m["projection"].(types.Document)
 	projectionStr := "*"
@@ -106,7 +102,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql += " LIMIT " + placeholder.Next()
 		args = append(args, limit)
 	default:
-		// TODO https://github.com/FerretDB/FerretDB/issues/79
+		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 

@@ -46,14 +46,13 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
 	"github.com/AlekSi/pointer"
 
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 type fjsontype interface {
@@ -184,7 +183,6 @@ func Unmarshal(data []byte) (any, error) {
 			err = o.UnmarshalJSON(data)
 			res = &o
 		case v["oid"] != nil:
-			fmt.Println("fjson.Unmarshal")
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
@@ -267,16 +265,3 @@ func MarshalHANA(v any) ([]byte, error) {
 	}
 
 }
-
-//func MarshalHANA(v amy) ([]byte, error) {
-//	if v == nil {
-//		return []byte("null"), nil
-//	}
-//
-//	b, err := v.MarshalJSONHANA()
-//	if err != nil {
-//		return nil, lazyerrors.Error(err)
-//	}
-//
-//	return b, nil
-//}

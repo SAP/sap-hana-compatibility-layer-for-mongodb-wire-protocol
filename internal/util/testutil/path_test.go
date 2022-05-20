@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/FerretDB/FerretDB/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
 )
 
 func TestSetByPath(t *testing.T) {

@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/FerretDB/FerretDB/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
 )
 
 //go:generate ./generate.sh

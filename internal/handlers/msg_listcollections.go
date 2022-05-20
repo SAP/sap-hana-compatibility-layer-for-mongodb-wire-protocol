@@ -16,12 +16,11 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgListCollections retrieves information (i.e. the name and options)
@@ -31,11 +30,8 @@ func (h *Handler) MsgListCollections(ctx context.Context, msg *wire.OpMsg) (*wir
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
-	fmt.Println("Document:")
-	fmt.Println(document)
+
 	m := document.Map()
-	fmt.Println("m:")
-	fmt.Println(m)
 	filter, ok := m["filter"].(types.Document)
 	if ok && len(filter.Map()) != 0 {
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgListCollections: filter is not supported")

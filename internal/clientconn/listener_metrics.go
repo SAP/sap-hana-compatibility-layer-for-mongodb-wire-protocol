@@ -17,7 +17,7 @@ package clientconn
 import "github.com/prometheus/client_golang/prometheus"
 
 const (
-	namespace = "ferretdb"
+	namespace = "HANA_HWY"
 	subsystem = "client"
 )
 

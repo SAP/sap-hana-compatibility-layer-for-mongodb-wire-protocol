@@ -18,13 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	//"github.com/jackc/pgx/v4"
-
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
-	"github.com/FerretDB/FerretDB/internal/wire"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
 )
 
 // MsgDelete deletes document.
@@ -36,7 +34,6 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	m := document.Map()
 	collection := m[document.Command()].(string)
-	//db := m["$db"].(string)
 	docs, _ := m["deletes"].(*types.Array)
 
 	var deleted int32
@@ -73,6 +70,9 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		}
 
 		rowsaffected, err := tag.RowsAffected()
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 
 		deleted += int32(rowsaffected)
 	}

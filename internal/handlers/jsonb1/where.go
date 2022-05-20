@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/FerretDB/FerretDB/internal/bson"
-	"github.com/FerretDB/FerretDB/internal/handlers/common"
-	"github.com/FerretDB/FerretDB/internal/pg"
-	"github.com/FerretDB/FerretDB/internal/types"
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 func scalar(v any, p *pg.Placeholder) (sql string, args []any, err error) {
@@ -235,16 +235,11 @@ func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, er
 	if len(filterMap) == 0 {
 		return
 	}
-	fmt.Println("Filtermap")
-	fmt.Println(filterMap)
+
 	sql = " WHERE"
 
 	for i, key := range filter.Keys() {
 		value := filterMap[key]
-		fmt.Println("valueWhere")
-		fmt.Println(value)
-		fmt.Println("i")
-		fmt.Println(i)
 
 		if i != 0 {
 			sql += " AND"
@@ -270,9 +265,8 @@ func whereDocument(document types.Document) (sql string, err error) {
 	var args []any
 	sqlKeys := "{\"keys\": ["
 	count := 0
-	fmt.Println(len(document.Map()))
+
 	for key := range document.Map() {
-		fmt.Println(count)
 
 		if count != 0 && (len(document.Map())-1) == count {
 			sql += ","
@@ -280,7 +274,6 @@ func whereDocument(document types.Document) (sql string, err error) {
 		}
 		sqlKeys += "'" + key + "'"
 		count += 1
-		fmt.Println(key)
 
 		sql += "\"" + key + "\":"
 
@@ -290,43 +283,23 @@ func whereDocument(document types.Document) (sql string, err error) {
 		case string:
 			args = append(args, value)
 			sql += "'%s'"
-		case int:
-			fmt.Println("Here")
 		case int64:
-			fmt.Println("is Int")
 			args = append(args, value)
 		case int32:
-			fmt.Println("int32")
 			sql += "%d"
-			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
-			//if errorV != nil {
-			//	fmt.Println("error")
-			//}
 			args = append(args, value)
-		case types.Document:
-			fmt.Println("is a document")
-			fmt.Println(value)
-
 		case types.ObjectID:
-			fmt.Println("is an Object")
 			sql += "%s"
 			var bOBJ []byte
-			var err error
-			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
-				err = lazyerrors.Errorf("scalar: %w", err)
+			var err1 error
+			if bOBJ, err1 = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = err1
+				return
 			}
-			fmt.Println("bObject")
-			fmt.Println(bOBJ)
-			//byt := make([]byte, hex.EncodedLen(len(value[:])))
-			//fmt.Println("byt")
-			//fmt.Println(byt)
-			//fmt.Println(string(byt))
-			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
-			//fmt.Println("bstring")
-			//fmt.Println(bstring)
 			args = append(args, string(bOBJ))
 		default:
-			fmt.Println("Nothing")
+			err = lazyerrors.Errorf("scalar did not fit cases ")
+			return
 		}
 
 	}
@@ -341,9 +314,6 @@ func whereDocument(document types.Document) (sql string, err error) {
 func whereHANA(filter types.Document) (sql string, args []any, err error) {
 
 	for key := range filter.Map() {
-		fmt.Println("key:")
-		fmt.Println(key)
-		fmt.Println(filter.Map()[key])
 		sql += " WHERE "
 		if strings.Contains(key, ".") {
 			split := strings.Split(key, ".")
@@ -361,58 +331,37 @@ func whereHANA(filter types.Document) (sql string, args []any, err error) {
 		}
 
 		sql += " = "
-		//sql += placeholder.Next()
 		value, _ := filter.Get(key)
-		fmt.Println("value")
-		fmt.Println(value)
+
 		switch value := value.(type) {
 		case string:
 			args = append(args, value)
 			sql += "'%s'"
-		case int:
-			fmt.Println("Here")
 		case int64:
-			fmt.Println("is Int")
 			args = append(args, value)
 		case int32:
-			fmt.Println("int32")
 			sql += "%d"
-			//newValue, errorV := strconv.ParseInt(string(value), 10, 64)
-			//if errorV != nil {
-			//	fmt.Println("error")
-			//}
 			args = append(args, value)
 		case types.Document:
-			fmt.Println("is a document")
-			fmt.Println(value)
 			sql += "%s"
-			argDoc, err := whereDocument(value)
+			argDoc, err1 := whereDocument(value)
 
-			if err != nil {
-				err = lazyerrors.Errorf("scalar: %w", err)
+			if err1 != nil {
+				err = lazyerrors.Errorf("scalar: %w", err1)
+				return
 			}
 
 			args = append(args, argDoc)
 		case types.ObjectID:
-			fmt.Println("is an Object")
-			fmt.Println(value)
 			sql += "%s"
 			var bOBJ []byte
 			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
 				err = lazyerrors.Errorf("scalar: %w", err)
 			}
-			fmt.Println("bObject")
-			fmt.Println(bOBJ)
-			//byt := make([]byte, hex.EncodedLen(len(value[:])))
-			//fmt.Println("byt")
-			//fmt.Println(byt)
-			//fmt.Println(string(byt))
-			//bstring := "{\"oid\": " + "'" + string(byt) + "'}"
-			//fmt.Println("bstring")
-			//fmt.Println(bstring)
 			args = append(args, string(bOBJ))
 		default:
-			fmt.Println("Nothing")
+			err = lazyerrors.Errorf("Scalar did not fit cases")
+			return
 		}
 	}
 

@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/FerretDB/FerretDB/internal/types"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
 )
 
 func convertDocument(d types.Document) *Document {

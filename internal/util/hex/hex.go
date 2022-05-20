@@ -19,7 +19,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/FerretDB/FerretDB/internal/util/lazyerrors"
+	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
 )
 
 func Dump(b []byte) string {
