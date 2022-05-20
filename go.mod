@@ -10,7 +10,7 @@ require (
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_golang v1.12.2
-	github.com/prometheus/common v0.32.1
+	github.com/prometheus/common v0.34.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/exp v0.0.0-20220104160115-025e73f80486
