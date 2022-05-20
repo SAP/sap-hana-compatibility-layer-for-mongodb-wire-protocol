@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 // String represents BSON String data type.

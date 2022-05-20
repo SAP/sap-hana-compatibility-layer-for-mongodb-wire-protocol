@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/types"
 )
 
 //go:generate ../../../bin/stringer -linecomment -type ErrorCode

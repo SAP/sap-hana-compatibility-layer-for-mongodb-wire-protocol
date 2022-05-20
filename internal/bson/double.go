@@ -20,8 +20,8 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/fjson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/fjson"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 // Double represents BSON Double data type.

@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
+	"github.com/DocStore/HANA_HWY/internal/pg"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 func scalar(v any, p *pg.Placeholder) (sql string, args []any, err error) {

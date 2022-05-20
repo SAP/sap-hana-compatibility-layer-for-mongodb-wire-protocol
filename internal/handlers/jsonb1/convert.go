@@ -17,9 +17,9 @@ package jsonb1
 import (
 	"database/sql"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 func nextRow(rows *sql.Rows) (*types.Document, error) {

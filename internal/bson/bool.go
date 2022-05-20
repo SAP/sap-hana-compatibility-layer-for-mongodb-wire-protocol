@@ -17,8 +17,8 @@ package bson
 import (
 	"bufio"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/fjson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/fjson"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 // Bool represents BSON Bool data type.

@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/types"
 )
 
 // GetByPath returns a value by path - a sequence of indexes and keys.

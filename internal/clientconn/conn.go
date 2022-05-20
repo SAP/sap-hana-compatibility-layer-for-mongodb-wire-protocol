@@ -25,13 +25,13 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 	"go.uber.org/zap"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/jsonb1"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/proxy"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/sql"
+	"github.com/DocStore/HANA_HWY/internal/handlers"
+	"github.com/DocStore/HANA_HWY/internal/handlers/jsonb1"
+	"github.com/DocStore/HANA_HWY/internal/handlers/proxy"
+	"github.com/DocStore/HANA_HWY/internal/handlers/sql"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // Mode represents FerretDB mode of operation.

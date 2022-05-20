@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
+	"github.com/DocStore/HANA_HWY/internal/pg"
 )
 
 func Ctx(tb testing.TB) context.Context {

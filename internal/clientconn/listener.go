@@ -25,10 +25,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/ctxutil"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.com/DocStore/HANA_HWY/internal/handlers"
+	"github.com/DocStore/HANA_HWY/internal/util/ctxutil"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 // Listener accepts incoming client connections.

@@ -15,7 +15,7 @@
 //go:build tools
 // +build tools
 
-package tools // import "github.com/lucboj/FerretDB_SAP_HANA/tools"
+package tools // import "github.com/DocStore/HANA_HWY/tools"
 
 import (
 	_ "github.com/BurntSushi/go-sumtype"

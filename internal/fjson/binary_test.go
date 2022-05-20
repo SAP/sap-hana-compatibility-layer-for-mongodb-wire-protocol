@@ -17,7 +17,7 @@ package fjson
 import (
 	"testing"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/types"
 )
 
 var binaryTestCases = []testCase{{

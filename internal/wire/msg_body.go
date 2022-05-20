@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 type MsgBody interface {

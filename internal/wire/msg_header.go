@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 //go:generate ../../bin/stringer -linecomment -type OpCode

@@ -24,9 +24,9 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // MsgHostInfo returns an OpMsg with the host information.

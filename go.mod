@@ -1,4 +1,4 @@
-module github.com/lucboj/FerretDB_SAP_HANA
+module github.com/DocStore/HANA_HWY
 
 go 1.18
 

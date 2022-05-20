@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/version"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/util/version"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // MsgGetLog is an administrative command that returns the most recent 1024 logged events.

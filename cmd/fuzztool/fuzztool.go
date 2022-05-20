@@ -19,7 +19,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/logging"
+	"github.com/DocStore/HANA_HWY/internal/util/logging"
 )
 
 func main() {

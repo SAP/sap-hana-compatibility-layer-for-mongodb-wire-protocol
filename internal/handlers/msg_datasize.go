@@ -22,9 +22,9 @@ import (
 
 	"github.com/jackc/pgx/v4"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 func formatResponse(size, rows, millis int32, showEstimate bool) (*wire.OpMsg, error) {

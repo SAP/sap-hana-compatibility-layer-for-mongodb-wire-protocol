@@ -27,12 +27,12 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/clientconn"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/hana"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/debug"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/logging"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/version"
+	"github.com/DocStore/HANA_HWY/internal/clientconn"
+	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.com/DocStore/HANA_HWY/internal/handlers"
+	"github.com/DocStore/HANA_HWY/internal/util/debug"
+	"github.com/DocStore/HANA_HWY/internal/util/logging"
+	"github.com/DocStore/HANA_HWY/internal/util/version"
 )
 
 //nolint:gochecknoglobals // flags are defined there to be visible in `bin/ferretdb-testcover -h` output

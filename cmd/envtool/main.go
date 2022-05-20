@@ -29,11 +29,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/clientconn"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/debug"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/logging"
+	"github.com/DocStore/HANA_HWY/internal/clientconn"
+	"github.com/DocStore/HANA_HWY/internal/handlers"
+	"github.com/DocStore/HANA_HWY/internal/pg"
+	"github.com/DocStore/HANA_HWY/internal/util/debug"
+	"github.com/DocStore/HANA_HWY/internal/util/logging"
 )
 
 var (

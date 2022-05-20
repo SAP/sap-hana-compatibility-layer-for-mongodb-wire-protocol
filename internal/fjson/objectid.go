@@ -19,8 +19,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
 // ObjectID represents BSON ObjectID data type.

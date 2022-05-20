@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/handlers/common"
+	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
@@ -150,7 +150,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql += " LIMIT %d"
 		args = append(args, limit)
 	default:
-		// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/79
+		// TODO https://github.com/DocStore/HANA_HWY/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))

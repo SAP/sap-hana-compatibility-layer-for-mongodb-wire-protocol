@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/bson"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // MsgInsert inserts a document or documents into a collection.

@@ -20,10 +20,10 @@ import (
 
 	"github.com/jackc/pgx/v4"
 
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/pg"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/types"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/util/lazyerrors"
-	"github.com/lucboj/FerretDB_SAP_HANA/internal/wire"
+	"github.com/DocStore/HANA_HWY/internal/pg"
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
 // MsgInsert inserts a document or documents into a collection.
@@ -43,7 +43,7 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		ordered = true
 	}
 
-	// TODO https://github.com/lucboj/FerretDB_SAP_HANA/issues/200
+	// TODO https://github.com/DocStore/HANA_HWY/issues/200
 	_ = ordered
 
 	var inserted int32
