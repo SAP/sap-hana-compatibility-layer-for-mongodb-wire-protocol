@@ -1,93 +1,84 @@
-# FerretDB
+# HANA HWY
 
-[![Go](https://github.com/FerretDB/FerretDB/actions/workflows/go.yml/badge.svg)](https://github.com/FerretDB/FerretDB/actions/workflows/go.yml)
- [![codecov](https://codecov.io/gh/FerretDB/FerretDB/branch/main/graph/badge.svg?token=JZ56XFT3DM)](https://codecov.io/gh/FerretDB/FerretDB)
-
-FerretDB (previously MangoDB) was founded to become the de-facto open-source substitute to MongoDB.
-FerretDB is an open-source proxy, converting the MongoDB wire protocol queries to SQL - using PostgreSQL as a database engine.
-
-
-## Why do we need FerretDB?
-
-MongoDB was originally an eye-opening technology for many of us developers, empowering us to build applications faster than using relational databases.
-In its early days, its ease-to-use and well-documented drivers made MongoDB one of the simplest database solutions available.
-However, as time passed, MongoDB abandoned its open-source roots; changing the license to SSPL - making it unusable for many open source and early stage commercial projects.
-
-Most MongoDB users are not in need of many advanced features offered by MongoDB; however, they are in need of an easy to use open-source database solution.
-Recognizing this, FerretDB is here to fill that gap.
-
+HANA HWY is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. HANA HWY is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to DocStore, the database engine of HANA HWY. MongoDB drivers and shell will, when connected to HANA HWY, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from DocStore.  
+Perfect for companies with software written for MongoDB looking to change to DocStore. 
 
 ## Scope
 
-FerretDB will be compatible with MongoDB drivers and will strive to serve as a drop-in replacement for MongoDB.
+HANA HWY will be compatible with MongoDB drivers and shell. The first version will implement the basic MongoDB CRUD operations and support all datatypes supported in DocStore.
 
 
 ## Current state
 
-What you see here is a tech demo - intended to show a proof of concept.
-Over the next couple of months we will be adding more.
-See [this example](https://github.com/FerretDB/example) for a short demonstration.
-
-FerretDB is in its very early stages and welcomes all contributors.
-See our [CONTRIBUTING.md](CONTRIBUTING.md).
+Prototype. Missing tests. 
 
 
 ## Quickstart
 
-These steps describe a quick local setup.
-They are not suitable for most production use-cases because they keep all data inside containers.
+These steps describe a quick local setup on linux.
 
-1. Store the following in the `docker-compose.yml` file:
+1. Make sure you have the following installed:
+- Go 1.18.*
+- Go-hdb. A native Go (golang) HANA database driver for Go's sql package. It implements the SAP HANA SQL command network protocol.
+- docker (preferably without the need for sudo)
+- docker-compose (preferably without the need for sudo)
+- make
 
-```yaml
-version: "3"
+Furthermore, a running HANA instance with DocStore enabled is necessary.
 
-services:
-  postgres:
-    image: postgres:14
-    container_name: postgres
-    ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_DB=ferretdb
-      - POSTGRES_HOST_AUTH_METHOD=trust
+For the installation of Go-hdb see the following links:
+- [https://developers.sap.com/tutorials/hana-clients-install.html](url)
+- [https://developers.sap.com/tutorials/hana-clients-golang.html](url)
 
-  postgres_setup:
-    image: postgres:14
-    container_name: postgres_setup
-    restart: on-failure
-    entrypoint: ["sh", "-c", "psql -h postgres -U user -d ferretdb -c 'CREATE SCHEMA IF NOT EXISTS test'"]
+2. Clone the repository
 
-  ferretdb:
-    image: ghcr.io/ferretdb/ferretdb:latest
-    container_name: ferretdb
-    restart: on-failure
-    ports:
-      - 27017:27017
-    command: ["-listen-addr=:27017", "-postgresql-url=postgres://user@postgres:5432/ferretdb"]
+3. After cloning, enter the folder HANA_HWY and run:
+
+```
+make init
 ```
 
-* `postgres` container runs PostgreSQL 14 that would store data.
-* `postgres_setup` container creates a PostgreSQL schema `test` that would act like a FerretDB database of the same name.
-* `ferretdb` runs FerretDB.
+It will download all modules needed for running HANA HWY
 
-2. Start services with `docker-compose up -d`.
+4. Open three terminal windows
 
-3. If you have `mongosh` installed, just run it to connect to FerretDB database `test`.
-If not, run the following command to run `mongosh` inside the temporary MongoDB container, attaching to the same Docker network:
+In terminal window 1 run:
+ ```
+ docker-compose up
+ ```
+ 
+ If sudo required, use:
+ 
 ```
-docker run --rm -it --network=ferretdb_default --entrypoint=mongosh mongo:5 mongodb://ferretdb/
+sudo docker-compose up
+```
+ 
+ In terminal window 2 run: 
+ 
+```
+make run
 ```
 
+and now in terminal window 3 run:
+```
+make mongosh
+```
 
-## Community
+If permission is denied because of lack of sudo, run:
+```
+make mongosh-sudo
+```
 
-* Website and blog: [https://ferretdb.io](https://ferretdb.io/).
-* Twitter: [@ferret_db](https://twitter.com/ferret_db).
-* [Slack chat](https://join.slack.com/t/ferretdb/shared_invite/zt-zqe9hj8g-ZcMG3~5Cs5u9uuOPnZB8~A) for quick questions.
-* [GitHub Discussions](https://github.com/FerretDB/FerretDB/discussions) for longer topics.
-* [GitHub Issues](https://github.com/FerretDB/FerretDB/issues) for bugs and missing features.
-* [Open Office House meeting](https://calendar.google.com/event?action=TEMPLATE&tmeid=NjNkdTkyN3VoNW5zdHRiaHZybXFtb2l1OWtfMjAyMTEyMTNUMTgwMDAwWiBjX24zN3RxdW9yZWlsOWIwMm0wNzQwMDA3MjQ0QGc&tmsrc=c_n37tquoreil9b02m0740007244%40group.calendar.google.com&scp=ALL) every Monday at 18:00 UTC at [Google Meet](https://meet.google.com/mcb-arhw-qbq).
+5. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
 
-If you want to contact FerretDB Inc., please use [this form](https://www.ferretdb.io/contact/).
+```
+db.createCollection("firstHANAHWYCollection")
+```
+
+```
+db.firstHANAHWYCollection.insertOne({we: "did", it: "!"})
+```
+
+```
+db.firstHANAHWYCollection.find()
+```
