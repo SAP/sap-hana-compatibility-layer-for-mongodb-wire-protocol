@@ -14,147 +14,147 @@
 
 package handlers
 
-import (
-	"testing"
+// import (
+// 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+// 	"github.com/stretchr/testify/assert"
+// 	"github.com/stretchr/testify/require"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/testutil"
-	"github.com/DocStore/HANA_HWY/internal/wire"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/testutil"
+// 	"github.com/DocStore/HANA_HWY/internal/wire"
+// )
 
-// TODO Rework to make them closer to other tests.
-//nolint:paralleltest // TODO
-func TestDelete(t *testing.T) {
-	ctx, h, pool := setup(t, nil)
-	schema := testutil.Schema(ctx, t, pool)
+// // TODO Rework to make them closer to other tests.
+// //nolint:paralleltest // TODO
+// func TestDelete(t *testing.T) {
+// 	ctx, h, pool := setup(t, nil)
+// 	schema := testutil.Schema(ctx, t, pool)
 
-	header := wire.MsgHeader{
-		OpCode: wire.OP_MSG,
-	}
+// 	header := wire.MsgHeader{
+// 		OpCode: wire.OP_MSG,
+// 	}
 
-	t.Run(schema, func(t *testing.T) {
-		for i := 1; i <= 5; i++ {
-			var msg wire.OpMsg
-			err := msg.SetSections(wire.OpMsgSection{
-				Documents: []types.Document{types.MustMakeDocument(
-					"insert", "test",
-					"documents", types.MustNewArray(
-						types.MustMakeDocument(
-							"_id", types.ObjectID{byte(10 + i)},
-							"colour", "red",
-						),
-					),
-					"$db", schema,
-				)},
-			})
-			require.NoError(t, err)
+// 	t.Run(schema, func(t *testing.T) {
+// 		for i := 1; i <= 5; i++ {
+// 			var msg wire.OpMsg
+// 			err := msg.SetSections(wire.OpMsgSection{
+// 				Documents: []types.Document{types.MustMakeDocument(
+// 					"insert", "test",
+// 					"documents", types.MustNewArray(
+// 						types.MustMakeDocument(
+// 							"_id", types.ObjectID{byte(10 + i)},
+// 							"colour", "red",
+// 						),
+// 					),
+// 					"$db", schema,
+// 				)},
+// 			})
+// 			require.NoError(t, err)
 
-			_, _, closeConn := h.Handle(ctx, &header, &msg)
-			require.False(t, closeConn)
-		}
+// 			_, _, closeConn := h.Handle(ctx, &header, &msg)
+// 			require.False(t, closeConn)
+// 		}
 
-		for i := 1; i <= 5; i++ {
-			var msg wire.OpMsg
-			err := msg.SetSections(wire.OpMsgSection{
-				Documents: []types.Document{types.MustMakeDocument(
-					"insert", "test",
-					"documents", types.MustNewArray(
-						types.MustMakeDocument(
-							"_id", types.ObjectID{byte(i)},
-							"animal", "cat",
-						),
-					),
-					"$db", schema,
-				)},
-			})
-			require.NoError(t, err)
+// 		for i := 1; i <= 5; i++ {
+// 			var msg wire.OpMsg
+// 			err := msg.SetSections(wire.OpMsgSection{
+// 				Documents: []types.Document{types.MustMakeDocument(
+// 					"insert", "test",
+// 					"documents", types.MustNewArray(
+// 						types.MustMakeDocument(
+// 							"_id", types.ObjectID{byte(i)},
+// 							"animal", "cat",
+// 						),
+// 					),
+// 					"$db", schema,
+// 				)},
+// 			})
+// 			require.NoError(t, err)
 
-			_, _, closeConn := h.Handle(ctx, &header, &msg)
-			require.False(t, closeConn)
-		}
+// 			_, _, closeConn := h.Handle(ctx, &header, &msg)
+// 			require.False(t, closeConn)
+// 		}
 
-		type testCase struct {
-			req  types.Document
-			resp types.Document
-		}
+// 		type testCase struct {
+// 			req  types.Document
+// 			resp types.Document
+// 		}
 
-		testCases := map[string]testCase{
-			"NothingToDelete": {
-				req: types.MustMakeDocument(
-					"delete", "test",
-					"deletes", types.MustNewArray(
-						types.MustMakeDocument(
-							"q", types.MustMakeDocument(
-								"colour", "blue",
-							),
-							"limit", int32(0),
-						),
-					),
-				),
-				resp: types.MustMakeDocument(
-					"n", int32(0),
-					"ok", float64(1),
-				),
-			},
-			"DeleteLimit1": {
-				req: types.MustMakeDocument(
-					"delete", "test",
-					"deletes", types.MustNewArray(
-						types.MustMakeDocument(
-							"q", types.MustMakeDocument(
-								"colour", "red",
-							),
-							"limit", int32(1),
-						),
-					),
-				),
-				resp: types.MustMakeDocument(
-					"n", int32(1),
-					"ok", float64(1),
-				),
-			},
-			"DeleteLimit0": {
-				req: types.MustMakeDocument(
-					"delete", "test",
-					"deletes", types.MustNewArray(
-						types.MustMakeDocument(
-							"q", types.MustMakeDocument(
-								"animal", "cat",
-							),
-							"limit", int32(0),
-						),
-					),
-				),
-				resp: types.MustMakeDocument(
-					"n", int32(5),
-					"ok", float64(1),
-				),
-			},
-		}
+// 		testCases := map[string]testCase{
+// 			"NothingToDelete": {
+// 				req: types.MustMakeDocument(
+// 					"delete", "test",
+// 					"deletes", types.MustNewArray(
+// 						types.MustMakeDocument(
+// 							"q", types.MustMakeDocument(
+// 								"colour", "blue",
+// 							),
+// 							"limit", int32(0),
+// 						),
+// 					),
+// 				),
+// 				resp: types.MustMakeDocument(
+// 					"n", int32(0),
+// 					"ok", float64(1),
+// 				),
+// 			},
+// 			"DeleteLimit1": {
+// 				req: types.MustMakeDocument(
+// 					"delete", "test",
+// 					"deletes", types.MustNewArray(
+// 						types.MustMakeDocument(
+// 							"q", types.MustMakeDocument(
+// 								"colour", "red",
+// 							),
+// 							"limit", int32(1),
+// 						),
+// 					),
+// 				),
+// 				resp: types.MustMakeDocument(
+// 					"n", int32(1),
+// 					"ok", float64(1),
+// 				),
+// 			},
+// 			"DeleteLimit0": {
+// 				req: types.MustMakeDocument(
+// 					"delete", "test",
+// 					"deletes", types.MustNewArray(
+// 						types.MustMakeDocument(
+// 							"q", types.MustMakeDocument(
+// 								"animal", "cat",
+// 							),
+// 							"limit", int32(0),
+// 						),
+// 					),
+// 				),
+// 				resp: types.MustMakeDocument(
+// 					"n", int32(5),
+// 					"ok", float64(1),
+// 				),
+// 			},
+// 		}
 
-		for name, tc := range testCases {
-			tc := tc
-			t.Run(name, func(t *testing.T) {
-				tc.req.Set("$db", schema)
+// 		for name, tc := range testCases {
+// 			tc := tc
+// 			t.Run(name, func(t *testing.T) {
+// 				tc.req.Set("$db", schema)
 
-				var reqMsg wire.OpMsg
-				err := reqMsg.SetSections(wire.OpMsgSection{
-					Documents: []types.Document{tc.req},
-				})
-				require.NoError(t, err)
+// 				var reqMsg wire.OpMsg
+// 				err := reqMsg.SetSections(wire.OpMsgSection{
+// 					Documents: []types.Document{tc.req},
+// 				})
+// 				require.NoError(t, err)
 
-				_, resBody, closeConn := h.Handle(ctx, &header, &reqMsg)
-				require.False(t, closeConn)
+// 				_, resBody, closeConn := h.Handle(ctx, &header, &reqMsg)
+// 				require.False(t, closeConn)
 
-				actual, err := resBody.(*wire.OpMsg).Document()
-				require.NoError(t, err)
+// 				actual, err := resBody.(*wire.OpMsg).Document()
+// 				require.NoError(t, err)
 
-				expected := tc.resp
-				assert.Equal(t, expected, actual)
-			})
-		}
-	})
-}
+// 				expected := tc.resp
+// 				assert.Equal(t, expected, actual)
+// 			})
+// 		}
+// 	})
+// }

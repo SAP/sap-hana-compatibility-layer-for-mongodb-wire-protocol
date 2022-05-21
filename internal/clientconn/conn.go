@@ -28,7 +28,6 @@ import (
 	"github.com/DocStore/HANA_HWY/internal/handlers"
 	"github.com/DocStore/HANA_HWY/internal/handlers/jsonb1"
 	"github.com/DocStore/HANA_HWY/internal/handlers/proxy"
-	"github.com/DocStore/HANA_HWY/internal/handlers/sql"
 
 	"github.com/DocStore/HANA_HWY/internal/hana"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -77,8 +76,6 @@ func newConn(opts *newConnOpts) (*conn, error) {
 
 	peerAddr := opts.netConn.RemoteAddr().String()
 
-	sqlH := sql.NewStorage(opts.hanaPool, l.Sugar())
-
 	jsonb1H := jsonb1.NewStorage(opts.hanaPool, l)
 
 	var p *proxy.Handler
@@ -93,7 +90,6 @@ func newConn(opts *newConnOpts) (*conn, error) {
 		HanaPool:      opts.hanaPool,
 		Logger:        l,
 		PeerAddr:      peerAddr,
-		SQLStorage:    sqlH,
 		JSONB1Storage: jsonb1H,
 		Metrics:       opts.handlersMetrics,
 	}

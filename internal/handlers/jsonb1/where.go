@@ -19,246 +19,244 @@ import (
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
-	"github.com/DocStore/HANA_HWY/internal/handlers/common"
-	"github.com/DocStore/HANA_HWY/internal/pg"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
-func scalar(v any, p *pg.Placeholder) (sql string, args []any, err error) {
-	var arg any
-	switch v := v.(type) {
-	case int32:
-		sql = "to_jsonb(" + p.Next() + "::int4)"
-		arg = v
-	case string:
-		sql = "to_jsonb(" + p.Next() + "::text)"
-		arg = v
-	case types.ObjectID:
-		sql = p.Next()
-		var b []byte
-		if b, err = bson.ObjectID(v).MarshalJSON(); err != nil {
-			err = lazyerrors.Errorf("scalar: %w", err)
-			return
-		}
-		arg = string(b)
-	case types.Regex:
-		var options string
-		for _, o := range v.Options {
-			switch o {
-			case 'i':
-				options += "i"
-			default:
-				err = lazyerrors.Errorf("scalar: unhandled regex option %v (%v)", o, v)
-			}
-		}
-		sql = p.Next()
-		arg = v.Pattern
-		if options != "" {
-			arg = "(?" + options + ")" + v.Pattern
-		}
-	default:
-		err = lazyerrors.Errorf("scalar: unhandled field %v (%T)", v, v)
-	}
+// func scalar(v any, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	var arg any
+// 	switch v := v.(type) {
+// 	case int32:
+// 		sql = "to_jsonb(" + p.Next() + "::int4)"
+// 		arg = v
+// 	case string:
+// 		sql = "to_jsonb(" + p.Next() + "::text)"
+// 		arg = v
+// 	case types.ObjectID:
+// 		sql = p.Next()
+// 		var b []byte
+// 		if b, err = bson.ObjectID(v).MarshalJSON(); err != nil {
+// 			err = lazyerrors.Errorf("scalar: %w", err)
+// 			return
+// 		}
+// 		arg = string(b)
+// 	case types.Regex:
+// 		var options string
+// 		for _, o := range v.Options {
+// 			switch o {
+// 			case 'i':
+// 				options += "i"
+// 			default:
+// 				err = lazyerrors.Errorf("scalar: unhandled regex option %v (%v)", o, v)
+// 			}
+// 		}
+// 		sql = p.Next()
+// 		arg = v.Pattern
+// 		if options != "" {
+// 			arg = "(?" + options + ")" + v.Pattern
+// 		}
+// 	default:
+// 		err = lazyerrors.Errorf("scalar: unhandled field %v (%T)", v, v)
+// 	}
 
-	args = []any{arg}
-	return
-}
+// 	args = []any{arg}
+// 	return
+// }
 
-// fieldExpr handles {field: {expr}}.
-func fieldExpr(field string, expr types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
-	filterKeys := expr.Keys()
-	filterMap := expr.Map()
+// // fieldExpr handles {field: {expr}}.
+// func fieldExpr(field string, expr types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	filterKeys := expr.Keys()
+// 	filterMap := expr.Map()
 
-	for _, op := range filterKeys {
-		if op == "$options" {
-			// handled by $regex, no need to modify sql in any way
-			continue
-		}
+// 	for _, op := range filterKeys {
+// 		if op == "$options" {
+// 			// handled by $regex, no need to modify sql in any way
+// 			continue
+// 		}
 
-		if sql != "" {
-			sql += " AND"
-		}
+// 		if sql != "" {
+// 			sql += " AND"
+// 		}
 
-		var argSql string
-		var arg []any
-		value := filterMap[op]
+// 		var argSql string
+// 		var arg []any
+// 		value := filterMap[op]
 
-		// {field: {$not: {expr}}}
-		if op == "$not" {
-			if sql != "" {
-				sql += " "
-			}
-			sql += "NOT("
+// 		// {field: {$not: {expr}}}
+// 		if op == "$not" {
+// 			if sql != "" {
+// 				sql += " "
+// 			}
+// 			sql += "NOT("
 
-			argSql, arg, err = fieldExpr(field, value.(types.Document), p)
-			if err != nil {
-				err = lazyerrors.Errorf("fieldExpr: %w", err)
-				return
-			}
+// 			argSql, arg, err = fieldExpr(field, value.(types.Document), p)
+// 			if err != nil {
+// 				err = lazyerrors.Errorf("fieldExpr: %w", err)
+// 				return
+// 			}
 
-			sql += argSql + ")"
-			args = append(args, arg...)
+// 			sql += argSql + ")"
+// 			args = append(args, arg...)
 
-			continue
-		}
+// 			continue
+// 		}
 
-		if sql != "" {
-			sql += " "
-		}
-		args = append(args, field)
+// 		if sql != "" {
+// 			sql += " "
+// 		}
+// 		args = append(args, field)
 
-		switch op {
-		case "$in":
-			// {field: {$in: [value1, value2, ...]}}
-			sql += "_jsonb->" + p.Next() + " IN"
-			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
-		case "$nin":
-			// {field: {$nin: [value1, value2, ...]}}
-			sql += "_jsonb->" + p.Next() + " NOT IN"
-			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
-		case "$eq":
-			// {field: {$eq: value}}
-			// TODO special handling for regex
-			sql += "_jsonb->" + p.Next() + " ="
-			argSql, arg, err = scalar(value, p)
-		case "$ne":
-			// {field: {$ne: value}}
-			sql += "_jsonb->" + p.Next() + " <>"
-			argSql, arg, err = scalar(value, p)
-		case "$lt":
-			// {field: {$lt: value}}
-			sql += "_jsonb->" + p.Next() + " <"
-			argSql, arg, err = scalar(value, p)
-		case "$lte":
-			// {field: {$lte: value}}
-			sql += "_jsonb->" + p.Next() + " <="
-			argSql, arg, err = scalar(value, p)
-		case "$gt":
-			// {field: {$gt: value}}
-			sql += "_jsonb->" + p.Next() + " >"
-			argSql, arg, err = scalar(value, p)
-		case "$gte":
-			// {field: {$gte: value}}
-			sql += "_jsonb->" + p.Next() + " >="
-			argSql, arg, err = scalar(value, p)
-		case "$regex":
-			// {field: {$regex: value}}
+// 		switch op {
+// 		case "$in":
+// 			// {field: {$in: [value1, value2, ...]}}
+// 			sql += "_jsonb->" + p.Next() + " IN"
+// 			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
+// 		case "$nin":
+// 			// {field: {$nin: [value1, value2, ...]}}
+// 			sql += "_jsonb->" + p.Next() + " NOT IN"
+// 			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
+// 		case "$eq":
+// 			// {field: {$eq: value}}
+// 			// TODO special handling for regex
+// 			sql += "_jsonb->" + p.Next() + " ="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$ne":
+// 			// {field: {$ne: value}}
+// 			sql += "_jsonb->" + p.Next() + " <>"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$lt":
+// 			// {field: {$lt: value}}
+// 			sql += "_jsonb->" + p.Next() + " <"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$lte":
+// 			// {field: {$lte: value}}
+// 			sql += "_jsonb->" + p.Next() + " <="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$gt":
+// 			// {field: {$gt: value}}
+// 			sql += "_jsonb->" + p.Next() + " >"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$gte":
+// 			// {field: {$gte: value}}
+// 			sql += "_jsonb->" + p.Next() + " >="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$regex":
+// 			// {field: {$regex: value}}
 
-			var options string
-			if opts, ok := filterMap["$options"]; ok {
-				// {field: {$regex: value, $options: string}}
-				if options, ok = opts.(string); !ok {
-					err = common.NewErrorMessage(common.ErrBadValue, "$options has to be a string")
-					return
-				}
-			}
+// 			var options string
+// 			if opts, ok := filterMap["$options"]; ok {
+// 				// {field: {$regex: value, $options: string}}
+// 				if options, ok = opts.(string); !ok {
+// 					err = common.NewErrorMessage(common.ErrBadValue, "$options has to be a string")
+// 					return
+// 				}
+// 			}
 
-			sql += "_jsonb->>" + p.Next() + " ~"
-			switch value := value.(type) {
-			case string:
-				// {field: {$regex: string}}
-				v := types.Regex{
-					Pattern: value,
-					Options: options,
-				}
-				argSql, arg, err = scalar(v, p)
-			case types.Regex:
-				// {field: {$regex: /regex/}}
-				if options != "" {
-					if value.Options != "" {
-						err = common.NewErrorMessage(common.ErrRegexOptions, "options set in both $regex and $options")
-						return
-					}
-					value.Options = options
-				}
-				argSql, arg, err = scalar(value, p)
-			default:
-				err = common.NewErrorMessage(common.ErrBadValue, "$regex has to be a string")
-				return
-			}
-		default:
-			err = lazyerrors.Errorf("unhandled {%q: %v}", op, value)
-		}
+// 			sql += "_jsonb->>" + p.Next() + " ~"
+// 			switch value := value.(type) {
+// 			case string:
+// 				// {field: {$regex: string}}
+// 				v := types.Regex{
+// 					Pattern: value,
+// 					Options: options,
+// 				}
+// 				argSql, arg, err = scalar(v, p)
+// 			case types.Regex:
+// 				// {field: {$regex: /regex/}}
+// 				if options != "" {
+// 					if value.Options != "" {
+// 						err = common.NewErrorMessage(common.ErrRegexOptions, "options set in both $regex and $options")
+// 						return
+// 					}
+// 					value.Options = options
+// 				}
+// 				argSql, arg, err = scalar(value, p)
+// 			default:
+// 				err = common.NewErrorMessage(common.ErrBadValue, "$regex has to be a string")
+// 				return
+// 			}
+// 		default:
+// 			err = lazyerrors.Errorf("unhandled {%q: %v}", op, value)
+// 		}
 
-		if err != nil {
-			err = lazyerrors.Errorf("fieldExpr: %w", err)
-			return
-		}
+// 		if err != nil {
+// 			err = lazyerrors.Errorf("fieldExpr: %w", err)
+// 			return
+// 		}
 
-		sql += " " + argSql
-		args = append(args, arg...)
-	}
+// 		sql += " " + argSql
+// 		args = append(args, arg...)
+// 	}
 
-	return
-}
+// 	return
+// }
 
-func wherePair(key string, value any, p *pg.Placeholder) (sql string, args []any, err error) {
-	if strings.HasPrefix(key, "$") {
-		exprs := value.(*types.Array)
-		sql, args, err = common.LogicExpr(key, exprs, p, wherePair)
-		return
-	}
+// func wherePair(key string, value any, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	if strings.HasPrefix(key, "$") {
+// 		exprs := value.(*types.Array)
+// 		sql, args, err = common.LogicExpr(key, exprs, p, wherePair)
+// 		return
+// 	}
 
-	switch value := value.(type) {
-	case types.Document:
-		// {field: {expr}}
-		sql, args, err = fieldExpr(key, value, p)
+// 	switch value := value.(type) {
+// 	case types.Document:
+// 		// {field: {expr}}
+// 		sql, args, err = fieldExpr(key, value, p)
 
-	default:
-		// {field: value}
-		switch value.(type) {
-		case types.Regex:
-			sql = "_jsonb->>" + p.Next() + " ~ "
-		default:
-			sql = "_jsonb->" + p.Next() + " = "
-		}
+// 	default:
+// 		// {field: value}
+// 		switch value.(type) {
+// 		case types.Regex:
+// 			sql = "_jsonb->>" + p.Next() + " ~ "
+// 		default:
+// 			sql = "_jsonb->" + p.Next() + " = "
+// 		}
 
-		args = append(args, key)
+// 		args = append(args, key)
 
-		var scalarSQL string
-		var scalarArgs []any
-		scalarSQL, scalarArgs, err = scalar(value, p)
-		sql += scalarSQL
-		args = append(args, scalarArgs...)
-	}
+// 		var scalarSQL string
+// 		var scalarArgs []any
+// 		scalarSQL, scalarArgs, err = scalar(value, p)
+// 		sql += scalarSQL
+// 		args = append(args, scalarArgs...)
+// 	}
 
-	if err != nil {
-		err = lazyerrors.Errorf("wherePair: %w", err)
-	}
+// 	if err != nil {
+// 		err = lazyerrors.Errorf("wherePair: %w", err)
+// 	}
 
-	return
-}
+// 	return
+// }
 
-func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
-	filterMap := filter.Map()
-	if len(filterMap) == 0 {
-		return
-	}
+// func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	filterMap := filter.Map()
+// 	if len(filterMap) == 0 {
+// 		return
+// 	}
 
-	sql = " WHERE"
+// 	sql = " WHERE"
 
-	for i, key := range filter.Keys() {
-		value := filterMap[key]
+// 	for i, key := range filter.Keys() {
+// 		value := filterMap[key]
 
-		if i != 0 {
-			sql += " AND"
-		}
+// 		if i != 0 {
+// 			sql += " AND"
+// 		}
 
-		var argSql string
-		var arg []any
-		argSql, arg, err = wherePair(key, value, p)
-		if err != nil {
-			err = lazyerrors.Errorf("where: %w", err)
-			return
-		}
+// 		var argSql string
+// 		var arg []any
+// 		argSql, arg, err = wherePair(key, value, p)
+// 		if err != nil {
+// 			err = lazyerrors.Errorf("where: %w", err)
+// 			return
+// 		}
 
-		sql += " (" + argSql + ")"
-		args = append(args, arg...)
-	}
+// 		sql += " (" + argSql + ")"
+// 		args = append(args, arg...)
+// 	}
 
-	return
-}
+// 	return
+// }
 
 func whereDocument(document types.Document) (sql string, err error) {
 

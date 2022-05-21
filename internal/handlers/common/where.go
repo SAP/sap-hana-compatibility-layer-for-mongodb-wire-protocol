@@ -14,99 +14,99 @@
 
 package common
 
-import (
-	"github.com/DocStore/HANA_HWY/internal/pg"
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// import (
 
-type wherePair func(key string, value any, p *pg.Placeholder) (sql string, args []any, err error)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-//nolint:goconst // $op is fine
-func LogicExpr(op string, exprs *types.Array, p *pg.Placeholder, wherePair wherePair) (sql string, args []any, err error) {
-	if op == "$nor" {
-		sql = "NOT ("
-	}
+// type wherePair func(key string, value any, p *pg.Placeholder) (sql string, args []any, err error)
 
-	switch op {
-	case "$or", "$and", "$nor":
-		// {$or: [{expr1}, {expr2}, ...]}
-		// {$and: [{expr1}, {expr2}, ...]}
-		// {$nor: [{expr1}, {expr2}, ...]}
-		for i := 0; i < exprs.Len(); i++ {
-			if i != 0 {
-				switch op {
-				case "$or", "$nor":
-					sql += " OR"
-				case "$and":
-					sql += " AND"
-				}
-			}
+// //nolint:goconst // $op is fine
+// func LogicExpr(op string, exprs *types.Array, p *pg.Placeholder, wherePair wherePair) (sql string, args []any, err error) {
+// 	if op == "$nor" {
+// 		sql = "NOT ("
+// 	}
 
-			var el any
-			if el, err = exprs.Get(i); err != nil {
-				err = lazyerrors.Errorf("logicExpr: %w", err)
-				return
-			}
+// 	switch op {
+// 	case "$or", "$and", "$nor":
+// 		// {$or: [{expr1}, {expr2}, ...]}
+// 		// {$and: [{expr1}, {expr2}, ...]}
+// 		// {$nor: [{expr1}, {expr2}, ...]}
+// 		for i := 0; i < exprs.Len(); i++ {
+// 			if i != 0 {
+// 				switch op {
+// 				case "$or", "$nor":
+// 					sql += " OR"
+// 				case "$and":
+// 					sql += " AND"
+// 				}
+// 			}
 
-			expr := el.(types.Document)
-			m := expr.Map()
-			for j, key := range expr.Keys() {
-				if j != 0 {
-					sql += " AND"
-				}
+// 			var el any
+// 			if el, err = exprs.Get(i); err != nil {
+// 				err = lazyerrors.Errorf("logicExpr: %w", err)
+// 				return
+// 			}
 
-				var exprSQL string
-				var exprArgs []any
-				exprSQL, exprArgs, err = wherePair(key, m[key], p)
-				if err != nil {
-					err = lazyerrors.Errorf("logicExpr: %w", err)
-					return
-				}
+// 			expr := el.(types.Document)
+// 			m := expr.Map()
+// 			for j, key := range expr.Keys() {
+// 				if j != 0 {
+// 					sql += " AND"
+// 				}
 
-				if sql != "" {
-					sql += " "
-				}
-				sql += "(" + exprSQL + ")"
-				args = append(args, exprArgs...)
-			}
-		}
+// 				var exprSQL string
+// 				var exprArgs []any
+// 				exprSQL, exprArgs, err = wherePair(key, m[key], p)
+// 				if err != nil {
+// 					err = lazyerrors.Errorf("logicExpr: %w", err)
+// 					return
+// 				}
 
-	default:
-		err = lazyerrors.Errorf("logicExpr: unhandled op %q", op)
-	}
+// 				if sql != "" {
+// 					sql += " "
+// 				}
+// 				sql += "(" + exprSQL + ")"
+// 				args = append(args, exprArgs...)
+// 			}
+// 		}
 
-	if op == "$nor" {
-		sql += ")"
-	}
+// 	default:
+// 		err = lazyerrors.Errorf("logicExpr: unhandled op %q", op)
+// 	}
 
-	return
-}
+// 	if op == "$nor" {
+// 		sql += ")"
+// 	}
 
-type scalar func(v any, p *pg.Placeholder) (sql string, args []any, err error)
+// 	return
+// }
 
-func InArray(a *types.Array, p *pg.Placeholder, scalar scalar) (sql string, args []any, err error) {
-	sql = "("
-	for i := 0; i < a.Len(); i++ {
-		if i != 0 {
-			sql += ", "
-		}
+// type scalar func(v any, p *pg.Placeholder) (sql string, args []any, err error)
 
-		var el any
-		if el, err = a.Get(i); err != nil {
-			err = lazyerrors.Errorf("inArray: %w", err)
-			return
-		}
+// func InArray(a *types.Array, p *pg.Placeholder, scalar scalar) (sql string, args []any, err error) {
+// 	sql = "("
+// 	for i := 0; i < a.Len(); i++ {
+// 		if i != 0 {
+// 			sql += ", "
+// 		}
 
-		var argSql string
-		var arg []any
-		if argSql, arg, err = scalar(el, p); err != nil {
-			err = lazyerrors.Errorf("inArray: %w", err)
-			return
-		}
-		sql += argSql
-		args = append(args, arg...)
-	}
-	sql += ")"
-	return
-}
+// 		var el any
+// 		if el, err = a.Get(i); err != nil {
+// 			err = lazyerrors.Errorf("inArray: %w", err)
+// 			return
+// 		}
+
+// 		var argSql string
+// 		var arg []any
+// 		if argSql, arg, err = scalar(el, p); err != nil {
+// 			err = lazyerrors.Errorf("inArray: %w", err)
+// 			return
+// 		}
+// 		sql += argSql
+// 		args = append(args, arg...)
+// 	}
+// 	sql += ")"
+// 	return
+// }

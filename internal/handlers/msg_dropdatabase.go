@@ -17,7 +17,6 @@ package handlers
 import (
 	"context"
 
-	"github.com/DocStore/HANA_HWY/internal/pg"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -41,8 +40,6 @@ func (h *Handler) MsgDropDatabase(ctx context.Context, msg *wire.OpMsg) (*wire.O
 	switch err {
 	case nil:
 		res.Set("dropped", db)
-	case pg.ErrNotExist:
-		// nothing
 	default:
 		return nil, lazyerrors.Error(err)
 	}

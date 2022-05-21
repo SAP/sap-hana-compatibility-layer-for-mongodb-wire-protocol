@@ -35,7 +35,6 @@ type Handler struct {
 	hanaPool      *hana.Hpool
 	peerAddr      string
 	l             *zap.Logger
-	sql           common.Storage
 	jsonb1        common.Storage
 	metrics       *Metrics
 	lastRequestID int32
@@ -44,7 +43,6 @@ type Handler struct {
 type NewOpts struct {
 	HanaPool      *hana.Hpool
 	Logger        *zap.Logger
-	SQLStorage    common.Storage
 	JSONB1Storage common.Storage
 	Metrics       *Metrics
 	PeerAddr      string
@@ -54,7 +52,7 @@ func New(opts *NewOpts) *Handler {
 	return &Handler{
 		hanaPool: opts.HanaPool,
 		l:        opts.Logger,
-		sql:      opts.SQLStorage,
+
 		jsonb1:   opts.JSONB1Storage,
 		metrics:  opts.Metrics,
 		peerAddr: opts.PeerAddr,
@@ -222,7 +220,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		if jsonbTableExist {
 			return h.jsonb1, nil
 		}
-		return h.sql, nil
+		return nil, nil
 
 	case "insert", "update":
 		if jsonbTableExist {
@@ -235,7 +233,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 		if i := sort.SearchStrings(tables, collection); i < len(tables) && tables[i] == collection {
-			return h.sql, nil
+			return nil, nil
 		}
 
 		//Not sure if this is needed

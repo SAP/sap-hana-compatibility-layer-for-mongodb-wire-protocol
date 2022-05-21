@@ -14,119 +14,118 @@
 
 package testutil
 
-import (
-	"context"
-	"strings"
-	"testing"
+// import (
+// 	"context"
+// 	"strings"
+// 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
+// 	"github.com/stretchr/testify/require"
+// 	"go.uber.org/zap/zaptest"
 
-	"github.com/DocStore/HANA_HWY/internal/pg"
-)
+// )
 
-func Ctx(tb testing.TB) context.Context {
-	tb.Helper()
+// func Ctx(tb testing.TB) context.Context {
+// 	tb.Helper()
 
-	// TODO
-	return context.Background()
-}
+// 	// TODO
+// 	return context.Background()
+// }
 
-// PoolOpts represents options for creating a connection pool.
-type PoolOpts struct {
-	// If set, the pool will use read-only user.
-	ReadOnly bool
-}
+// // PoolOpts represents options for creating a connection pool.
+// type PoolOpts struct {
+// 	// If set, the pool will use read-only user.
+// 	ReadOnly bool
+// }
 
-// Pool creates a new connection connection pool for testing.
-func Pool(_ context.Context, tb testing.TB, opts *PoolOpts) *pg.Pool {
-	tb.Helper()
+// // Pool creates a new connection connection pool for testing.
+// func Pool(_ context.Context, tb testing.TB, opts *PoolOpts) *pg.Pool {
+// 	tb.Helper()
 
-	if testing.Short() {
-		tb.Skip("skipping in -short mode")
-	}
+// 	if testing.Short() {
+// 		tb.Skip("skipping in -short mode")
+// 	}
 
-	username := "postgres"
-	if opts.ReadOnly {
-		username = "readonly"
-	}
+// 	username := "postgres"
+// 	if opts.ReadOnly {
+// 		username = "readonly"
+// 	}
 
-	pool, err := pg.NewPool("postgres://"+username+"@127.0.0.1:5432/ferretdb?pool_min_conns=1", zaptest.NewLogger(tb), false)
-	require.NoError(tb, err)
-	tb.Cleanup(pool.Close)
+// 	pool, err := pg.NewPool("postgres://"+username+"@127.0.0.1:5432/ferretdb?pool_min_conns=1", zaptest.NewLogger(tb), false)
+// 	require.NoError(tb, err)
+// 	tb.Cleanup(pool.Close)
 
-	return pool
-}
+// 	return pool
+// }
 
-// SchemaName returns a stable schema name for that test.
-func SchemaName(tb testing.TB) string {
-	return strings.ReplaceAll(strings.ToLower(tb.Name()), "/", "_")
-}
+// // SchemaName returns a stable schema name for that test.
+// func SchemaName(tb testing.TB) string {
+// 	return strings.ReplaceAll(strings.ToLower(tb.Name()), "/", "_")
+// }
 
-// Schema creates a new FerretDB database / PostgreSQL schema for testing.
-//
-// Name is stable for that test. It is automatically dropped if test pass.
-func Schema(ctx context.Context, tb testing.TB, pool *pg.Pool) string {
-	tb.Helper()
+// // Schema creates a new FerretDB database / PostgreSQL schema for testing.
+// //
+// // Name is stable for that test. It is automatically dropped if test pass.
+// func Schema(ctx context.Context, tb testing.TB, pool *pg.Pool) string {
+// 	tb.Helper()
 
-	if testing.Short() {
-		tb.Skip("skipping in -short mode")
-	}
+// 	if testing.Short() {
+// 		tb.Skip("skipping in -short mode")
+// 	}
 
-	schema := strings.ToLower(tb.Name())
-	tb.Logf("Using schema %q.", schema)
+// 	schema := strings.ToLower(tb.Name())
+// 	tb.Logf("Using schema %q.", schema)
 
-	err := pool.DropSchema(ctx, schema)
-	if err == pg.ErrNotExist {
-		err = nil
-	}
-	require.NoError(tb, err)
+// 	err := pool.DropSchema(ctx, schema)
+// 	if err == pg.ErrNotExist {
+// 		err = nil
+// 	}
+// 	require.NoError(tb, err)
 
-	err = pool.CreateSchema(ctx, schema)
-	require.NoError(tb, err)
+// 	err = pool.CreateSchema(ctx, schema)
+// 	require.NoError(tb, err)
 
-	tb.Cleanup(func() {
-		if tb.Failed() {
-			tb.Logf("Keeping schema %q for debugging.", schema)
-			return
-		}
+// 	tb.Cleanup(func() {
+// 		if tb.Failed() {
+// 			tb.Logf("Keeping schema %q for debugging.", schema)
+// 			return
+// 		}
 
-		err = pool.DropSchema(ctx, schema)
-		if err == pg.ErrNotExist { // test might delete it
-			err = nil
-		}
-		require.NoError(tb, err)
-	})
+// 		err = pool.DropSchema(ctx, schema)
+// 		if err == pg.ErrNotExist { // test might delete it
+// 			err = nil
+// 		}
+// 		require.NoError(tb, err)
+// 	})
 
-	return schema
-}
+// 	return schema
+// }
 
-// TableName returns a stable table name for that test.
-func TableName(tb testing.TB) string {
-	return strings.ReplaceAll(strings.ToLower(tb.Name()), "/", "_")
-}
+// // TableName returns a stable table name for that test.
+// func TableName(tb testing.TB) string {
+// 	return strings.ReplaceAll(strings.ToLower(tb.Name()), "/", "_")
+// }
 
-// CreateTable creates FerretDB collection / PostgreSQL table for testing.
-//
-// Name is stable for that test.
-func CreateTable(ctx context.Context, tb testing.TB, pool *pg.Pool, db string) string {
-	tb.Helper()
+// // CreateTable creates FerretDB collection / PostgreSQL table for testing.
+// //
+// // Name is stable for that test.
+// func CreateTable(ctx context.Context, tb testing.TB, pool *pg.Pool, db string) string {
+// 	tb.Helper()
 
-	if testing.Short() {
-		tb.Skip("skipping in -short mode")
-	}
+// 	if testing.Short() {
+// 		tb.Skip("skipping in -short mode")
+// 	}
 
-	table := TableName(tb)
-	tb.Logf("Using table %q.", table)
+// 	table := TableName(tb)
+// 	tb.Logf("Using table %q.", table)
 
-	err := pool.DropTable(ctx, db, table)
-	if err == pg.ErrNotExist {
-		err = nil
-	}
-	require.NoError(tb, err)
+// 	err := pool.DropTable(ctx, db, table)
+// 	if err == pg.ErrNotExist {
+// 		err = nil
+// 	}
+// 	require.NoError(tb, err)
 
-	err = pool.CreateTable(ctx, db, table)
-	require.NoError(tb, err)
+// 	err = pool.CreateTable(ctx, db, table)
+// 	require.NoError(tb, err)
 
-	return table
-}
+// 	return table
+// }
