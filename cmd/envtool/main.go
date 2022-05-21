@@ -21,19 +21,11 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-
-	"github.com/DocStore/HANA_HWY/internal/clientconn"
-	"github.com/DocStore/HANA_HWY/internal/handlers"
-	"github.com/DocStore/HANA_HWY/internal/pg"
-	"github.com/DocStore/HANA_HWY/internal/util/debug"
-	"github.com/DocStore/HANA_HWY/internal/util/logging"
 )
 
 var (
@@ -159,126 +151,126 @@ func setupPagila(ctx context.Context) {
 	logger.Infof("Done in %s.", time.Since(start))
 }
 
-func setupMonila(ctx context.Context, pgPool *pg.Pool) {
-	start := time.Now()
-	logger := zap.S().Named("postgres.monila")
+// func setupMonila(ctx context.Context, pgPool *pg.Pool) {
+// 	start := time.Now()
+// 	logger := zap.S().Named("postgres.monila")
 
-	logger.Infof("Importing database...")
+// 	logger.Infof("Importing database...")
 
-	listenerMetrics := clientconn.NewListenerMetrics()
-	handlersMetrics := handlers.NewMetrics()
-	prometheus.DefaultRegisterer.MustRegister(listenerMetrics, handlersMetrics)
+// 	listenerMetrics := clientconn.NewListenerMetrics()
+// 	handlersMetrics := handlers.NewMetrics()
+// 	prometheus.DefaultRegisterer.MustRegister(listenerMetrics, handlersMetrics)
 
-	// listen on all interfaces to make mongoimport below work from inside Docker
-	addr := ":27018"
-	if runtime.GOOS == "darwin" {
-		// do not trigger macOS firewall; it works with Docker Desktop
-		addr = "127.0.0.1:27018"
-	}
+// 	// listen on all interfaces to make mongoimport below work from inside Docker
+// 	addr := ":27018"
+// 	if runtime.GOOS == "darwin" {
+// 		// do not trigger macOS firewall; it works with Docker Desktop
+// 		addr = "127.0.0.1:27018"
+// 	}
 
-	l := clientconn.NewListener(&clientconn.NewListenerOpts{
-		ListenAddr:      addr,
-		Mode:            "normal",
-		PgPool:          pgPool,
-		Logger:          logger.Named("listener").Desugar(),
-		Metrics:         listenerMetrics,
-		HandlersMetrics: handlersMetrics,
-	})
+// 	l := clientconn.NewListener(&clientconn.NewListenerOpts{
+// 		ListenAddr:      addr,
+// 		Mode:            "normal",
+// 		PgPool:          pgPool,
+// 		Logger:          logger.Named("listener").Desugar(),
+// 		Metrics:         listenerMetrics,
+// 		HandlersMetrics: handlersMetrics,
+// 	})
 
-	lCtx, lCancel := context.WithCancel(ctx)
-	lDone := make(chan struct{})
-	go func() {
-		defer close(lDone)
-		l.Run(lCtx)
-	}()
+// 	lCtx, lCancel := context.WithCancel(ctx)
+// 	lDone := make(chan struct{})
+// 	go func() {
+// 		defer close(lDone)
+// 		l.Run(lCtx)
+// 	}()
 
-	var wg sync.WaitGroup
+// 	var wg sync.WaitGroup
 
-	for _, c := range collections {
-		cmd := fmt.Sprintf(
-			`exec -T mongodb mongoimport --uri mongodb://host.docker.internal:27018/monila `+
-				`--drop --maintainInsertionOrder --collection %[1]s /test_db/%[1]s.json`,
-			c,
-		)
-		args := strings.Split(cmd, " ")
+// 	for _, c := range collections {
+// 		cmd := fmt.Sprintf(
+// 			`exec -T mongodb mongoimport --uri mongodb://host.docker.internal:27018/monila `+
+// 				`--drop --maintainInsertionOrder --collection %[1]s /test_db/%[1]s.json`,
+// 			c,
+// 		)
+// 		args := strings.Split(cmd, " ")
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			runCompose(args, nil, logger)
-		}()
-	}
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
+// 			runCompose(args, nil, logger)
+// 		}()
+// 	}
 
-	wg.Wait()
+// 	wg.Wait()
 
-	lCancel()
-	<-lDone
+// 	lCancel()
+// 	<-lDone
 
-	logger.Infof("Done in %s.", time.Since(start))
-}
+// 	logger.Infof("Done in %s.", time.Since(start))
+// }
 
-func main() {
-	logging.Setup(zap.InfoLevel)
-	logger := zap.S()
+// func main() {
+// 	logging.Setup(zap.InfoLevel)
+// 	logger := zap.S()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	defer cancel()
 
-	go debug.RunHandler(ctx, "127.0.0.1:8089", logger.Named("debug").Desugar())
+// 	go debug.RunHandler(ctx, "127.0.0.1:8089", logger.Named("debug").Desugar())
 
-	var err error
-	if composeBin, err = exec.LookPath("docker-compose"); err != nil {
-		logger.Fatal(err)
-	}
+// 	var err error
+// 	if composeBin, err = exec.LookPath("docker-compose"); err != nil {
+// 		logger.Fatal(err)
+// 	}
 
-	var wg sync.WaitGroup
+// 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		setupMongoDB(ctx)
-	}()
+// 	wg.Add(1)
+// 	go func() {
+// 		defer wg.Done()
+// 		setupMongoDB(ctx)
+// 	}()
 
-	logger.Infof("Waiting for port 5432 to be up...")
-	if err := waitForPostgresPort(ctx, 5432); err != nil {
-		logger.Fatal(err)
-	}
+// 	logger.Infof("Waiting for port 5432 to be up...")
+// 	if err := waitForPostgresPort(ctx, 5432); err != nil {
+// 		logger.Fatal(err)
+// 	}
 
-	pgPool, err := pg.NewPool("postgres://postgres@127.0.0.1:5432/ferretdb", logger.Desugar(), false)
-	if err != nil {
-		logger.Fatal(err)
-	}
+// 	pgPool, err := pg.NewPool("postgres://postgres@127.0.0.1:5432/ferretdb", logger.Desugar(), false)
+// 	if err != nil {
+// 		logger.Fatal(err)
+// 	}
 
-	for _, db := range []string{`monila`, `test`} {
-		if err = pgPool.CreateSchema(ctx, db); err != nil {
-			logger.Fatal(err)
-		}
-	}
+// 	for _, db := range []string{`monila`, `test`} {
+// 		if err = pgPool.CreateSchema(ctx, db); err != nil {
+// 			logger.Fatal(err)
+// 		}
+// 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		setupPagila(ctx)
-	}()
+// 	wg.Add(1)
+// 	go func() {
+// 		defer wg.Done()
+// 		setupPagila(ctx)
+// 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		setupMonila(ctx, pgPool)
-	}()
+// 	wg.Add(1)
+// 	go func() {
+// 		defer wg.Done()
+// 		setupMonila(ctx, pgPool)
+// 	}()
 
-	wg.Wait()
+// 	wg.Wait()
 
-	for _, q := range []string{
-		`ALTER SCHEMA public RENAME TO pagila`,
-		`CREATE ROLE readonly NOINHERIT LOGIN`,
-		`GRANT SELECT ON ALL TABLES IN SCHEMA monila, pagila, test TO readonly`,
-		`GRANT USAGE ON SCHEMA monila, pagila, test TO readonly`,
-	} {
-		if _, err = pgPool.Exec(ctx, q); err != nil {
-			logger.Fatal(err)
-		}
-	}
+// 	for _, q := range []string{
+// 		`ALTER SCHEMA public RENAME TO pagila`,
+// 		`CREATE ROLE readonly NOINHERIT LOGIN`,
+// 		`GRANT SELECT ON ALL TABLES IN SCHEMA monila, pagila, test TO readonly`,
+// 		`GRANT USAGE ON SCHEMA monila, pagila, test TO readonly`,
+// 	} {
+// 		if _, err = pgPool.Exec(ctx, q); err != nil {
+// 			logger.Fatal(err)
+// 		}
+// 	}
 
-	logger.Info("Done.")
-}
+// 	logger.Info("Done.")
+// }

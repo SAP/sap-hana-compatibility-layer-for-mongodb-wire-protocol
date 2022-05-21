@@ -14,68 +14,68 @@
 
 package handlers
 
-import (
-	"strconv"
-	"testing"
+// import (
+// 	"strconv"
+// 	"testing"
 
-	"github.com/stretchr/testify/require"
+// 	"github.com/stretchr/testify/require"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/testutil"
-	"github.com/DocStore/HANA_HWY/internal/wire"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/testutil"
+// 	"github.com/DocStore/HANA_HWY/internal/wire"
+// )
 
-// TODO Rework to make them closer to other tests.
-//nolint:paralleltest // TODO
-func TestUpdate(t *testing.T) {
-	ctx, h, pool := setup(t, nil)
-	schema := testutil.Schema(ctx, t, pool)
+// // TODO Rework to make them closer to other tests.
+// //nolint:paralleltest // TODO
+// func TestUpdate(t *testing.T) {
+// 	ctx, h, pool := setup(t, nil)
+// 	schema := testutil.Schema(ctx, t, pool)
 
-	header := &wire.MsgHeader{
-		OpCode: wire.OP_MSG,
-	}
+// 	header := &wire.MsgHeader{
+// 		OpCode: wire.OP_MSG,
+// 	}
 
-	for i := 1; i <= 3; i++ {
-		var msg wire.OpMsg
-		err := msg.SetSections(wire.OpMsgSection{
-			Documents: []types.Document{types.MustMakeDocument(
-				"insert", "test",
-				"documents", types.MustNewArray(
-					types.MustMakeDocument(
-						"_id", types.ObjectID{byte(i)},
-						"description", "Test "+strconv.Itoa(i),
-					),
-				),
-				"$db", schema,
-			)},
-		})
-		require.NoError(t, err)
+// 	for i := 1; i <= 3; i++ {
+// 		var msg wire.OpMsg
+// 		err := msg.SetSections(wire.OpMsgSection{
+// 			Documents: []types.Document{types.MustMakeDocument(
+// 				"insert", "test",
+// 				"documents", types.MustNewArray(
+// 					types.MustMakeDocument(
+// 						"_id", types.ObjectID{byte(i)},
+// 						"description", "Test "+strconv.Itoa(i),
+// 					),
+// 				),
+// 				"$db", schema,
+// 			)},
+// 		})
+// 		require.NoError(t, err)
 
-		_, _, closeConn := h.Handle(ctx, header, &msg)
-		require.False(t, closeConn)
-	}
+// 		_, _, closeConn := h.Handle(ctx, header, &msg)
+// 		require.False(t, closeConn)
+// 	}
 
-	var msg wire.OpMsg
-	err := msg.SetSections(wire.OpMsgSection{
-		Documents: []types.Document{types.MustMakeDocument(
-			"update", "test",
-			"updates", types.MustNewArray(
-				types.MustMakeDocument(
-					"q", types.MustMakeDocument(
-						"_id", types.ObjectID{byte(1)},
-					),
-					"u", types.MustMakeDocument(
-						"$set", types.MustMakeDocument(
-							"description", "Test 1 updated",
-						),
-					),
-				),
-			),
-			"$db", schema,
-		)},
-	})
-	require.NoError(t, err)
+// 	var msg wire.OpMsg
+// 	err := msg.SetSections(wire.OpMsgSection{
+// 		Documents: []types.Document{types.MustMakeDocument(
+// 			"update", "test",
+// 			"updates", types.MustNewArray(
+// 				types.MustMakeDocument(
+// 					"q", types.MustMakeDocument(
+// 						"_id", types.ObjectID{byte(1)},
+// 					),
+// 					"u", types.MustMakeDocument(
+// 						"$set", types.MustMakeDocument(
+// 							"description", "Test 1 updated",
+// 						),
+// 					),
+// 				),
+// 			),
+// 			"$db", schema,
+// 		)},
+// 	})
+// 	require.NoError(t, err)
 
-	_, _, closeConn := h.Handle(ctx, header, &msg)
-	require.False(t, closeConn)
-}
+// 	_, _, closeConn := h.Handle(ctx, header, &msg)
+// 	require.False(t, closeConn)
+// }
