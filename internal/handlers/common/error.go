@@ -26,6 +26,8 @@ import (
 // ErrorCode represents wire protocol error code.
 type ErrorCode int32
 
+// for complete list of MongoDB error codes see:
+// https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.yml
 const (
 	// For ProtocolError only.
 	errInternalError = ErrorCode(1) // InternalError
