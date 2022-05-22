@@ -1,7 +1,7 @@
 # HANA HWY
 
 HANA HWY is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. HANA HWY is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to DocStore, the database engine of HANA HWY. MongoDB drivers and shell will, when connected to HANA HWY, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from DocStore.  
-Perfect for companies with software written for MongoDB looking to change to DocStore. 
+Perfect for companies looking to change from MongoDB to DocStore. 
 
 ## Scope
 
