@@ -17,6 +17,8 @@ package handlers
 import (
 	"context"
 
+	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -33,15 +35,15 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	collection := m[document.Command()].(string)
 
 	//--- CreateSchema still needs to be implemented
-	//db := m["$db"].(string)
-	//if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != pg.ErrAlreadyExist {
-	//	return nil, lazyerrors.Error(err)
-	//}
+	db := m["$db"].(string)
+	// if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
+	// 	return nil, lazyerrors.Error(err)
+	// }
 
 	if err = h.hanaPool.CreateTable(ctx, collection); err != nil {
-		// if err == pg.ErrAlreadyExist {
-		// 	return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: %s.%s", db, collection)
-		// }
+		if err == hana.ErrAlreadyExist {
+			return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: %s.%s", db, collection)
+		}
 		return nil, lazyerrors.Error(err)
 	}
 

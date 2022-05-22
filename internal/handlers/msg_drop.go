@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -36,9 +38,10 @@ func (h *Handler) MsgDrop(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, er
 
 	if err = h.hanaPool.DropTable(ctx, collection); err != nil {
 		fmt.Println(err)
-		// if err == pg.ErrNotExist {
-		// 	return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "ns not found")
-		// }
+
+		if err == hana.ErrNotExist {
+			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "ns not found")
+		}
 		return nil, lazyerrors.Error(err)
 	}
 
