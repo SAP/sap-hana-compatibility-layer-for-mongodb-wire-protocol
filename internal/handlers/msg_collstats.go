@@ -23,6 +23,7 @@ import (
 )
 
 // MsgCollStats returns a set of statistics for a collection.
+//To function hanapool.TableStats needs to be implemented for DocStore
 func (h *Handler) MsgCollStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	document, err := msg.Document()
 	if err != nil {
