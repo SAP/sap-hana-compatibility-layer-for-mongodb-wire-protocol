@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -47,11 +48,13 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		docM := doc.(types.Document).Map()
 
 		whereSQL, args, err := whereHANA(docM["q"].(types.Document))
+
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
+
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -119,7 +122,14 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
 
-	updateVal = updateVal.Map()["$set"].(types.Document)
+	updateValMap := updateVal.Map()
+
+	if _, ok := updateValMap["$set"]; !ok {
+		return "", nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: replaceOne")
+	}
+
+	updateVal = updateValMap["$set"].(types.Document)
+	fmt.Println(updateVal)
 	for key := range updateVal.Map() {
 
 		if strings.Contains(key, ".") {

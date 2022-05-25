@@ -34,6 +34,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
+	fmt.Println(document)
+
+	docMap := document.Map()
+	fmt.Println(docMap)
+	if isPrintShardingStatus(docMap) {
+		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
+	}
 
 	var filter types.Document
 	var sql, collection string
@@ -221,4 +228,20 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	}
 
 	return &reply, nil
+}
+
+func isPrintShardingStatus(docMap map[string]any) bool {
+
+	if docMap["find"] == "shards" && docMap["$db"] == "config" {
+		fmt.Println(1)
+		return true
+	} else if docMap["find"] == "mongos" && docMap["$db"] == "config" {
+		fmt.Println(2)
+		return true
+	} else if docMap["find"] == "version" && docMap["$db"] == "config" {
+		fmt.Println(3)
+		return true
+	}
+	fmt.Println("NO")
+	return false
 }

@@ -142,6 +142,10 @@ func (h *Handler) handleOpMsg(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg
 		return nil, lazyerrors.Error(err)
 	}
 
+	if _, ok := document.Map()["help"]; ok {
+		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: commandHelp")
+	}
+
 	cmd := document.Command()
 
 	h.metrics.requests.WithLabelValues(wire.OP_MSG.String(), cmd).Inc()
