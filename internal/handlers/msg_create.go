@@ -32,6 +32,10 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	}
 
 	m := document.Map()
+	if _, ok := m["viewOn"]; ok {
+		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: createView")
+	}
+
 	collection := m[document.Command()].(string)
 
 	//--- CreateSchema still needs to be implemented
