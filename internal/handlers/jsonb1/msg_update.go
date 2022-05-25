@@ -33,6 +33,22 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		return nil, lazyerrors.Error(err)
 	}
 
+	unimplementedFields := []string{
+		"upsert",
+		"writeConcern",
+		"collation",
+		"arrayFilter",
+		"hint",
+		"commented",
+		"bypassDocumentValidation",
+	}
+
+	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
+		return nil, err
+	}
+
+	common.Ignored(&document, h.l, "ordered")
+
 	m := document.Map()
 	collection := m["update"].(string)
 	docs, _ := m["updates"].(*types.Array)

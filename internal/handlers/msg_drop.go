@@ -32,6 +32,10 @@ func (h *Handler) MsgDrop(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, er
 		return nil, lazyerrors.Error(err)
 	}
 
+	if err := common.Unimplemented(&document, "writeConcern", "comment"); err != nil {
+		return nil, err
+	}
+
 	m := document.Map()
 	collection := m[document.Command()].(string)
 	db := m["$db"].(string)

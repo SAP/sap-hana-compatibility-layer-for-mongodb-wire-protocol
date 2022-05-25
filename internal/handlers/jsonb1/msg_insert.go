@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 	"github.com/DocStore/HANA_HWY/internal/wire"
@@ -30,6 +31,8 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
+
+	common.Unimplemented(&document, "writeConcern", "ordered", "bypassDocumentValidation", "comment")
 
 	m := document.Map()
 

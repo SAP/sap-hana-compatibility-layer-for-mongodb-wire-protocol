@@ -32,6 +32,11 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		return nil, lazyerrors.Error(err)
 	}
 
+	if err := common.Unimplemented(&document, "let", "writeConcern"); err != nil {
+		return nil, err
+	}
+	common.Ignored(&document, h.l, "ordered")
+
 	m := document.Map()
 
 	collection := m[document.Command()].(string)
