@@ -32,7 +32,9 @@ For the installation of Go-hdb see the following links:
 
 2. Clone the repository
 
-3. After cloning, enter the folder HANA_HWY and run:
+3. After cloning, enter the folder HANA_HWY and open the file /cmd/hanahwy/main.go. Then insert a connect string for a HANA Cloud instance on line 47. Do the same in file /internal/hana/hanapool.go on line 51.
+
+4. In the folder HANA_HWY run the following:
 
 ```
 make init
