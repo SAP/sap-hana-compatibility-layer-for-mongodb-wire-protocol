@@ -10,9 +10,6 @@ Makefile
 .vscode
 .idea
 
-internal/hana/hanapool.go
-cmd/hanahwy/main.go
-
 internal/util/version/version.txt
 internal/util/version/branch.txt
 internal/util/version/generate.sh
