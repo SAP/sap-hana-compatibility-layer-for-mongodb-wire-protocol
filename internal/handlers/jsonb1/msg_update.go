@@ -138,30 +138,38 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
 
-	// uninmplementedFields := []string{
-	// 	"$currentDate",
-	// 	"$inc",
-	// 	"$min",
-	// 	"$max",
-	// 	"$mul",
-	// 	"$rename",
-	// 	"$set",
-	// 	"$setOnInsert",
-	// 	"$unset",
-	// 	"$",
-	// 	"$[]",
-	// 	"$[<identifier>]",
-	// 	"$addToSet",
-	// 	"$pop",
-	// 	"$pull",
-	// 	"$push",
-	// 	"$pullAll",
-	// 	"$each",
-	// 	"$position",
-	// 	"$slice",
-	// 	"$sort",
+	uninmplementedFields := []string{
+		"$currentDate",
+		"$inc",
+		"$min",
+		"$max",
+		"$mul",
+		"$rename",
+		"$setOnInsert",
+		"$unset",
+		"$",
+		"$[]",
+		"$[<identifier>]",
+		"$addToSet",
+		"$pop",
+		"$pull",
+		"$push",
+		"$pullAll",
+		"$each",
+		"$position",
+		"$slice",
+		"$sort",
+		"$bit",
+		"$addFields",
+		"$project",
+		"$unset",
+		"$replaceRoot",
+		"$replaceWith",
+	}
 
-	// }
+	if err := common.Unimplemented(&updateVal, uninmplementedFields...); err != nil {
+		return "", nil, err
+	}
 
 	updateValMap := updateVal.Map()
 

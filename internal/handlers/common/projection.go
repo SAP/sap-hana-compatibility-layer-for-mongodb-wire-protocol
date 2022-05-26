@@ -97,6 +97,20 @@ func inclusionProjection(projection types.Document) (sql string) {
 }
 
 func Projection(projection types.Document) (sql string, exclusion bool, projectBool bool, err error) {
+
+	unimplementedFields := []string{
+		"$",
+		"$elemMatch",
+		"$meta",
+		"$slice",
+		"$comment",
+		"$rand",
+	}
+
+	if err := Unimplemented(&projection, unimplementedFields...); err != nil {
+		return "", false, false, err
+	}
+
 	projectionMap := projection.Map()
 	if len(projectionMap) == 0 {
 		sql = "*"
@@ -200,7 +214,7 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 				}
 			}
 		default:
-			return lazyerrors.Errorf("unsupported operation %s %v (%T)", k1, projectionVal, projectionVal)
+			return lazyerrors.Errorf("unsupported projection operation %s %v (%T)", k1, projectionVal, projectionVal)
 		}
 	}
 
