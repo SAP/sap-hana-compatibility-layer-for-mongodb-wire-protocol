@@ -145,7 +145,7 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 	}
 
 	updateVal = updateValMap["$set"].(types.Document)
-	fmt.Println(updateVal)
+
 	for key := range updateVal.Map() {
 
 		if strings.Contains(key, ".") {

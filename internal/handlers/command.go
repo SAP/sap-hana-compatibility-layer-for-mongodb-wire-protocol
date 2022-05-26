@@ -123,12 +123,12 @@ var commands = map[string]command{
 		help:    "Returns the information of the collections and views in the database.",
 		handler: (*Handler).MsgListCollections,
 	},
-	"listdatabases": {
-		// db.adminCommand( { listDatabases: 1 } ) or show dbs
-		name:    "listDatabases",
-		help:    "Returns a summary of all the databases.",
-		handler: (*Handler).MsgListDatabases,
-	},
+	// "listdatabases": {
+	// 	// db.adminCommand( { listDatabases: 1 } ) or show dbs
+	// 	name:    "listDatabases",
+	// 	help:    "Returns a summary of all the databases.",
+	// 	handler: (*Handler).MsgListDatabases,
+	// },
 	"listcommands": {
 		// db.listCommands()
 		name: "listCommands",
