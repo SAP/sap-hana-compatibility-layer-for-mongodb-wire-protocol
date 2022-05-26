@@ -42,7 +42,7 @@ make init
 
 It will download all modules needed for running HANA HWY
 
-4. Open three terminal windows
+5. Open three terminal windows
 
 In terminal window 1 run:
  ```
@@ -71,7 +71,7 @@ If permission is denied because of lack of sudo, run:
 make mongosh-sudo
 ```
 
-5. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
+6. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
 
 ```
 db.createCollection("firstHANAHWYCollection")
