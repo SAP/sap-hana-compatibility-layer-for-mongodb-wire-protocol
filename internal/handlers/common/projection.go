@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jsonb1
+package common
 
 import (
 	"github.com/DocStore/HANA_HWY/internal/types"
@@ -96,7 +96,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 	return
 }
 
-func projection(projection types.Document) (sql string, exclusion bool, projectBool bool, err error) {
+func Projection(projection types.Document) (sql string, exclusion bool, projectBool bool, err error) {
 	projectionMap := projection.Map()
 	if len(projectionMap) == 0 {
 		sql = "*"
@@ -120,7 +120,7 @@ func projection(projection types.Document) (sql string, exclusion bool, projectB
 	}
 }
 
-func projectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
+func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
 
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)

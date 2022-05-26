@@ -31,6 +31,28 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		return nil, lazyerrors.Error(err)
 	}
 
+	unimplementedFields := []string{
+		"capped",
+		"timeseries",
+		"expireAfterSeconds",
+		"size",
+		"max",
+		"validator",
+		"validationLevel",
+		"validationAction",
+		"viewOn",
+		"pipeline",
+		"collation",
+		"autoIndexId",
+		"storageEngine",
+		"indexOptionDefaults",
+		"writeConcern",
+		"comment",
+	}
+	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
+		return nil, err
+	}
+
 	m := document.Map()
 	if _, ok := m["viewOn"]; ok {
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: createView")

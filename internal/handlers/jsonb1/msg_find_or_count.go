@@ -34,10 +34,36 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
-	fmt.Println(document)
+
+	unimplementedFields := []string{
+		"skip",
+		"sort",
+		"returnKey",
+		"showRecordId",
+		"tailable",
+		"oplogReplay",
+		"noCursorTimeout",
+		"awaitData",
+		"allowPartialResults",
+		"collation",
+		"allowDiskUse",
+		"let",
+		"hint",
+		"batchSize",
+		"singleBatch",
+		"maxTimeMS",
+		"readConcern",
+		"max",
+		"min",
+		"comment",
+	}
+
+	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
+		return nil, err
+	}
 
 	docMap := document.Map()
-	fmt.Println(docMap)
+
 	if isPrintShardingStatus(docMap) {
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
 	}
@@ -57,7 +83,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		var projectionSQL string
 
 		projectionIn, _ := m["projection"].(types.Document)
-		projectionSQL, exclusion, projectBool, err = projection(projectionIn)
+		projectionSQL, exclusion, projectBool, err = common.Projection(projectionIn)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -185,7 +211,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		}
 
 		if projectBool {
-			err = projectDocuments(&docs, m["projection"].(types.Document), exclusion)
+			err = common.ProjectDocuments(&docs, m["projection"].(types.Document), exclusion)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
