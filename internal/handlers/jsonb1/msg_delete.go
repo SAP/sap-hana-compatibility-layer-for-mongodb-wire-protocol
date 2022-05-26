@@ -61,7 +61,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if limit != 0 {
 			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s", collection)
 
-			whereSQL, whereArgs, err := whereHANA(d["q"].(types.Document))
+			whereSQL, whereArgs, err := common.WhereHANA(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
@@ -86,7 +86,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			delSQL = " WHERE \"_id\".\"oid\" = '%s'"
 
 		} else {
-			delSQL, args, err = whereHANA(d["q"].(types.Document))
+			delSQL, args, err = common.WhereHANA(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
