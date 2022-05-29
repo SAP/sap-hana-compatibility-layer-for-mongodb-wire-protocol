@@ -14,99 +14,399 @@
 
 package common
 
-// import (
+import (
+	"fmt"
+	"strings"
 
-// 	"github.com/DocStore/HANA_HWY/internal/types"
-// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-// )
+	"github.com/DocStore/HANA_HWY/internal/bson"
 
-// type wherePair func(key string, value any, p *pg.Placeholder) (sql string, args []any, err error)
+	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+)
 
-// //nolint:goconst // $op is fine
-// func LogicExpr(op string, exprs *types.Array, p *pg.Placeholder, wherePair wherePair) (sql string, args []any, err error) {
-// 	if op == "$nor" {
-// 		sql = "NOT ("
-// 	}
-
-// 	switch op {
-// 	case "$or", "$and", "$nor":
-// 		// {$or: [{expr1}, {expr2}, ...]}
-// 		// {$and: [{expr1}, {expr2}, ...]}
-// 		// {$nor: [{expr1}, {expr2}, ...]}
-// 		for i := 0; i < exprs.Len(); i++ {
-// 			if i != 0 {
-// 				switch op {
-// 				case "$or", "$nor":
-// 					sql += " OR"
-// 				case "$and":
-// 					sql += " AND"
-// 				}
-// 			}
-
-// 			var el any
-// 			if el, err = exprs.Get(i); err != nil {
-// 				err = lazyerrors.Errorf("logicExpr: %w", err)
-// 				return
-// 			}
-
-// 			expr := el.(types.Document)
-// 			m := expr.Map()
-// 			for j, key := range expr.Keys() {
-// 				if j != 0 {
-// 					sql += " AND"
-// 				}
-
-// 				var exprSQL string
-// 				var exprArgs []any
-// 				exprSQL, exprArgs, err = wherePair(key, m[key], p)
-// 				if err != nil {
-// 					err = lazyerrors.Errorf("logicExpr: %w", err)
-// 					return
-// 				}
-
-// 				if sql != "" {
-// 					sql += " "
-// 				}
-// 				sql += "(" + exprSQL + ")"
-// 				args = append(args, exprArgs...)
+// func scalar(v any, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	var arg any
+// 	switch v := v.(type) {
+// 	case int32:
+// 		sql = "to_jsonb(" + p.Next() + "::int4)"
+// 		arg = v
+// 	case string:
+// 		sql = "to_jsonb(" + p.Next() + "::text)"
+// 		arg = v
+// 	case types.ObjectID:
+// 		sql = p.Next()
+// 		var b []byte
+// 		if b, err = bson.ObjectID(v).MarshalJSON(); err != nil {
+// 			err = lazyerrors.Errorf("scalar: %w", err)
+// 			return
+// 		}
+// 		arg = string(b)
+// 	case types.Regex:
+// 		var options string
+// 		for _, o := range v.Options {
+// 			switch o {
+// 			case 'i':
+// 				options += "i"
+// 			default:
+// 				err = lazyerrors.Errorf("scalar: unhandled regex option %v (%v)", o, v)
 // 			}
 // 		}
-
+// 		sql = p.Next()
+// 		arg = v.Pattern
+// 		if options != "" {
+// 			arg = "(?" + options + ")" + v.Pattern
+// 		}
 // 	default:
-// 		err = lazyerrors.Errorf("logicExpr: unhandled op %q", op)
+// 		err = lazyerrors.Errorf("scalar: unhandled field %v (%T)", v, v)
 // 	}
 
-// 	if op == "$nor" {
-// 		sql += ")"
-// 	}
-
+// 	args = []any{arg}
 // 	return
 // }
 
-// type scalar func(v any, p *pg.Placeholder) (sql string, args []any, err error)
+// // fieldExpr handles {field: {expr}}.
+// func fieldExpr(field string, expr types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	filterKeys := expr.Keys()
+// 	filterMap := expr.Map()
 
-// func InArray(a *types.Array, p *pg.Placeholder, scalar scalar) (sql string, args []any, err error) {
-// 	sql = "("
-// 	for i := 0; i < a.Len(); i++ {
-// 		if i != 0 {
-// 			sql += ", "
+// 	for _, op := range filterKeys {
+// 		if op == "$options" {
+// 			// handled by $regex, no need to modify sql in any way
+// 			continue
 // 		}
 
-// 		var el any
-// 		if el, err = a.Get(i); err != nil {
-// 			err = lazyerrors.Errorf("inArray: %w", err)
-// 			return
+// 		if sql != "" {
+// 			sql += " AND"
 // 		}
 
 // 		var argSql string
 // 		var arg []any
-// 		if argSql, arg, err = scalar(el, p); err != nil {
-// 			err = lazyerrors.Errorf("inArray: %w", err)
+// 		value := filterMap[op]
+
+// 		// {field: {$not: {expr}}}
+// 		if op == "$not" {
+// 			if sql != "" {
+// 				sql += " "
+// 			}
+// 			sql += "NOT("
+
+// 			argSql, arg, err = fieldExpr(field, value.(types.Document), p)
+// 			if err != nil {
+// 				err = lazyerrors.Errorf("fieldExpr: %w", err)
+// 				return
+// 			}
+
+// 			sql += argSql + ")"
+// 			args = append(args, arg...)
+
+// 			continue
+// 		}
+
+// 		if sql != "" {
+// 			sql += " "
+// 		}
+// 		args = append(args, field)
+
+// 		switch op {
+// 		case "$in":
+// 			// {field: {$in: [value1, value2, ...]}}
+// 			sql += "_jsonb->" + p.Next() + " IN"
+// 			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
+// 		case "$nin":
+// 			// {field: {$nin: [value1, value2, ...]}}
+// 			sql += "_jsonb->" + p.Next() + " NOT IN"
+// 			argSql, arg, err = common.InArray(value.(*types.Array), p, scalar)
+// 		case "$eq":
+// 			// {field: {$eq: value}}
+// 			// TODO special handling for regex
+// 			sql += "_jsonb->" + p.Next() + " ="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$ne":
+// 			// {field: {$ne: value}}
+// 			sql += "_jsonb->" + p.Next() + " <>"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$lt":
+// 			// {field: {$lt: value}}
+// 			sql += "_jsonb->" + p.Next() + " <"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$lte":
+// 			// {field: {$lte: value}}
+// 			sql += "_jsonb->" + p.Next() + " <="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$gt":
+// 			// {field: {$gt: value}}
+// 			sql += "_jsonb->" + p.Next() + " >"
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$gte":
+// 			// {field: {$gte: value}}
+// 			sql += "_jsonb->" + p.Next() + " >="
+// 			argSql, arg, err = scalar(value, p)
+// 		case "$regex":
+// 			// {field: {$regex: value}}
+
+// 			var options string
+// 			if opts, ok := filterMap["$options"]; ok {
+// 				// {field: {$regex: value, $options: string}}
+// 				if options, ok = opts.(string); !ok {
+// 					err = common.NewErrorMessage(common.ErrBadValue, "$options has to be a string")
+// 					return
+// 				}
+// 			}
+
+// 			sql += "_jsonb->>" + p.Next() + " ~"
+// 			switch value := value.(type) {
+// 			case string:
+// 				// {field: {$regex: string}}
+// 				v := types.Regex{
+// 					Pattern: value,
+// 					Options: options,
+// 				}
+// 				argSql, arg, err = scalar(v, p)
+// 			case types.Regex:
+// 				// {field: {$regex: /regex/}}
+// 				if options != "" {
+// 					if value.Options != "" {
+// 						err = common.NewErrorMessage(common.ErrRegexOptions, "options set in both $regex and $options")
+// 						return
+// 					}
+// 					value.Options = options
+// 				}
+// 				argSql, arg, err = scalar(value, p)
+// 			default:
+// 				err = common.NewErrorMessage(common.ErrBadValue, "$regex has to be a string")
+// 				return
+// 			}
+// 		default:
+// 			err = lazyerrors.Errorf("unhandled {%q: %v}", op, value)
+// 		}
+
+// 		if err != nil {
+// 			err = lazyerrors.Errorf("fieldExpr: %w", err)
 // 			return
 // 		}
-// 		sql += argSql
+
+// 		sql += " " + argSql
 // 		args = append(args, arg...)
 // 	}
-// 	sql += ")"
+
 // 	return
 // }
+
+// func wherePair(key string, value any, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	if strings.HasPrefix(key, "$") {
+// 		exprs := value.(*types.Array)
+// 		sql, args, err = common.LogicExpr(key, exprs, p, wherePair)
+// 		return
+// 	}
+
+// 	switch value := value.(type) {
+// 	case types.Document:
+// 		// {field: {expr}}
+// 		sql, args, err = fieldExpr(key, value, p)
+
+// 	default:
+// 		// {field: value}
+// 		switch value.(type) {
+// 		case types.Regex:
+// 			sql = "_jsonb->>" + p.Next() + " ~ "
+// 		default:
+// 			sql = "_jsonb->" + p.Next() + " = "
+// 		}
+
+// 		args = append(args, key)
+
+// 		var scalarSQL string
+// 		var scalarArgs []any
+// 		scalarSQL, scalarArgs, err = scalar(value, p)
+// 		sql += scalarSQL
+// 		args = append(args, scalarArgs...)
+// 	}
+
+// 	if err != nil {
+// 		err = lazyerrors.Errorf("wherePair: %w", err)
+// 	}
+
+// 	return
+// }
+
+// func where(filter types.Document, p *pg.Placeholder) (sql string, args []any, err error) {
+// 	filterMap := filter.Map()
+// 	if len(filterMap) == 0 {
+// 		return
+// 	}
+
+// 	sql = " WHERE"
+
+// 	for i, key := range filter.Keys() {
+// 		value := filterMap[key]
+
+// 		if i != 0 {
+// 			sql += " AND"
+// 		}
+
+// 		var argSql string
+// 		var arg []any
+// 		argSql, arg, err = wherePair(key, value, p)
+// 		if err != nil {
+// 			err = lazyerrors.Errorf("where: %w", err)
+// 			return
+// 		}
+
+// 		sql += " (" + argSql + ")"
+// 		args = append(args, arg...)
+// 	}
+
+// 	return
+// }
+
+func WhereDocument(document types.Document) (sql string, err error) {
+
+	var args []any
+	sqlKeys := "{\"keys\": ["
+	count := 0
+
+	for key := range document.Map() {
+
+		if count != 0 && (len(document.Map())-1) == count {
+			sql += ","
+			sqlKeys += ","
+		}
+		sqlKeys += "'" + key + "'"
+		count += 1
+
+		sql += "\"" + key + "\":"
+
+		value, _ := document.Get(key)
+
+		switch value := value.(type) {
+		case string:
+			args = append(args, value)
+			sql += "'%s'"
+		case int64:
+			args = append(args, value)
+		case int32:
+			sql += "%d"
+			args = append(args, value)
+		case types.ObjectID:
+			sql += "%s"
+			var bOBJ []byte
+			var err1 error
+			if bOBJ, err1 = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = err1
+				return
+			}
+			args = append(args, string(bOBJ))
+		default:
+			err = lazyerrors.Errorf("scalar did not fit cases ")
+			return
+		}
+
+	}
+	sqlKeys += "],"
+	sqlnew := fmt.Sprintf(sql, args...)
+	sqlnew += "}"
+	sql = sqlKeys + sqlnew
+
+	return
+}
+
+func WhereHANA(filter types.Document) (sql string, args []any, err error) {
+
+	unimplementedFields := []string{
+		"$eq",
+		"$gt",
+		"$gte",
+		"$in",
+		"$lt",
+		"$lte",
+		"$ne",
+		"$nin",
+		"$and",
+		"$not",
+		"$nor",
+		"$or",
+		"$exists",
+		"$type",
+		"$expr",
+		"$jsonSchema",
+		"$mod",
+		"$regex",
+		"$text",
+		"$where",
+		"$geoIntersects",
+		"$geoWithin",
+		"$near",
+		"$nearSphere",
+		"$all",
+		"$elemMatch",
+		"$size",
+		"$bitsAllClear",
+		"$bitsAllSet",
+		"$bitsAnyClear",
+		"$bitsAnySet",
+		"$",
+		"$elemMatch",
+		"$meta",
+		"$slice",
+		"$comment",
+		"$rand",
+	}
+
+	if err := Unimplemented(&filter, unimplementedFields...); err != nil {
+		return "", nil, err
+	}
+
+	for key := range filter.Map() {
+		sql += " WHERE "
+		if strings.Contains(key, ".") {
+			split := strings.Split(key, ".")
+			count := 0
+			for _, s := range split {
+				if (len(split) - 1) == count {
+					sql += "\"" + s + "\""
+				} else {
+					sql += "\"" + s + "\"."
+				}
+				count += 1
+			}
+		} else {
+			sql += "\"" + key + "\""
+		}
+
+		sql += " = "
+		value, _ := filter.Get(key)
+
+		switch value := value.(type) {
+		case string:
+			args = append(args, value)
+			sql += "'%s'"
+		case int64:
+			args = append(args, value)
+		case int32:
+			sql += "%d"
+			args = append(args, value)
+		case types.Document:
+			sql += "%s"
+			argDoc, err1 := WhereDocument(value)
+
+			if err1 != nil {
+				err = lazyerrors.Errorf("scalar: %w", err1)
+				return
+			}
+
+			args = append(args, argDoc)
+		case types.ObjectID:
+			sql += "%s"
+			var bOBJ []byte
+			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+				err = lazyerrors.Errorf("scalar: %w", err)
+			}
+			args = append(args, string(bOBJ))
+		default:
+			err = lazyerrors.Errorf("Scalar did not fit cases")
+			return
+		}
+	}
+
+	return
+}

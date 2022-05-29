@@ -17,9 +17,7 @@ package jsonb1
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/DocStore/HANA_HWY/internal/bson"
 	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 
 	"github.com/DocStore/HANA_HWY/internal/types"
@@ -99,61 +97,12 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
 
-	i := 0
-	for key := range filter.Map() {
-		if i != 0 {
-			sql += " AND "
-		} else {
-			sql += " WHERE "
-		}
-		i++
-		if strings.Contains(key, ".") {
-			split := strings.Split(key, ".")
-			count := 0
-			for _, s := range split {
-				if (len(split) - 1) == count {
-					sql += "\"" + s + "\""
-				} else {
-					sql += "\"" + s + "\"."
-				}
-				count += 1
-			}
-		} else {
-			sql += "\"" + key + "\""
-		}
-
-		sql += " = "
-		value, _ := filter.Get(key)
-
-		switch value := value.(type) {
-		case string:
-			args = append(args, value)
-			sql += "'%s'"
-		case int64:
-			args = append(args, value)
-		case int32:
-			sql += "%d"
-			args = append(args, value)
-		case types.Document:
-			sql += "%s"
-			argDoc, err := whereDocument(value)
-
-			if err != nil {
-				return nil, lazyerrors.Errorf("scalar: %w", err)
-			}
-			args = append(args, argDoc)
-		case types.ObjectID:
-
-			sql += "%s"
-			var bOBJ []byte
-			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
-				return nil, lazyerrors.Errorf("scalar: %w", err)
-			}
-			args = append(args, string(bOBJ))
-		default:
-			return nil, lazyerrors.Errorf("scalar: %w does not fit any of the cases.")
-		}
+	whereSQL, whereArgs, err := common.WhereHANA(filter)
+	if err != nil {
+		return nil, err
 	}
+
+	sql += fmt.Sprintf(whereSQL, whereArgs...)
 
 	sortMap := sort.Map()
 	if len(sortMap) != 0 {
@@ -268,6 +217,6 @@ func isPrintShardingStatus(docMap map[string]any) bool {
 		fmt.Println(3)
 		return true
 	}
-	fmt.Println("NO")
+
 	return false
 }

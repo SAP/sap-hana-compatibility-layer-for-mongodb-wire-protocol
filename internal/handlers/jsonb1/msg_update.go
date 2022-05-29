@@ -63,7 +63,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		docM := doc.(types.Document).Map()
 
-		whereSQL, args, err := whereHANA(docM["q"].(types.Document))
+		whereSQL, args, err := common.WhereHANA(docM["q"].(types.Document))
 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
@@ -138,6 +138,39 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
 
+	uninmplementedFields := []string{
+		"$currentDate",
+		"$inc",
+		"$min",
+		"$max",
+		"$mul",
+		"$rename",
+		"$setOnInsert",
+		"$unset",
+		"$",
+		"$[]",
+		"$[<identifier>]",
+		"$addToSet",
+		"$pop",
+		"$pull",
+		"$push",
+		"$pullAll",
+		"$each",
+		"$position",
+		"$slice",
+		"$sort",
+		"$bit",
+		"$addFields",
+		"$project",
+		"$unset",
+		"$replaceRoot",
+		"$replaceWith",
+	}
+
+	if err := common.Unimplemented(&updateVal, uninmplementedFields...); err != nil {
+		return "", nil, err
+	}
+
 	updateValMap := updateVal.Map()
 
 	if _, ok := updateValMap["$set"]; !ok {
@@ -178,7 +211,7 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 			updateargs = append(updateargs, value)
 		case types.Document:
 			updateSQL += "%s"
-			argDoc, err := whereDocument(value)
+			argDoc, err := common.WhereDocument(value)
 			if err != nil {
 				return "", nil, lazyerrors.Errorf("scalar: %w", err)
 			}
