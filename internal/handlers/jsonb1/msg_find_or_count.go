@@ -217,6 +217,6 @@ func isPrintShardingStatus(docMap map[string]any) bool {
 		fmt.Println(3)
 		return true
 	}
-	fmt.Println("NO")
+
 	return false
 }

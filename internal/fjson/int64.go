@@ -27,10 +27,6 @@ type Int64 int64
 // fjsontype implements fjsontype interface.
 func (i *Int64) fjsontype() {}
 
-type int64JSON struct {
-	L int64 `json:"$l,string"`
-}
-
 // UnmarshalJSON implements fjsontype interface.
 func (i *Int64) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte("null")) {
@@ -41,7 +37,7 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
-	var o int64JSON
+	var o int64
 	if err := dec.Decode(&o); err != nil {
 		return lazyerrors.Error(err)
 	}
@@ -49,15 +45,14 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	*i = Int64(o.L)
+	*i = Int64(o)
 	return nil
 }
 
 // MarshalJSON implements fjsontype interface.
 func (i *Int64) MarshalJSON() ([]byte, error) {
-	res, err := json.Marshal(int64JSON{
-		L: int64(*i),
-	})
+	res, err := json.Marshal(int64(*i))
+
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}

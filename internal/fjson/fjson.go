@@ -89,8 +89,8 @@ func fromFJSON(v fjsontype) any {
 		return float64(*v)
 	case *String:
 		return string(*v)
-	case *Binary:
-		return types.Binary(*v)
+	// case *Binary:
+	// 	return types.Binary(*v)
 	case *ObjectID:
 		return types.ObjectID(*v)
 	case *Bool:
@@ -99,18 +99,17 @@ func fromFJSON(v fjsontype) any {
 		return time.Time(*v)
 	case nil:
 		return nil
-	case *Regex:
-		return types.Regex(*v)
-	case *Int32:
-		return int32(*v)
-	case *Timestamp:
-		return types.Timestamp(*v)
+	// case *Regex:
+	// 	return types.Regex(*v)
 	case *Int64:
 		return int64(*v)
-	case *CString:
-		return types.CString(*v)
+	case *Int32:
+		return int32(*v)
+		// case *Timestamp:
+		// 	return types.Timestamp(*v)
+		// case *CString:
+		// 	return types.CString(*v)
 	}
-
 	panic("not reached") // for go-sumtype to work
 }
 
@@ -124,8 +123,8 @@ func toFJSON(v any) fjsontype {
 		return pointer.To(Double(v))
 	case string:
 		return pointer.To(String(v))
-	case types.Binary:
-		return pointer.To(Binary(v))
+	// case types.Binary:
+	// 	return pointer.To(Binary(v))
 	case types.ObjectID:
 		return pointer.To(ObjectID(v))
 	case bool:
@@ -134,18 +133,17 @@ func toFJSON(v any) fjsontype {
 		return pointer.To(DateTime(v))
 	case nil:
 		return nil
-	case types.Regex:
-		return pointer.To(Regex(v))
-	case int32:
-		return pointer.To(Int32(v))
-	case types.Timestamp:
-		return pointer.To(Timestamp(v))
+	// case types.Regex:
+	// 	return pointer.To(Regex(v))
 	case int64:
 		return pointer.To(Int64(v))
-	case types.CString:
-		return pointer.To(CString(v))
+	case int32:
+		return pointer.To(Int64(v))
+		// case types.Timestamp:
+		// 	return pointer.To(Timestamp(v))
+		// case types.CString:
+		// 	return pointer.To(CString(v))
 	}
-
 	panic("not reached")
 }
 
@@ -166,46 +164,48 @@ func Unmarshal(data []byte) (any, error) {
 	switch v := v.(type) {
 	case map[string]any:
 		switch {
-		case v["ft"] != nil:
-			var o Double
-			err = o.UnmarshalJSON(data)
-			res = &o
-		case v["$k"] != nil:
-			var o Document
-			err = o.UnmarshalJSON(data)
-			res = &o
+		// case v["ft"] != nil:
+		// 	var o Double
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
+		// case v["$k"] != nil:
+		// 	var o Document
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
 		case v["keys"] != nil:
 			var o Document
 			err = o.UnmarshalJSON(data)
 			res = &o
-		case v["$b"] != nil:
-			var o Binary
-			err = o.UnmarshalJSON(data)
-			res = &o
+		// case v["$b"] != nil:
+		// 	var o Binary
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
 		case v["oid"] != nil:
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
-		case v["da"] != nil:
-			var o DateTime
-			err = o.UnmarshalJSON(data)
-			res = &o
-		case v["$r"] != nil:
-			var o Regex
-			err = o.UnmarshalJSON(data)
-			res = &o
-		case v["ts"] != nil:
-			var o Timestamp
-			err = o.UnmarshalJSON(data)
-			res = &o
-		case v["$l"] != nil:
-			var o Int64
-			err = o.UnmarshalJSON(data)
-			res = &o
-		case v["$c"] != nil:
-			var o CString
-			err = o.UnmarshalJSON(data)
-			res = &o
+		// case v["da"] != nil:
+		// 	var o DateTime
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
+		// case v["$r"] != nil:
+		// 	var o Regex
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
+		// case v["ts"] != nil:
+		// 	var o Timestamp
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
+		// case v["nl"] != nil:
+		// 	fmt.Println("fjson")
+		// 	fmt.Println(v)
+		// 	var o Int64
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
+		// case v["$c"] != nil:
+		// 	var o CString
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
 		default:
 			err = lazyerrors.Errorf("fjson.Unmarshal: unhandled map %v", v)
 		}
@@ -220,7 +220,19 @@ func Unmarshal(data []byte) (any, error) {
 	case nil:
 		res = nil
 	case float64:
-		res = pointer.To(Int32(v))
+		vType, err := decoderNumber(data)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+		switch vType := vType.(type) {
+		case int32:
+			res = pointer.To(Int32(vType))
+		case int64:
+			res = pointer.To(Int64(vType))
+		case float64:
+			res = pointer.To(Double(vType))
+		}
+
 	default:
 		err = lazyerrors.Errorf("fjson.Unmarshal: unhandled element %[1]T (%[1]v)", v)
 	}
@@ -264,4 +276,30 @@ func MarshalHANA(v any) ([]byte, error) {
 		return []byte("null"), nil
 	}
 
+}
+
+func decoderNumber(data []byte) (any, error) {
+	var err error = nil
+	var num any
+	d := json.NewDecoder(bytes.NewBuffer(data))
+	d.UseNumber()
+	if err := d.Decode(&num); err != nil {
+		panic(err)
+	}
+
+	switch num := num.(type) {
+	case json.Number:
+		if _, err := num.Int64(); err != nil {
+			return num.Float64()
+		}
+		numInt64, _ := num.Int64()
+		if numInt64 > 2147483647 {
+			return numInt64, nil
+		}
+		return int32(numInt64), nil
+
+	default:
+		err = lazyerrors.Errorf("Not a json.Number")
+	}
+	return true, err
 }

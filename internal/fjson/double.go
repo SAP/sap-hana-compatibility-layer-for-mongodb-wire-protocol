@@ -17,7 +17,6 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
-	"math"
 
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
@@ -28,11 +27,6 @@ type Double float64
 // fjsontype implements fjsontype interface.
 func (d *Double) fjsontype() {}
 
-type doubleJSON struct {
-	F any `json:"ft"`
-}
-
-// UnmarshalJSON implements fjsontype interface.
 func (d *Double) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte("null")) {
 		panic("null data")
@@ -42,7 +36,7 @@ func (d *Double) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 
-	var o doubleJSON
+	var o float64
 	if err := dec.Decode(&o); err != nil {
 		return lazyerrors.Error(err)
 	}
@@ -50,43 +44,16 @@ func (d *Double) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	switch f := o.F.(type) {
-	case float64:
-		*d = Double(f)
-	case string:
-		switch f {
-		case "Infinity":
-			*d = Double(math.Inf(1))
-		case "-Infinity":
-			*d = Double(math.Inf(-1))
-		case "NaN":
-			*d = Double(math.NaN())
-		default:
-			return lazyerrors.Errorf("fjson.Double.UnmarshalJSON: unexpected string %q", f)
-		}
-	default:
-		return lazyerrors.Errorf("fjson.Double.UnmarshalJSON: unexpected type %[1]T: %[1]v", f)
-	}
+	*d = Double(o)
 
 	return nil
 }
 
-// MarshalJSON implements fjsontype interface.
 func (d *Double) MarshalJSON() ([]byte, error) {
-	f := float64(*d)
-	var o doubleJSON
-	switch {
-	case math.IsInf(f, 1):
-		o.F = "Infinity"
-	case math.IsInf(f, -1):
-		o.F = "-Infinity"
-	case math.IsNaN(f):
-		o.F = "NaN"
-	default:
-		o.F = f
-	}
 
-	res, err := json.Marshal(o)
+	f := float64(*d)
+
+	res, err := json.Marshal(f)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
