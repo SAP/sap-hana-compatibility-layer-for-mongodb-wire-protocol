@@ -11,7 +11,7 @@ new.txt
 
 internal/util/version/version.txt
 internal/util/version/branch.txt
-internal/util/version/generate.sh
+# internal/util/version/generate.sh
 
 # for now
 **/testdata/fuzz
