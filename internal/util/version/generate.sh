@@ -3,4 +3,4 @@
 set -e
 
 git describe --tags --dirty --always > version.txt
-git branch --show-current > branch.tx
+git branch --show-current > branch.txt
