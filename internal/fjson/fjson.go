@@ -207,7 +207,9 @@ func Unmarshal(data []byte) (any, error) {
 		// 	err = o.UnmarshalJSON(data)
 		// 	res = &o
 		default:
-			err = lazyerrors.Errorf("fjson.Unmarshal: unhandled map %v", v)
+			var o Document
+			err = o.UnmarshalJSON(data)
+			res = &o
 		}
 	case string:
 		res = pointer.To(String(v))

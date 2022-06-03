@@ -17,6 +17,9 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
+	"log"
 
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
@@ -34,6 +37,12 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 		panic("null data")
 	}
 
+	jsonKeys, err := getJSONKeys(data)
+
+	if err != nil {
+		return lazyerrors.Error(err)
+	}
+
 	r := bytes.NewReader(data)
 	dec := json.NewDecoder(r)
 
@@ -45,35 +54,9 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	bKeys, ok := rawMessages["keys"]
-	if !ok {
-		return lazyerrors.Errorf("fjson.Document.Unmarshal: missing keys")
-	}
-
-	var keys []string
-
-	if err := json.Unmarshal(bKeys, &keys); err != nil {
-		if err.Error() == "json: cannot unmarshal string into Go value of type []string" {
-
-			var newbKeys []byte
-			for _, k := range bKeys {
-				if bytes.Equal([]byte{k}, []byte{92}) {
-					continue
-				}
-				newbKeys = append(newbKeys, k)
-			}
-			if err := json.Unmarshal(newbKeys[1:(len(newbKeys)-1)], &keys); err != nil {
-				return lazyerrors.Error(err)
-			}
-		} else {
-			return lazyerrors.Error(err)
-		}
-
-	}
-
 	td := types.MustMakeDocument()
 
-	for _, key := range keys {
+	for _, key := range jsonKeys {
 		bValue, ok := rawMessages[key]
 		if !ok {
 			return lazyerrors.Errorf("fjson.Document.UnmarshalJSON: missing key %q", key)
@@ -91,6 +74,75 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 
 	*doc = Document(td)
 	return nil
+}
+
+func getJSONKeys(docs []byte) (keys []string, error error) {
+
+	r := bytes.NewReader(docs)
+	dec := json.NewDecoder(r)
+	i := 0
+	isArray := 0
+	isDocument := 0
+	for {
+
+		t, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if i == 0 {
+			i++
+			continue
+		}
+
+		s := fmt.Sprintf("%v", t)
+
+		if s == "]" {
+			isArray--
+			continue
+		}
+
+		if s == "}" {
+			isDocument--
+			continue
+		}
+
+		if s == "[" {
+			i++
+			isArray++
+			continue
+		}
+
+		if s == "{" {
+			i++
+			isDocument++
+			continue
+		}
+
+		if i%2 == 0 {
+			i++
+			continue
+		}
+
+		if s == "]" {
+			isArray--
+			continue
+		}
+
+		if isArray > 0 || isDocument > 0 {
+			continue
+		}
+
+		keys = append(keys, fmt.Sprintf("%v", t))
+
+		i++
+	}
+
+	return keys, nil
 }
 
 // MarshalJSON implements fjsontype interface.
@@ -139,16 +191,15 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 	var b []byte
 	var err error
 
-	buf.WriteString("{\"keys\":")
-	b, err = json.Marshal(doc.Keys())
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	buf.Write(b)
+	buf.WriteByte('{')
+
+	i := 0
 
 	for _, key := range doc.Keys() {
 
-		buf.WriteByte(',')
+		if i != 0 {
+			buf.WriteByte(',')
+		}
 
 		if b, err = json.Marshal(key); err != nil {
 			return nil, lazyerrors.Error(err)
@@ -169,18 +220,12 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 			b, err = Marshal(value)
 		}
 
-		c := []byte{123, 34, 36, 111, 34}
-		res := bytes.Contains(b, c)
-		if res {
-			cAdd := []byte{123, 34, 111, 105, 100, 34}
-			b = append(cAdd, b[5:]...)
-		}
-
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		buf.Write(b)
+		i++
 	}
 
 	buf.WriteByte('}')
