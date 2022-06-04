@@ -17,7 +17,7 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"sort"
+	"strings"
 	"sync/atomic"
 
 	"github.com/DocStore/HANA_HWY/internal/hana"
@@ -198,24 +198,23 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	db := m["$db"].(string)
 
 	var jsonbTableExist bool
-	sql := "SELECT count(*) FROM PUBLIC.M_TABLES"
-	rows, err := h.hanaPool.Query(sql)
+	sql := "SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = $1 AND table_name = $2"
+	rows, err := h.hanaPool.QueryContext(ctx, sql, db, strings.ToUpper(collection))
 	if err != nil {
 		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 	}
 	defer rows.Close()
 
-	var address int
+	var address string
 	for rows.Next() {
 		err = rows.Scan(&address)
 		if err != nil {
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 	}
-	if address > 0 {
+	if address != "" {
 		jsonbTableExist = true
-	}
-	if address == 0 {
+	} else {
 		jsonbTableExist = false
 	}
 
@@ -224,7 +223,8 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		if jsonbTableExist {
 			return h.jsonb1, nil
 		}
-		return nil, nil
+
+		return nil, lazyerrors.Errorf("Collection %s does not exist", strings.ToUpper(collection))
 
 	case "insert", "update":
 		if jsonbTableExist {
@@ -232,13 +232,13 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		}
 
 		// check if SQL table exist
-		tables, err := h.hanaPool.Tables(ctx, db)
-		if err != nil {
-			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		}
-		if i := sort.SearchStrings(tables, collection); i < len(tables) && tables[i] == collection {
-			return nil, nil
-		}
+		// tables, err := h.hanaPool.Tables(ctx, db)
+		// if err != nil {
+		// 	return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
+		// }
+		// if i := sort.SearchStrings(tables, collection); i < len(tables) && tables[i] == collection {
+		// 	return nil, nil
+		// }
 
 		//Not sure if this is needed
 		// create schema if needed
