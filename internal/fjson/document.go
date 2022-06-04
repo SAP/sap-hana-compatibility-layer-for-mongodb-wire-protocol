@@ -190,12 +190,37 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 	var buf bytes.Buffer
 	var b []byte
 	var err error
+	var idInserted bool
 
 	buf.WriteByte('{')
+
+	objectId, _ := doc.Get("_id")
+
+	switch objectId := objectId.(type) {
+	case types.ObjectID:
+		buf.Write([]byte("\"_id\""))
+		buf.WriteByte(':')
+		b, err = Marshal(objectId)
+
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		buf.WriteByte(',')
+
+		idInserted = true
+	default:
+		idInserted = false
+	}
 
 	i := 0
 
 	for _, key := range doc.Keys() {
+
+		if key == "_id" && idInserted {
+			continue
+		}
 
 		if i != 0 {
 			buf.WriteByte(',')
