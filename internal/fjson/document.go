@@ -145,56 +145,18 @@ func getJSONKeys(docs []byte) (keys []string, error error) {
 	return keys, nil
 }
 
-// MarshalJSON implements fjsontype interface.
 func (doc *Document) MarshalJSON() ([]byte, error) {
-
-	td := types.Document(*doc)
-	var buf bytes.Buffer
-
-	buf.WriteString(`{"$k":`)
-	b, err := json.Marshal(td.Keys())
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-
-	buf.Write(b)
-
-	for _, key := range td.Keys() {
-		buf.WriteByte(',')
-
-		if b, err = json.Marshal(key); err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-
-		buf.Write(b)
-		buf.WriteByte(':')
-
-		value, err := td.Get(key)
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-		b, err := Marshal(value)
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-
-		buf.Write(b)
-	}
-
-	buf.WriteByte('}')
-	return buf.Bytes(), nil
-}
-
-func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 
 	var buf bytes.Buffer
 	var b []byte
 	var err error
 	var idInserted bool
 
+	td := types.Document(*doc)
+	fmt.Println(td)
 	buf.WriteByte('{')
 
-	objectId, _ := doc.Get("_id")
+	objectId, _ := td.Get("_id")
 
 	switch objectId := objectId.(type) {
 	case types.ObjectID:
@@ -207,7 +169,7 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		}
 
 		buf.Write(b)
-		buf.WriteByte(',')
+		//buf.WriteByte(',')
 
 		idInserted = true
 	default:
@@ -216,13 +178,13 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 
 	i := 0
 
-	for _, key := range doc.Keys() {
+	for _, key := range td.Keys() {
 
 		if key == "_id" && idInserted {
 			continue
 		}
 
-		if i != 0 {
+		if i != 0 || idInserted {
 			buf.WriteByte(',')
 		}
 
@@ -233,17 +195,12 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 		buf.Write(b)
 		buf.WriteByte(':')
 
-		value, err := doc.Get(key)
+		value, err := td.Get(key)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
-		switch value := value.(type) {
-		case types.Document:
-			b, err = MarshalHANA(value)
-		default:
-			b, err = Marshal(value)
-		}
+		b, err = Marshal(value)
 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
@@ -254,6 +211,7 @@ func MarshalJSONHANA(doc types.Document) ([]byte, error) {
 	}
 
 	buf.WriteByte('}')
+	fmt.Println(buf.String())
 	return buf.Bytes(), nil
 }
 
