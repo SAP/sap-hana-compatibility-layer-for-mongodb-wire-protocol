@@ -260,26 +260,6 @@ func Marshal(v any) ([]byte, error) {
 	return b, nil
 }
 
-func MarshalHANA(v any) ([]byte, error) {
-	if v == nil {
-		return []byte("null"), nil
-	}
-
-	switch v := v.(type) {
-	case types.ObjectID:
-		b, err := MarshalJSONObjectHANA(v)
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-		return b, nil
-	case types.Document:
-		return MarshalJSONHANA(v)
-	default:
-		return []byte("null"), nil
-	}
-
-}
-
 func decoderNumber(data []byte) (any, error) {
 	var err error = nil
 	var num any

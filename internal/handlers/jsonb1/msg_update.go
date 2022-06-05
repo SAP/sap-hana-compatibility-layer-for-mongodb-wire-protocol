@@ -220,7 +220,7 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 		case types.ObjectID:
 			updateSQL += "%s"
 			var bOBJ []byte
-			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+			if bOBJ, err = bson.ObjectID(value).MarshalJSON(); err != nil {
 				err = lazyerrors.Errorf("scalar: %w", err)
 			}
 			updateargs = append(updateargs, string(bOBJ))

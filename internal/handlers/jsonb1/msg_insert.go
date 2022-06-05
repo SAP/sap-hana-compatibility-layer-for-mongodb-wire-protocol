@@ -51,7 +51,7 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		sql := fmt.Sprintf("insert INTO %s VALUES ($1)", collection)
 
-		b, err := bson.MustConvertDocument(d).MarshalJSONHANA()
+		b, err := bson.MustConvertDocument(d).MarshalJSON()
 		if err != nil {
 			return nil, err
 		}

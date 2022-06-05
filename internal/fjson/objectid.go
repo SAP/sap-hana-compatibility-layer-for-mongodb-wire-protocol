@@ -79,18 +79,6 @@ func (obj *ObjectID) MarshalJSON() ([]byte, error) {
 	return res, nil
 }
 
-// MarshalJSONObjectHANA implements fjsontype interface.
-func MarshalJSONObjectHANA(obj types.ObjectID) ([]byte, error) {
-
-	byt := make([]byte, hex.EncodedLen(len(obj[:])))
-	byt = append([]byte{39}, byt...)
-	byt = append(byt, []byte{39, 125}...)
-
-	res := append([]byte{123, 34, 111, 105, 100, 34, 58, 32}, byt...)
-
-	return res, nil
-}
-
 // check interfaces
 var (
 	_ fjsontype = (*ObjectID)(nil)

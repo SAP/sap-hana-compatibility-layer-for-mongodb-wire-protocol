@@ -15,6 +15,7 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -291,7 +292,7 @@ func WhereDocument(document types.Document) (sql string, err error) {
 			sql += "%s"
 			var bOBJ []byte
 			var err1 error
-			if bOBJ, err1 = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+			if bOBJ, err1 = bson.ObjectID(value).MarshalJSON(); err != nil {
 				err = err1
 				return
 			}
@@ -398,10 +399,13 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 		case types.ObjectID:
 			sql += "%s"
 			var bOBJ []byte
-			if bOBJ, err = bson.ObjectID(value).MarshalJSONHANA(); err != nil {
+			if bOBJ, err = bson.ObjectID(value).MarshalJSON(); err != nil {
 				err = lazyerrors.Errorf("scalar: %w", err)
 			}
-			args = append(args, string(bOBJ))
+
+			oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+			oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+			args = append(args, string(oid))
 		default:
 			err = lazyerrors.Errorf("Scalar did not fit cases")
 			return
