@@ -14,35 +14,35 @@
 
 package fjson
 
-import (
-	"testing"
+// import (
+// 	"testing"
 
-	"github.com/AlekSi/pointer"
-)
+// 	"github.com/AlekSi/pointer"
+// )
 
-var regexTestCases = []testCase{{
-	name: "normal",
-	v:    pointer.To(Regex{Pattern: "hoffman", Options: "i"}),
-	j:    `{"$r":"hoffman","o":"i"}`,
-}, {
-	name: "empty",
-	v:    pointer.To(Regex{Pattern: "", Options: ""}),
-	j:    `{"$r":"","o":""}`,
-}, {
-	name: "EOF",
-	j:    `{`,
-	jErr: `unexpected EOF`,
-}}
+// var regexTestCases = []testCase{{
+// 	name: "normal",
+// 	v:    pointer.To(Regex{Pattern: "hoffman", Options: "i"}),
+// 	j:    `{"$r":"hoffman","o":"i"}`,
+// }, {
+// 	name: "empty",
+// 	v:    pointer.To(Regex{Pattern: "", Options: ""}),
+// 	j:    `{"$r":"","o":""}`,
+// }, {
+// 	name: "EOF",
+// 	j:    `{`,
+// 	jErr: `unexpected EOF`,
+// }}
 
-func TestRegex(t *testing.T) {
-	t.Parallel()
-	testJSON(t, regexTestCases, func() fjsontype { return new(Regex) })
-}
+// func TestRegex(t *testing.T) {
+// 	t.Parallel()
+// 	testJSON(t, regexTestCases, func() fjsontype { return new(Regex) })
+// }
 
-func FuzzRegex(f *testing.F) {
-	fuzzJSON(f, regexTestCases, func() fjsontype { return new(Regex) })
-}
+// func FuzzRegex(f *testing.F) {
+// 	fuzzJSON(f, regexTestCases, func() fjsontype { return new(Regex) })
+// }
 
-func BenchmarkRegex(b *testing.B) {
-	benchmark(b, regexTestCases, func() fjsontype { return new(Regex) })
-}
+// func BenchmarkRegex(b *testing.B) {
+// 	benchmark(b, regexTestCases, func() fjsontype { return new(Regex) })
+// }

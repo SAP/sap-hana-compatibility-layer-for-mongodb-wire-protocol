@@ -14,35 +14,35 @@
 
 package bson
 
-import (
-	"testing"
+// import (
+// 	"testing"
 
-	"github.com/AlekSi/pointer"
-)
+// 	"github.com/AlekSi/pointer"
+// )
 
-var timestampTestCases = []testCase{{
-	name: "one",
-	v:    pointer.To(Timestamp(1)),
-	b:    []byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-}, {
-	name: "zero",
-	v:    pointer.To(Timestamp(0)),
-	b:    []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-}, {
-	name: "EOF",
-	b:    []byte{0x00},
-	bErr: `unexpected EOF`,
-}}
+// var timestampTestCases = []testCase{{
+// 	name: "one",
+// 	v:    pointer.To(Timestamp(1)),
+// 	b:    []byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+// }, {
+// 	name: "zero",
+// 	v:    pointer.To(Timestamp(0)),
+// 	b:    []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+// }, {
+// 	name: "EOF",
+// 	b:    []byte{0x00},
+// 	bErr: `unexpected EOF`,
+// }}
 
-func TestTimestamp(t *testing.T) {
-	t.Parallel()
-	testBinary(t, timestampTestCases, func() bsontype { return new(Timestamp) })
-}
+// func TestTimestamp(t *testing.T) {
+// 	t.Parallel()
+// 	testBinary(t, timestampTestCases, func() bsontype { return new(Timestamp) })
+// }
 
-func FuzzTimestamp(f *testing.F) {
-	fuzzBinary(f, timestampTestCases, func() bsontype { return new(Timestamp) })
-}
+// func FuzzTimestamp(f *testing.F) {
+// 	fuzzBinary(f, timestampTestCases, func() bsontype { return new(Timestamp) })
+// }
 
-func BenchmarkTimestamp(b *testing.B) {
-	benchmark(b, timestampTestCases, func() bsontype { return new(Timestamp) })
-}
+// func BenchmarkTimestamp(b *testing.B) {
+// 	benchmark(b, timestampTestCases, func() bsontype { return new(Timestamp) })
+// }
