@@ -208,13 +208,10 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 func isPrintShardingStatus(docMap map[string]any) bool {
 
 	if docMap["find"] == "shards" && docMap["$db"] == "config" {
-		fmt.Println(1)
 		return true
 	} else if docMap["find"] == "mongos" && docMap["$db"] == "config" {
-		fmt.Println(2)
 		return true
 	} else if docMap["find"] == "version" && docMap["$db"] == "config" {
-		fmt.Println(3)
 		return true
 	}
 
