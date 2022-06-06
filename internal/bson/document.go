@@ -206,12 +206,12 @@ func (doc *Document) ReadFrom(r *bufio.Reader) error {
 		case tagNull:
 			doc.m[string(ename)] = nil
 
-		case tagRegex:
-			var v Regex
-			if err := v.ReadFrom(bufr); err != nil {
-				return lazyerrors.Errorf("bson.Document.ReadFrom (Regex): %w", err)
-			}
-			doc.m[string(ename)] = types.Regex(v)
+		// case tagRegex:
+		// 	var v Regex
+		// 	if err := v.ReadFrom(bufr); err != nil {
+		// 		return lazyerrors.Errorf("bson.Document.ReadFrom (Regex): %w", err)
+		// 	}
+		// 	doc.m[string(ename)] = types.Regex(v)
 
 		case tagInt32:
 			var v Int32
@@ -220,12 +220,12 @@ func (doc *Document) ReadFrom(r *bufio.Reader) error {
 			}
 			doc.m[string(ename)] = int32(v)
 
-		case tagTimestamp:
-			var v Timestamp
-			if err := v.ReadFrom(bufr); err != nil {
-				return lazyerrors.Errorf("bson.Document.ReadFrom (Timestamp): %w", err)
-			}
-			doc.m[string(ename)] = types.Timestamp(v)
+		// case tagTimestamp:
+		// 	var v Timestamp
+		// 	if err := v.ReadFrom(bufr); err != nil {
+		// 		return lazyerrors.Errorf("bson.Document.ReadFrom (Timestamp): %w", err)
+		// 	}
+		// 	doc.m[string(ename)] = types.Timestamp(v)
 
 		case tagInt64:
 			var v Int64
@@ -358,14 +358,14 @@ func (doc Document) MarshalBinary() ([]byte, error) {
 				return nil, lazyerrors.Error(err)
 			}
 
-		case types.Regex:
-			bufw.WriteByte(byte(tagRegex))
-			if err := ename.WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-			if err := Regex(elV).WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		// case types.Regex:
+		// 	bufw.WriteByte(byte(tagRegex))
+		// 	if err := ename.WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
+		// 	if err := Regex(elV).WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
 
 		case int32:
 			bufw.WriteByte(byte(tagInt32))
@@ -376,14 +376,14 @@ func (doc Document) MarshalBinary() ([]byte, error) {
 				return nil, lazyerrors.Error(err)
 			}
 
-		case types.Timestamp:
-			bufw.WriteByte(byte(tagTimestamp))
-			if err := ename.WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-			if err := Timestamp(elV).WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		// case types.Timestamp:
+		// 	bufw.WriteByte(byte(tagTimestamp))
+		// 	if err := ename.WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
+		// 	if err := Timestamp(elV).WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
 
 		case int64:
 			bufw.WriteByte(byte(tagInt64))

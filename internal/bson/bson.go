@@ -66,16 +66,16 @@ func fromBSON(v bsontype) any {
 		return time.Time(*v)
 	case nil:
 		return nil
-	case *Regex:
-		return types.Regex(*v)
+	// case *Regex:
+	// 	return types.Regex(*v)
 	case *Int32:
 		return int32(*v)
-	case *Timestamp:
-		return types.Timestamp(*v)
+	// case *Timestamp:
+	// 	return types.Timestamp(*v)
 	case *Int64:
 		return int64(*v)
-	case *CString:
-		return types.CString(*v)
+		// case *CString:
+		// 	return types.CString(*v)
 	}
 
 	panic("not reached") // for go-sumtype to work
@@ -102,16 +102,16 @@ func toBSON(v any) bsontype {
 		return pointer.To(DateTime(v))
 	case nil:
 		return nil
-	case types.Regex:
-		return pointer.To(Regex(v))
+	// case types.Regex:
+	// 	return pointer.To(Regex(v))
 	case int32:
 		return pointer.To(Int32(v))
-	case types.Timestamp:
-		return pointer.To(Timestamp(v))
+	// case types.Timestamp:
+	// 	return pointer.To(Timestamp(v))
 	case int64:
 		return pointer.To(Int64(v))
-	case types.CString:
-		return pointer.To(CString(v))
+		// case types.CString:
+		// 	return pointer.To(CString(v))
 	}
 
 	panic("not reached")

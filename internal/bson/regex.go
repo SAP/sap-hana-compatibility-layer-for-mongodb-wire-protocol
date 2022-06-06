@@ -14,86 +14,86 @@
 
 package bson
 
-import (
-	"bufio"
-	"bytes"
+// import (
+// 	"bufio"
+// 	"bytes"
 
-	"github.com/DocStore/HANA_HWY/internal/fjson"
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/fjson"
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-// Regex represents BSON Regex data type.
-type Regex types.Regex
+// // Regex represents BSON Regex data type.
+// type Regex types.Regex
 
-func (regex *Regex) bsontype() {}
+// func (regex *Regex) bsontype() {}
 
-// ReadFrom implements bsontype interface.
-func (regex *Regex) ReadFrom(r *bufio.Reader) error {
-	var pattern, options CString
-	if err := pattern.ReadFrom(r); err != nil {
-		return lazyerrors.Errorf("bson.Regex.ReadFrom (regex pattern): %w", err)
-	}
-	if err := options.ReadFrom(r); err != nil {
-		return lazyerrors.Errorf("bson.Regex.ReadFrom (regex options): %w", err)
-	}
+// // ReadFrom implements bsontype interface.
+// func (regex *Regex) ReadFrom(r *bufio.Reader) error {
+// 	var pattern, options CString
+// 	if err := pattern.ReadFrom(r); err != nil {
+// 		return lazyerrors.Errorf("bson.Regex.ReadFrom (regex pattern): %w", err)
+// 	}
+// 	if err := options.ReadFrom(r); err != nil {
+// 		return lazyerrors.Errorf("bson.Regex.ReadFrom (regex options): %w", err)
+// 	}
 
-	*regex = Regex{
-		Pattern: string(pattern),
-		Options: string(options),
-	}
-	return nil
-}
+// 	*regex = Regex{
+// 		Pattern: string(pattern),
+// 		Options: string(options),
+// 	}
+// 	return nil
+// }
 
-// WriteTo implements bsontype interface.
-func (regex Regex) WriteTo(w *bufio.Writer) error {
-	v, err := regex.MarshalBinary()
-	if err != nil {
-		return lazyerrors.Errorf("bson.Regex.WriteTo: %w", err)
-	}
+// // WriteTo implements bsontype interface.
+// func (regex Regex) WriteTo(w *bufio.Writer) error {
+// 	v, err := regex.MarshalBinary()
+// 	if err != nil {
+// 		return lazyerrors.Errorf("bson.Regex.WriteTo: %w", err)
+// 	}
 
-	_, err = w.Write(v)
-	if err != nil {
-		return lazyerrors.Errorf("bson.Regex.WriteTo: %w", err)
-	}
+// 	_, err = w.Write(v)
+// 	if err != nil {
+// 		return lazyerrors.Errorf("bson.Regex.WriteTo: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// MarshalBinary implements bsontype interface.
-func (regex Regex) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
-	bufw := bufio.NewWriter(&buf)
+// // MarshalBinary implements bsontype interface.
+// func (regex Regex) MarshalBinary() ([]byte, error) {
+// 	var buf bytes.Buffer
+// 	bufw := bufio.NewWriter(&buf)
 
-	if err := CString(regex.Pattern).WriteTo(bufw); err != nil {
-		return nil, err
-	}
-	if err := CString(regex.Options).WriteTo(bufw); err != nil {
-		return nil, err
-	}
+// 	if err := CString(regex.Pattern).WriteTo(bufw); err != nil {
+// 		return nil, err
+// 	}
+// 	if err := CString(regex.Options).WriteTo(bufw); err != nil {
+// 		return nil, err
+// 	}
 
-	bufw.Flush()
+// 	bufw.Flush()
 
-	return buf.Bytes(), nil
-}
+// 	return buf.Bytes(), nil
+// }
 
-// UnmarshalJSON implements bsontype interface.
-func (regex *Regex) UnmarshalJSON(data []byte) error {
-	var regexJ fjson.Regex
-	if err := regexJ.UnmarshalJSON(data); err != nil {
-		return err
-	}
+// // UnmarshalJSON implements bsontype interface.
+// func (regex *Regex) UnmarshalJSON(data []byte) error {
+// 	var regexJ fjson.Regex
+// 	if err := regexJ.UnmarshalJSON(data); err != nil {
+// 		return err
+// 	}
 
-	*regex = Regex(regexJ)
-	return nil
-}
+// 	*regex = Regex(regexJ)
+// 	return nil
+// }
 
-// MarshalJSON implements bsontype interface.
-func (regex Regex) MarshalJSON() ([]byte, error) {
-	return fjson.Marshal(fromBSON(&regex))
-}
+// // MarshalJSON implements bsontype interface.
+// func (regex Regex) MarshalJSON() ([]byte, error) {
+// 	return fjson.Marshal(fromBSON(&regex))
+// }
 
-// check interfaces
-var (
-	_ bsontype = (*Regex)(nil)
-)
+// // check interfaces
+// var (
+// 	_ bsontype = (*Regex)(nil)
+// )
