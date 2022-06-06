@@ -172,12 +172,12 @@ func (doc *Document) ReadFrom(r *bufio.Reader) error {
 			}
 			doc.m[string(ename)] = string(v)
 
-		case tagBinary:
-			var v Binary
-			if err := v.ReadFrom(bufr); err != nil {
-				return lazyerrors.Errorf("bson.Document.ReadFrom (Binary): %w", err)
-			}
-			doc.m[string(ename)] = types.Binary(v)
+		// case tagBinary:
+		// 	var v Binary
+		// 	if err := v.ReadFrom(bufr); err != nil {
+		// 		return lazyerrors.Errorf("bson.Document.ReadFrom (Binary): %w", err)
+		// 	}
+		// 	doc.m[string(ename)] = types.Binary(v)
 
 		case tagUndefined:
 			return lazyerrors.Errorf("bson.Document.ReadFrom: unhandled element type `Undefined (value) — Deprecated`")
@@ -316,14 +316,14 @@ func (doc Document) MarshalBinary() ([]byte, error) {
 				return nil, lazyerrors.Error(err)
 			}
 
-		case types.Binary:
-			bufw.WriteByte(byte(tagBinary))
-			if err := ename.WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-			if err := Binary(elV).WriteTo(bufw); err != nil {
-				return nil, lazyerrors.Error(err)
-			}
+		// case types.Binary:
+		// 	bufw.WriteByte(byte(tagBinary))
+		// 	if err := ename.WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
+		// 	if err := Binary(elV).WriteTo(bufw); err != nil {
+		// 		return nil, lazyerrors.Error(err)
+		// 	}
 
 		case types.ObjectID:
 			bufw.WriteByte(byte(tagObjectID))

@@ -56,8 +56,8 @@ func fromBSON(v bsontype) any {
 		return float64(*v)
 	case *String:
 		return string(*v)
-	case *Binary:
-		return types.Binary(*v)
+	// case *Binary:
+	// 	return types.Binary(*v)
 	case *ObjectID:
 		return types.ObjectID(*v)
 	case *Bool:
@@ -92,8 +92,8 @@ func toBSON(v any) bsontype {
 		return pointer.To(Double(v))
 	case string:
 		return pointer.To(String(v))
-	case types.Binary:
-		return pointer.To(Binary(v))
+	// case types.Binary:
+	// 	return pointer.To(Binary(v))
 	case types.ObjectID:
 		return pointer.To(ObjectID(v))
 	case bool:

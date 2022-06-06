@@ -14,55 +14,55 @@
 
 package bson
 
-import (
-	"testing"
+// import (
+// 	"testing"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// )
 
-var binaryTestCases = []testCase{{
-	name: "foo",
-	v: &Binary{
-		Subtype: types.BinaryUser,
-		B:       []byte("foo"),
-	},
-	b: []byte{0x03, 0x00, 0x00, 0x00, 0x80, 0x66, 0x6f, 0x6f},
-}, {
-	name: "empty",
-	v: &Binary{
-		Subtype: types.BinaryGeneric,
-		B:       []byte{},
-	},
-	b: []byte{0x00, 0x00, 0x00, 0x00, 0x00},
-}, {
-	name: "invalid subtype",
-	v: &Binary{
-		Subtype: 0xff,
-		B:       []byte{},
-	},
-	b: []byte{0x00, 0x00, 0x00, 0x00, 0xff},
-}, {
-	name: "extra JSON fields",
-	v: &Binary{
-		Subtype: types.BinaryUser,
-		B:       []byte("foo"),
-	},
-	b: []byte{0x03, 0x00, 0x00, 0x00, 0x80, 0x66, 0x6f, 0x6f},
-}, {
-	name: "EOF",
-	b:    []byte{0x00},
-	bErr: `unexpected EOF`,
-}}
+// var binaryTestCases = []testCase{{
+// 	name: "foo",
+// 	v: &Binary{
+// 		Subtype: types.BinaryUser,
+// 		B:       []byte("foo"),
+// 	},
+// 	b: []byte{0x03, 0x00, 0x00, 0x00, 0x80, 0x66, 0x6f, 0x6f},
+// }, {
+// 	name: "empty",
+// 	v: &Binary{
+// 		Subtype: types.BinaryGeneric,
+// 		B:       []byte{},
+// 	},
+// 	b: []byte{0x00, 0x00, 0x00, 0x00, 0x00},
+// }, {
+// 	name: "invalid subtype",
+// 	v: &Binary{
+// 		Subtype: 0xff,
+// 		B:       []byte{},
+// 	},
+// 	b: []byte{0x00, 0x00, 0x00, 0x00, 0xff},
+// }, {
+// 	name: "extra JSON fields",
+// 	v: &Binary{
+// 		Subtype: types.BinaryUser,
+// 		B:       []byte("foo"),
+// 	},
+// 	b: []byte{0x03, 0x00, 0x00, 0x00, 0x80, 0x66, 0x6f, 0x6f},
+// }, {
+// 	name: "EOF",
+// 	b:    []byte{0x00},
+// 	bErr: `unexpected EOF`,
+// }}
 
-func TestBinary(t *testing.T) {
-	t.Parallel()
-	testBinary(t, binaryTestCases, func() bsontype { return new(Binary) })
-}
+// func TestBinary(t *testing.T) {
+// 	t.Parallel()
+// 	testBinary(t, binaryTestCases, func() bsontype { return new(Binary) })
+// }
 
-func FuzzBinary(f *testing.F) {
-	fuzzBinary(f, binaryTestCases, func() bsontype { return new(Binary) })
-}
+// func FuzzBinary(f *testing.F) {
+// 	fuzzBinary(f, binaryTestCases, func() bsontype { return new(Binary) })
+// }
 
-func BenchmarkBinary(b *testing.B) {
-	benchmark(b, binaryTestCases, func() bsontype { return new(Binary) })
-}
+// func BenchmarkBinary(b *testing.B) {
+// 	benchmark(b, binaryTestCases, func() bsontype { return new(Binary) })
+// }
