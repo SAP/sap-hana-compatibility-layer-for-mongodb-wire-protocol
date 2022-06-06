@@ -275,7 +275,7 @@ func decoderNumber(data []byte) (any, error) {
 			return num.Float64()
 		}
 		numInt64, _ := num.Int64()
-		if numInt64 > 2147483647 {
+		if numInt64 > 2147483647 || numInt64 < -2147483648 {
 			return numInt64, nil
 		}
 		return int32(numInt64), nil

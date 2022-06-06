@@ -153,7 +153,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	var idInserted bool
 
 	td := types.Document(*doc)
-	fmt.Println(td)
+
 	buf.WriteByte('{')
 
 	objectId, _ := td.Get("_id")
@@ -211,7 +211,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	}
 
 	buf.WriteByte('}')
-	fmt.Println(buf.String())
+
 	return buf.Bytes(), nil
 }
 

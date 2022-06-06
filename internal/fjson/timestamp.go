@@ -14,58 +14,58 @@
 
 package fjson
 
-import (
-	"bytes"
-	"encoding/json"
+// import (
+// 	"bytes"
+// 	"encoding/json"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-// Timestamp represents BSON Timestamp data type.
-type Timestamp types.Timestamp
+// // Timestamp represents BSON Timestamp data type.
+// type Timestamp types.Timestamp
 
-// fjsontype implements fjsontype interface.
-func (ts *Timestamp) fjsontype() {}
+// // fjsontype implements fjsontype interface.
+// func (ts *Timestamp) fjsontype() {}
 
-type timestampJSON struct {
-	T uint64 `json:"ts,string"`
-}
+// type timestampJSON struct {
+// 	T uint64 `json:"ts,string"`
+// }
 
-// UnmarshalJSON implements fjsontype interface.
-func (ts *Timestamp) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte("null")) {
-		panic("null data")
-	}
+// // UnmarshalJSON implements fjsontype interface.
+// func (ts *Timestamp) UnmarshalJSON(data []byte) error {
+// 	if bytes.Equal(data, []byte("null")) {
+// 		panic("null data")
+// 	}
 
-	r := bytes.NewReader(data)
-	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
+// 	r := bytes.NewReader(data)
+// 	dec := json.NewDecoder(r)
+// 	dec.DisallowUnknownFields()
 
-	var o timestampJSON
-	if err := dec.Decode(&o); err != nil {
-		return lazyerrors.Error(err)
-	}
-	if err := checkConsumed(dec, r); err != nil {
-		return lazyerrors.Error(err)
-	}
+// 	var o timestampJSON
+// 	if err := dec.Decode(&o); err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
+// 	if err := checkConsumed(dec, r); err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
 
-	*ts = Timestamp(o.T)
-	return nil
-}
+// 	*ts = Timestamp(o.T)
+// 	return nil
+// }
 
-// MarshalJSON implements fjsontype interface.
-func (ts *Timestamp) MarshalJSON() ([]byte, error) {
-	res, err := json.Marshal(timestampJSON{
-		T: uint64(*ts),
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	return res, nil
-}
+// // MarshalJSON implements fjsontype interface.
+// func (ts *Timestamp) MarshalJSON() ([]byte, error) {
+// 	res, err := json.Marshal(timestampJSON{
+// 		T: uint64(*ts),
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
+// 	return res, nil
+// }
 
-// check interfaces
-var (
-	_ fjsontype = (*Timestamp)(nil)
-)
+// // check interfaces
+// var (
+// 	_ fjsontype = (*Timestamp)(nil)
+// )

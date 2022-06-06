@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/DocStore/HANA_HWY/internal/hana"
 	"github.com/DocStore/HANA_HWY/internal/handlers/common"
@@ -41,7 +40,6 @@ func (h *Handler) MsgDrop(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, er
 	db := m["$db"].(string)
 
 	if err = h.hanaPool.DropTable(ctx, collection); err != nil {
-		fmt.Println(err)
 
 		if err == hana.ErrNotExist {
 			return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "ns not found")

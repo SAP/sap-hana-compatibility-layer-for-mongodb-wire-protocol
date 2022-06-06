@@ -14,58 +14,58 @@
 
 package fjson
 
-import (
-	"bytes"
-	"encoding/json"
+// import (
+// 	"bytes"
+// 	"encoding/json"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-// CString represents BSON CString data type.
-type CString types.CString
+// // CString represents BSON CString data type.
+// type CString types.CString
 
-// fjsontype implements fjsontype interface.
-func (cstr *CString) fjsontype() {}
+// // fjsontype implements fjsontype interface.
+// func (cstr *CString) fjsontype() {}
 
-type cstringJSON struct {
-	CString string `json:"$c"`
-}
+// type cstringJSON struct {
+// 	CString string `json:"$c"`
+// }
 
-// UnmarshalJSON implements fjsontype interface.
-func (cstr *CString) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte("null")) {
-		panic("null data")
-	}
+// // UnmarshalJSON implements fjsontype interface.
+// func (cstr *CString) UnmarshalJSON(data []byte) error {
+// 	if bytes.Equal(data, []byte("null")) {
+// 		panic("null data")
+// 	}
 
-	r := bytes.NewReader(data)
-	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
+// 	r := bytes.NewReader(data)
+// 	dec := json.NewDecoder(r)
+// 	dec.DisallowUnknownFields()
 
-	var o cstringJSON
-	if err := dec.Decode(&o); err != nil {
-		return lazyerrors.Error(err)
-	}
-	if err := checkConsumed(dec, r); err != nil {
-		return lazyerrors.Error(err)
-	}
+// 	var o cstringJSON
+// 	if err := dec.Decode(&o); err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
+// 	if err := checkConsumed(dec, r); err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
 
-	*cstr = CString(o.CString)
-	return nil
-}
+// 	*cstr = CString(o.CString)
+// 	return nil
+// }
 
-// MarshalJSON implements fjsontype interface.
-func (cstr *CString) MarshalJSON() ([]byte, error) {
-	res, err := json.Marshal(cstringJSON{
-		CString: string(*cstr),
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	return res, nil
-}
+// // MarshalJSON implements fjsontype interface.
+// func (cstr *CString) MarshalJSON() ([]byte, error) {
+// 	res, err := json.Marshal(cstringJSON{
+// 		CString: string(*cstr),
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
+// 	return res, nil
+// }
 
-// check interfaces
-var (
-	_ fjsontype = (*CString)(nil)
-)
+// // check interfaces
+// var (
+// 	_ fjsontype = (*CString)(nil)
+// )
