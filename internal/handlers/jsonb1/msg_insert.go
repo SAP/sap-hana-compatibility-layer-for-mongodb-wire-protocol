@@ -32,7 +32,12 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		return nil, lazyerrors.Error(err)
 	}
 
-	common.Unimplemented(&document, "writeConcern", "ordered", "bypassDocumentValidation", "comment")
+	err = (common.Unimplemented(&document, "writeConcern", "bypassDocumentValidation", "comment"))
+	if err != nil {
+		return nil, err
+	}
+
+	common.Ignored(&document, h.l, "ordered")
 
 	m := document.Map()
 
