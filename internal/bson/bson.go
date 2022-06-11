@@ -27,6 +27,7 @@ import (
 	"bufio"
 	"encoding"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/AlekSi/pointer"
@@ -79,6 +80,33 @@ func fromBSON(v bsontype) any {
 	}
 
 	panic("not reached") // for go-sumtype to work
+}
+
+func fromBSONHANA(v bsontype) (any, error) {
+	switch v := v.(type) {
+	case *Document:
+		return types.MustConvertDocument(v), nil
+	case *Array:
+		return pointer.To(types.Array(*v)), nil
+	case *Double:
+		return float64(*v), nil
+	case *String:
+		return string(*v), nil
+	case *ObjectID:
+		return types.ObjectID(*v), nil
+	case *Bool:
+		return bool(*v), nil
+	case nil:
+		return nil, nil
+	case *Int32:
+		return int32(*v), nil
+	case *Int64:
+		return int64(*v), nil
+	default:
+		err := fmt.Errorf("Support for datatype %s not implemented yet", v)
+		return nil, err
+	}
+
 }
 
 //nolint:deadcode // remove later if it is not needed

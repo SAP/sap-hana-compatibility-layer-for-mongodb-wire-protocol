@@ -147,6 +147,31 @@ func toFJSON(v any) fjsontype {
 	panic("not reached")
 }
 
+func toFJSONHANA(v any) (fjsontype, error) {
+	switch v := v.(type) {
+	case types.Document:
+		return pointer.To(Document(v)), nil
+	case *types.Array:
+		return pointer.To(Array(*v)), nil
+	case float64:
+		return pointer.To(Double(v)), nil
+	case string:
+		return pointer.To(String(v)), nil
+	case types.ObjectID:
+		return pointer.To(ObjectID(v)), nil
+	case bool:
+		return pointer.To(Bool(v)), nil
+	case nil:
+		return nil, nil
+	case int64:
+		return pointer.To(Int64(v)), nil
+	case int32:
+		return pointer.To(Int64(v)), nil
+	default:
+		return nil, lazyerrors.Errorf("Datatype %T not supported", v)
+	}
+}
+
 // Unmarshal decodes the given fjson-encoded data.
 func Unmarshal(data []byte) (any, error) {
 	var v any
@@ -172,10 +197,10 @@ func Unmarshal(data []byte) (any, error) {
 		// 	var o Document
 		// 	err = o.UnmarshalJSON(data)
 		// 	res = &o
-		case v["keys"] != nil:
-			var o Document
-			err = o.UnmarshalJSON(data)
-			res = &o
+		// case v["keys"] != nil:
+		// 	var o Document
+		// 	err = o.UnmarshalJSON(data)
+		// 	res = &o
 		// case v["$b"] != nil:
 		// 	var o Binary
 		// 	err = o.UnmarshalJSON(data)
@@ -253,6 +278,30 @@ func Marshal(v any) ([]byte, error) {
 	}
 
 	b, err := toFJSON(v).MarshalJSON()
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+
+	return b, nil
+}
+
+func MarshalHANA(v any) ([]byte, error) {
+	if v == nil {
+		return []byte("null"), nil
+	}
+
+	f, err := toFJSONHANA(v)
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+	var b []byte
+	switch f := f.(type) {
+	case *Document:
+		b, err = f.MarshalJSONHANA()
+	default:
+		b, err = f.MarshalJSON()
+	}
+
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}

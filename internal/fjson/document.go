@@ -153,7 +153,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	var idInserted bool
 
 	td := types.Document(*doc)
-	fmt.Println(td)
+
 	buf.WriteByte('{')
 
 	objectId, _ := td.Get("_id")
@@ -169,7 +169,6 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 		}
 
 		buf.Write(b)
-		//buf.WriteByte(',')
 
 		idInserted = true
 	default:
@@ -211,7 +210,77 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	}
 
 	buf.WriteByte('}')
-	fmt.Println(buf.String())
+
+	return buf.Bytes(), nil
+}
+
+func (doc *Document) MarshalJSONHANA() ([]byte, error) {
+
+	var buf bytes.Buffer
+	var b []byte
+	var err error
+	var idInserted bool
+
+	td := types.Document(*doc)
+
+	buf.WriteByte('{')
+
+	objectId, _ := td.Get("_id")
+
+	switch objectId := objectId.(type) {
+	case types.ObjectID:
+		buf.Write([]byte("\"_id\""))
+		buf.WriteByte(':')
+		b, err = MarshalHANA(objectId)
+
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		//buf.WriteByte(',')
+
+		idInserted = true
+	default:
+		idInserted = false
+	}
+
+	i := 0
+
+	for _, key := range td.Keys() {
+
+		if key == "_id" && idInserted {
+			continue
+		}
+
+		if i != 0 || idInserted {
+			buf.WriteByte(',')
+		}
+
+		if b, err = json.Marshal(key); err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		buf.WriteByte(':')
+
+		value, err := td.Get(key)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		b, err = MarshalHANA(value)
+
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
+		buf.Write(b)
+		i++
+	}
+
+	buf.WriteByte('}')
+
 	return buf.Bytes(), nil
 }
 
