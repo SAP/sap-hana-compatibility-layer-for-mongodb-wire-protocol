@@ -56,7 +56,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	var selected, updated int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
-
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -64,13 +63,11 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		docM := doc.(types.Document).Map()
 
 		whereSQL, args, err := common.WhereHANA(docM["q"].(types.Document))
-
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
 		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
-
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -137,7 +134,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 }
 
 func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
-
 	uninmplementedFields := []string{
 		"$currentDate",
 		"$inc",

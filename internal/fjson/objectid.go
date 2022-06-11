@@ -68,11 +68,9 @@ func (obj *ObjectID) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON implements fjsontype interface.
 func (obj *ObjectID) MarshalJSON() ([]byte, error) {
-
 	res, err := json.Marshal(objectIDJSON{
 		O: hex.EncodeToString(obj[:]),
 	})
-
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}

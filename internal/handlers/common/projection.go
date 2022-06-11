@@ -20,7 +20,6 @@ import (
 )
 
 func isProjectionInclusion(projection types.Document) (inclusion bool, err error) {
-
 	var exclusion bool
 	for _, k := range projection.Keys() {
 		if k == "_id" { // _id is a special case and can be both
@@ -72,11 +71,9 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 		}
 	}
 	return
-
 }
 
 func inclusionProjection(projection types.Document) (sql string) {
-
 	keysSQL := "{\"ignoreKeys\": \"keys\", \"keys\": '[\"_id\", \"ignoreKeys\" "
 	sql = ", \"_id\": \"_id\""
 
@@ -97,7 +94,6 @@ func inclusionProjection(projection types.Document) (sql string) {
 }
 
 func Projection(projection types.Document) (sql string, exclusion bool, projectBool bool, err error) {
-
 	unimplementedFields := []string{
 		"$",
 		"$elemMatch",
@@ -135,7 +131,6 @@ func Projection(projection types.Document) (sql string, exclusion bool, projectB
 }
 
 func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
-
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
 		if errGet != nil {
@@ -156,7 +151,6 @@ func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bo
 }
 
 func projectDocument(doc *types.Document, projection types.Document, exclusion bool) (err error) {
-
 	projectionMap := projection.Map()
 
 	for k1 := range doc.Map() {
@@ -172,7 +166,7 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 			if exclusion { // k1 from doc is absent in projection, remove from doc only if projection type inclusion
 				continue
 			}
-			//inclusion
+			// inclusion
 			doc.Remove(k1)
 			continue
 		}
@@ -222,5 +216,4 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 		doc.Remove("ignoreKeys")
 	}
 	return nil
-
 }

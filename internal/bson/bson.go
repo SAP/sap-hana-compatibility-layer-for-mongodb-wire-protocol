@@ -106,7 +106,6 @@ func fromBSONHANA(v bsontype) (any, error) {
 		err := fmt.Errorf("Support for datatype %s not implemented yet", v)
 		return nil, err
 	}
-
 }
 
 //nolint:deadcode // remove later if it is not needed

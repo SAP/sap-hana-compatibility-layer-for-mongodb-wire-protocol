@@ -133,7 +133,6 @@ func (a *Array) Append(values ...any) error {
 }
 
 func (a *Array) Contains(key string) bool {
-
 	for _, value := range a.s {
 		switch value := value.(type) {
 		case string:
