@@ -14,62 +14,62 @@
 
 package fjson
 
-import (
-	"bytes"
-	"encoding/json"
+// import (
+// 	"bytes"
+// 	"encoding/json"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-// Binary represents BSON Binary data type.
-type Binary types.Binary
+// // Binary represents BSON Binary data type.
+// type Binary types.Binary
 
-// fjsontype implements fjsontype interface.
-func (bin *Binary) fjsontype() {}
+// // fjsontype implements fjsontype interface.
+// func (bin *Binary) fjsontype() {}
 
-type binaryJSON struct {
-	B []byte `json:"$b"`
-	S byte   `json:"s"`
-}
+// type binaryJSON struct {
+// 	B []byte `json:"bin"`
+// 	S byte   `json:"s"`
+// }
 
-// UnmarshalJSON implements fjsontype interface.
-func (bin *Binary) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte("null")) {
-		panic("null data")
-	}
+// // UnmarshalJSON implements fjsontype interface.
+// func (bin *Binary) UnmarshalJSON(data []byte) error {
+// 	if bytes.Equal(data, []byte("null")) {
+// 		panic("null data")
+// 	}
 
-	r := bytes.NewReader(data)
-	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
+// 	r := bytes.NewReader(data)
+// 	dec := json.NewDecoder(r)
+// 	dec.DisallowUnknownFields()
 
-	var o binaryJSON
-	err := dec.Decode(&o)
-	if err != nil {
-		return lazyerrors.Error(err)
-	}
-	if err = checkConsumed(dec, r); err != nil {
-		return lazyerrors.Error(err)
-	}
+// 	var o binaryJSON
+// 	err := dec.Decode(&o)
+// 	if err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
+// 	if err = checkConsumed(dec, r); err != nil {
+// 		return lazyerrors.Error(err)
+// 	}
 
-	bin.B = o.B
-	bin.Subtype = types.BinarySubtype(o.S)
-	return nil
-}
+// 	bin.B = o.B
+// 	bin.Subtype = types.BinarySubtype(o.S)
+// 	return nil
+// }
 
-// MarshalJSON implements fjsontype interface.
-func (bin *Binary) MarshalJSON() ([]byte, error) {
-	res, err := json.Marshal(binaryJSON{
-		B: bin.B,
-		S: byte(bin.Subtype),
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	return res, nil
-}
+// // MarshalJSON implements fjsontype interface.
+// func (bin *Binary) MarshalJSON() ([]byte, error) {
+// 	res, err := json.Marshal(binaryJSON{
+// 		B: bin.B,
+// 		S: byte(bin.Subtype),
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
+// 	return res, nil
+// }
 
-// check interfaces
-var (
-	_ fjsontype = (*Binary)(nil)
-)
+// // check interfaces
+// var (
+// 	_ fjsontype = (*Binary)(nil)
+// )

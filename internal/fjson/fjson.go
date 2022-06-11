@@ -209,10 +209,10 @@ func Unmarshal(data []byte) (any, error) {
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
-		// case v["da"] != nil:
-		// 	var o DateTime
-		// 	err = o.UnmarshalJSON(data)
-		// 	res = &o
+		case v["da"] != nil:
+			var o DateTime
+			err = o.UnmarshalJSON(data)
+			res = &o
 		// case v["$r"] != nil:
 		// 	var o Regex
 		// 	err = o.UnmarshalJSON(data)
@@ -324,7 +324,7 @@ func decoderNumber(data []byte) (any, error) {
 			return num.Float64()
 		}
 		numInt64, _ := num.Int64()
-		if numInt64 > 2147483647 {
+		if numInt64 > 2147483647 || numInt64 < -2147483648 {
 			return numInt64, nil
 		}
 		return int32(numInt64), nil

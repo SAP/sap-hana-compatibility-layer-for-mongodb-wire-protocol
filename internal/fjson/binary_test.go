@@ -14,58 +14,58 @@
 
 package fjson
 
-import (
-	"testing"
+// import (
+// 	"testing"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// )
 
-var binaryTestCases = []testCase{{
-	name: "foo",
-	v: &Binary{
-		Subtype: types.BinaryUser,
-		B:       []byte("foo"),
-	},
-	j: `{"$b":"Zm9v","s":128}`,
-}, {
-	name: "empty",
-	v: &Binary{
-		Subtype: types.BinaryGeneric,
-		B:       []byte{},
-	},
-	j:      `{"$b":""}`,
-	canonJ: `{"$b":"","s":0}`,
-}, {
-	name: "invalid subtype",
-	v: &Binary{
-		Subtype: 0xff,
-		B:       []byte{},
-	},
-	j: `{"$b":"","s":255}`,
-}, {
-	name: "extra JSON fields",
-	v: &Binary{
-		Subtype: types.BinaryUser,
-		B:       []byte("foo"),
-	},
-	j:      `{"$b":"Zm9v","s":128,"foo":"bar"}`,
-	canonJ: `{"$b":"Zm9v","s":128}`,
-	jErr:   `json: unknown field "foo"`,
-}, {
-	name: "EOF",
-	j:    `{`,
-	jErr: `unexpected EOF`,
-}}
+// var binaryTestCases = []testCase{{
+// 	name: "foo",
+// 	v: &Binary{
+// 		Subtype: types.BinaryUser,
+// 		B:       []byte("foo"),
+// 	},
+// 	j: `{"bin":"Zm9v","s":128}`,
+// }, {
+// 	name: "empty",
+// 	v: &Binary{
+// 		Subtype: types.BinaryGeneric,
+// 		B:       []byte{},
+// 	},
+// 	j:      `{"bin":""}`,
+// 	canonJ: `{"bin":"","s":0}`,
+// }, {
+// 	name: "invalid subtype",
+// 	v: &Binary{
+// 		Subtype: 0xff,
+// 		B:       []byte{},
+// 	},
+// 	j: `{"bin":"","s":255}`,
+// }, {
+// 	name: "extra JSON fields",
+// 	v: &Binary{
+// 		Subtype: types.BinaryUser,
+// 		B:       []byte("foo"),
+// 	},
+// 	j:      `{"bin":"Zm9v","s":128,"foo":"bar"}`,
+// 	canonJ: `{"bin":"Zm9v","s":128}`,
+// 	jErr:   `json: unknown field "foo"`,
+// }, {
+// 	name: "EOF",
+// 	j:    `{`,
+// 	jErr: `unexpected EOF`,
+// }}
 
-func TestBinary(t *testing.T) {
-	t.Parallel()
-	testJSON(t, binaryTestCases, func() fjsontype { return new(Binary) })
-}
+// func TestBinary(t *testing.T) {
+// 	t.Parallel()
+// 	testJSON(t, binaryTestCases, func() fjsontype { return new(Binary) })
+// }
 
-func FuzzBinary(f *testing.F) {
-	fuzzJSON(f, binaryTestCases, func() fjsontype { return new(Binary) })
-}
+// func FuzzBinary(f *testing.F) {
+// 	fuzzJSON(f, binaryTestCases, func() fjsontype { return new(Binary) })
+// }
 
-func BenchmarkBinary(b *testing.B) {
-	benchmark(b, binaryTestCases, func() fjsontype { return new(Binary) })
-}
+// func BenchmarkBinary(b *testing.B) {
+// 	benchmark(b, binaryTestCases, func() fjsontype { return new(Binary) })
+// }

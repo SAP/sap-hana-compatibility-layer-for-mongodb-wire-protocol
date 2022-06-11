@@ -14,89 +14,89 @@
 
 package bson
 
-import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
-	"io"
+// import (
+// 	"bufio"
+// 	"bytes"
+// 	"encoding/binary"
+// 	"io"
 
-	"github.com/DocStore/HANA_HWY/internal/fjson"
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-)
+// 	"github.com/DocStore/HANA_HWY/internal/fjson"
+// 	"github.com/DocStore/HANA_HWY/internal/types"
+// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// )
 
-// Binary represents BSON Binary data type.
-type Binary types.Binary
+// // Binary represents BSON Binary data type.
+// type Binary types.Binary
 
-func (bin *Binary) bsontype() {}
+// func (bin *Binary) bsontype() {}
 
-// ReadFrom implements bsontype interface.
-func (bin *Binary) ReadFrom(r *bufio.Reader) error {
-	var l int32
-	if err := binary.Read(r, binary.LittleEndian, &l); err != nil {
-		return lazyerrors.Errorf("bson.Binary.ReadFrom (binary.Read): %w", err)
-	}
-	if l < 0 {
-		return lazyerrors.Errorf("bson.Binary.ReadFrom: invalid length: %d", l)
-	}
+// // ReadFrom implements bsontype interface.
+// func (bin *Binary) ReadFrom(r *bufio.Reader) error {
+// 	var l int32
+// 	if err := binary.Read(r, binary.LittleEndian, &l); err != nil {
+// 		return lazyerrors.Errorf("bson.Binary.ReadFrom (binary.Read): %w", err)
+// 	}
+// 	if l < 0 {
+// 		return lazyerrors.Errorf("bson.Binary.ReadFrom: invalid length: %d", l)
+// 	}
 
-	subtype, err := r.ReadByte()
-	if err != nil {
-		return lazyerrors.Errorf("bson.Binary.ReadFrom (ReadByte): %w", err)
-	}
-	bin.Subtype = types.BinarySubtype(subtype)
+// 	subtype, err := r.ReadByte()
+// 	if err != nil {
+// 		return lazyerrors.Errorf("bson.Binary.ReadFrom (ReadByte): %w", err)
+// 	}
+// 	bin.Subtype = types.BinarySubtype(subtype)
 
-	bin.B = make([]byte, l)
-	if _, err := io.ReadFull(r, bin.B); err != nil {
-		return lazyerrors.Errorf("bson.Binary.ReadFrom (io.ReadFull): %w", err)
-	}
+// 	bin.B = make([]byte, l)
+// 	if _, err := io.ReadFull(r, bin.B); err != nil {
+// 		return lazyerrors.Errorf("bson.Binary.ReadFrom (io.ReadFull): %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// WriteTo implements bsontype interface.
-func (bin Binary) WriteTo(w *bufio.Writer) error {
-	v, err := bin.MarshalBinary()
-	if err != nil {
-		return lazyerrors.Errorf("bson.Binary.WriteTo: %w", err)
-	}
+// // WriteTo implements bsontype interface.
+// func (bin Binary) WriteTo(w *bufio.Writer) error {
+// 	v, err := bin.MarshalBinary()
+// 	if err != nil {
+// 		return lazyerrors.Errorf("bson.Binary.WriteTo: %w", err)
+// 	}
 
-	_, err = w.Write(v)
-	if err != nil {
-		return lazyerrors.Errorf("bson.Binary.WriteTo: %w", err)
-	}
+// 	_, err = w.Write(v)
+// 	if err != nil {
+// 		return lazyerrors.Errorf("bson.Binary.WriteTo: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// MarshalBinary implements bsontype interface.
-func (bin Binary) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
+// // MarshalBinary implements bsontype interface.
+// func (bin Binary) MarshalBinary() ([]byte, error) {
+// 	var buf bytes.Buffer
 
-	binary.Write(&buf, binary.LittleEndian, int32(len(bin.B)))
-	buf.WriteByte(byte(bin.Subtype))
-	buf.Write(bin.B)
+// 	binary.Write(&buf, binary.LittleEndian, int32(len(bin.B)))
+// 	buf.WriteByte(byte(bin.Subtype))
+// 	buf.Write(bin.B)
 
-	return buf.Bytes(), nil
-}
+// 	return buf.Bytes(), nil
+// }
 
-// UnmarshalJSON implements bsontype interface.
-func (bin *Binary) UnmarshalJSON(data []byte) error {
-	var binJ fjson.Binary
-	if err := binJ.UnmarshalJSON(data); err != nil {
-		return err
-	}
+// // UnmarshalJSON implements bsontype interface.
+// func (bin *Binary) UnmarshalJSON(data []byte) error {
+// 	var binJ fjson.Binary
+// 	if err := binJ.UnmarshalJSON(data); err != nil {
+// 		return err
+// 	}
 
-	*bin = Binary(binJ)
-	return nil
-}
+// 	*bin = Binary(binJ)
+// 	return nil
+// }
 
-// MarshalJSON implements bsontype interface.
-func (bin Binary) MarshalJSON() ([]byte, error) {
-	return fjson.Marshal(fromBSON(&bin))
-}
+// // MarshalJSON implements bsontype interface.
+// func (bin Binary) MarshalJSON() ([]byte, error) {
+// 	return fjson.Marshal(fromBSON(&bin))
+// }
 
-// check interfaces
-var (
-	_ bsontype = (*Binary)(nil)
-)
+// // check interfaces
+// var (
+// 	_ bsontype = (*Binary)(nil)
+// )

@@ -1,167 +1,167 @@
----
-name: Go
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-  schedule:
-    - cron: '42 3 * * *'
+# ---
+# name: Go
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#   schedule:
+#     - cron: '42 3 * * *'
 
-env:
-  GOPATH: /home/runner/go
-  GOCACHE: /home/runner/go/cache
-  GOMODCACHE: /home/runner/go/cache/mod
-  GOPROXY: https://proxy.golang.org # remove direct
+# env:
+#   GOPATH: /home/runner/go
+#   GOCACHE: /home/runner/go/cache
+#   GOMODCACHE: /home/runner/go/cache/mod
+#   GOPROXY: https://proxy.golang.org # remove direct
 
-jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-20.04
+# jobs:
+#   test:
+#     name: Test
+#     runs-on: ubuntu-20.04
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Start pulling environment in the background
-        run: make env-pull &
+#       - name: Start pulling environment in the background
+#         run: make env-pull &
 
-      - name: Setup Go
-        uses: FerretDB/github-actions/setup-go@main
-        with:
-          cache-key: test
+#       - name: Setup Go
+#         uses: FerretDB/github-actions/setup-go@main
+#         with:
+#           cache-key: test
 
-      - name: Start environment
-        run: make env-up-detach
+#       - name: Start environment
+#         run: make env-up-detach
 
-      - name: Run init
-        run: make init
+#       - name: Run init
+#         run: make init
 
-      - name: Wait for and setup environment
-        run: make env-setup
+#       - name: Wait for and setup environment
+#         run: make env-setup
 
-      - name: Run tests
-        run: make test
+#       - name: Run tests
+#         run: make test
 
-      - name: Upload coverage information
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./cover.txt
+#       - name: Upload coverage information
+#         uses: codecov/codecov-action@v3
+#         with:
+#           files: ./cover.txt
 
-      - name: Check dirty
-        run: |
-          git status
-          git diff --exit-code
+#       - name: Check dirty
+#         run: |
+#           git status
+#           git diff --exit-code
 
-  golangci-lint:
-    name: golangci-lint
-    runs-on: ubuntu-20.04
+#   golangci-lint:
+#     name: golangci-lint
+#     runs-on: ubuntu-20.04
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Setup Go
-        uses: FerretDB/github-actions/setup-go@main
-        with:
-          cache-key: lint
+#       - name: Setup Go
+#         uses: FerretDB/github-actions/setup-go@main
+#         with:
+#           cache-key: lint
 
-      - name: Run init
-        run: make init
+#       - name: Run init
+#         run: make init
 
-      - name: Format code
-        run: make fmt
+#       - name: Format code
+#         run: make fmt
 
-      - name: Run required linters
-        uses: golangci/golangci-lint-action@v3.1.0
-        if: ${{ false }} # skip until golangci-lint is recompiled with Go 1.18
-        with:
-          version: v1.43 # sync with tools/go.mod
-          args: --config=.golangci-required.yml
-          only-new-issues: false
-          skip-go-installation: true
-          skip-pkg-cache: true
-          skip-build-cache: true
+#       - name: Run required linters
+#         uses: golangci/golangci-lint-action@v3.1.0
+#         if: ${{ false }} # skip until golangci-lint is recompiled with Go 1.18
+#         with:
+#           version: v1.43 # sync with tools/go.mod
+#           args: --config=.golangci-required.yml
+#           only-new-issues: false
+#           skip-go-installation: true
+#           skip-pkg-cache: true
+#           skip-build-cache: true
 
-      - name: Run all linters
-        uses: golangci/golangci-lint-action@v3.1.0
-        if: ${{ false }} # skip until golangci-lint is recompiled with Go 1.18
-        with:
-          version: v1.43 # sync with tools/go.mod
-          args: --config=.golangci.yml
-          only-new-issues: true
-          skip-go-installation: true
-          skip-pkg-cache: true
-          skip-build-cache: true
+#       - name: Run all linters
+#         uses: golangci/golangci-lint-action@v3.1.0
+#         if: ${{ false }} # skip until golangci-lint is recompiled with Go 1.18
+#         with:
+#           version: v1.43 # sync with tools/go.mod
+#           args: --config=.golangci.yml
+#           only-new-issues: true
+#           skip-go-installation: true
+#           skip-pkg-cache: true
+#           skip-build-cache: true
 
-      - name: Run linters manually
-        run: make lint
+#       - name: Run linters manually
+#         run: make lint
 
-      # TODO don't forget to run go-consistent when we switch back to golangci/golangci-lint-action
+#       # TODO don't forget to run go-consistent when we switch back to golangci/golangci-lint-action
 
-      - name: Check dirty
-        run: |
-          git status
-          git diff --exit-code
+#       - name: Check dirty
+#         run: |
+#           git status
+#           git diff --exit-code
 
-  fuzz:
-    name: Fuzz
-    runs-on: ubuntu-20.04
+#   fuzz:
+#     name: Fuzz
+#     runs-on: ubuntu-20.04
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Setup Go
-        uses: FerretDB/github-actions/setup-go@main
-        with:
-          cache-key: fuzz
+#       - name: Setup Go
+#         uses: FerretDB/github-actions/setup-go@main
+#         with:
+#           cache-key: fuzz
 
-      - name: Run init
-        run: make init
+#       - name: Run init
+#         run: make init
 
-      # precompile tests with unset GOMAXPROCS
-      - name: Init fuzzers
-        run: make fuzz-init
+#       # precompile tests with unset GOMAXPROCS
+#       - name: Init fuzzers
+#         run: make fuzz-init
 
-      # TODO https://github.com/FerretDB/FerretDB/issues/238
-      - name: Run fuzzers
-        run: make fuzz-short
-        env:
-          GOMAXPROCS: 1 # otherwise, oom-killer kills fuzzer too often
+#       # TODO https://github.com/FerretDB/FerretDB/issues/238
+#       - name: Run fuzzers
+#         run: make fuzz-short
+#         env:
+#           GOMAXPROCS: 1 # otherwise, oom-killer kills fuzzer too often
 
-      - name: Collect Linux logs
-        if: failure()
-        run: |
-          mkdir -p /tmp/logs
-          ls -al /var/log/
-          sudo cp /var/log/syslog /tmp/logs/
-          sudo free > /tmp/logs/free.txt
-          sudo chmod 0666 /tmp/logs/*
+#       - name: Collect Linux logs
+#         if: failure()
+#         run: |
+#           mkdir -p /tmp/logs
+#           ls -al /var/log/
+#           sudo cp /var/log/syslog /tmp/logs/
+#           sudo free > /tmp/logs/free.txt
+#           sudo chmod 0666 /tmp/logs/*
 
-      - name: Upload Linux logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: linux-logs
-          path: /tmp/logs
+#       - name: Upload Linux logs
+#         if: failure()
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: linux-logs
+#           path: /tmp/logs
 
-      - name: Upload fuzz corpus
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: fuzz-corpus
-          path: |
-            ${{ env.GOCACHE }}/fuzz
-            **/testdata/fuzz
+#       - name: Upload fuzz corpus
+#         if: always()
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: fuzz-corpus
+#           path: |
+#             ${{ env.GOCACHE }}/fuzz
+#             **/testdata/fuzz
 
-      - name: Check dirty
-        run: |
-          git status
-          git diff --exit-code
+#       - name: Check dirty
+#         run: |
+#           git status
+#           git diff --exit-code
