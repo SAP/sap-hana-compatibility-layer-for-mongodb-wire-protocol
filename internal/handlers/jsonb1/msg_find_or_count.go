@@ -77,7 +77,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	var exclusion, projectBool bool
 
-	if isFindOp { //enters here if find
+	if isFindOp { // enters here if find
 		var projectionSQL string
 
 		projectionIn, _ := m["projection"].(types.Document)
@@ -206,7 +206,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 }
 
 func isPrintShardingStatus(docMap map[string]any) bool {
-
 	if docMap["find"] == "shards" && docMap["$db"] == "config" {
 		return true
 	} else if docMap["find"] == "mongos" && docMap["$db"] == "config" {

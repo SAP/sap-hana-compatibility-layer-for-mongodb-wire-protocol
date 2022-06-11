@@ -38,7 +38,6 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	}
 
 	jsonKeys, err := getJSONKeys(data)
-
 	if err != nil {
 		return lazyerrors.Error(err)
 	}
@@ -77,7 +76,6 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 }
 
 func getJSONKeys(docs []byte) (keys []string, error error) {
-
 	r := bytes.NewReader(docs)
 	dec := json.NewDecoder(r)
 	i := 0
@@ -146,7 +144,6 @@ func getJSONKeys(docs []byte) (keys []string, error error) {
 }
 
 func (doc *Document) MarshalJSON() ([]byte, error) {
-
 	var buf bytes.Buffer
 	var b []byte
 	var err error
@@ -215,7 +212,6 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 }
 
 func (doc *Document) MarshalJSONHANA() ([]byte, error) {
-
 	var buf bytes.Buffer
 	var b []byte
 	var err error
@@ -238,7 +234,7 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 		}
 
 		buf.Write(b)
-		//buf.WriteByte(',')
+		// buf.WriteByte(',')
 
 		idInserted = true
 	default:

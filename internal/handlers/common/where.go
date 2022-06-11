@@ -261,7 +261,6 @@ import (
 // }
 
 func WhereDocument(document types.Document) (sql string, err error) {
-
 	var args []any
 	sqlKeys := "{\"keys\": ["
 	count := 0
@@ -312,7 +311,6 @@ func WhereDocument(document types.Document) (sql string, err error) {
 }
 
 func WhereHANA(filter types.Document) (sql string, args []any, err error) {
-
 	unimplementedFields := []string{
 		"$eq",
 		"$gt",

@@ -21,11 +21,12 @@ import (
 	"github.com/AlekSi/pointer"
 )
 
-var doubleTestCases = []testCase{{
-	name: "42.13",
-	v:    pointer.To(Double(42.13)),
-	j:    `42.13`,
-},
+var doubleTestCases = []testCase{
+	{
+		name: "42.13",
+		v:    pointer.To(Double(42.13)),
+		j:    `42.13`,
+	},
 	// {
 	// 	name: "zero",
 	// 	v:    pointer.To(Double(0)),
@@ -35,7 +36,8 @@ var doubleTestCases = []testCase{{
 		name: "max float64",
 		v:    pointer.To(Double(math.MaxFloat64)),
 		j:    `1.7976931348623157e+308`,
-	}, {
+	},
+	{
 		name: "smallest positive float64",
 		v:    pointer.To(Double(math.SmallestNonzeroFloat64)),
 		j:    `5e-324`,
@@ -57,7 +59,8 @@ var doubleTestCases = []testCase{{
 		name: "EOF",
 		j:    `{`,
 		jErr: `unexpected EOF`,
-	}}
+	},
+}
 
 func TestDouble(t *testing.T) {
 	t.Parallel()

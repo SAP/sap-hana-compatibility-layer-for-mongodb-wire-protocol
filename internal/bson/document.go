@@ -438,7 +438,6 @@ func (doc Document) MarshalJSON() ([]byte, error) {
 }
 
 func (doc Document) MarshalJSONHANA() ([]byte, error) {
-
 	v, err := fromBSONHANA((&doc))
 	if err != nil {
 		return nil, err

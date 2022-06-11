@@ -50,7 +50,6 @@ func (d *Double) UnmarshalJSON(data []byte) error {
 }
 
 func (d *Double) MarshalJSON() ([]byte, error) {
-
 	f := float64(*d)
 
 	res, err := json.Marshal(f)

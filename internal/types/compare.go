@@ -64,7 +64,7 @@ func CompareScalars(a, b any) CompareResult {
 		}
 		return notEqual
 
-	//case Binary:
+	// case Binary:
 	//	b, ok := b.(types.Binary)
 	//	if !ok {
 	//		return notEqual
@@ -123,7 +123,7 @@ func CompareScalars(a, b any) CompareResult {
 		}
 		return notEqual
 
-	//case NullType:
+	// case NullType:
 	//	_, ok := b.(types.NullType)
 	//	if ok {
 	//		return equal

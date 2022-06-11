@@ -52,7 +52,6 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 // MarshalJSON implements fjsontype interface.
 func (i *Int64) MarshalJSON() ([]byte, error) {
 	res, err := json.Marshal(int64(*i))
-
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
