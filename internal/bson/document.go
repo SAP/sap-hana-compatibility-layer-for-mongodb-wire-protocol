@@ -437,6 +437,15 @@ func (doc Document) MarshalJSON() ([]byte, error) {
 	return fjson.Marshal(fromBSON(&doc))
 }
 
+func (doc Document) MarshalJSONHANA() ([]byte, error) {
+
+	v, err := fromBSONHANA((&doc))
+	if err != nil {
+		return nil, err
+	}
+	return fjson.MarshalHANA(v)
+}
+
 // check interfaces
 var (
 	_ bsontype = (*Document)(nil)
