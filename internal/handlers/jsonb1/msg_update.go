@@ -221,7 +221,7 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 			}
 			updateargs = append(updateargs, string(bOBJ))
 		default:
-			return "", nil, lazyerrors.Errorf("scalar: %w did not fit any case")
+			return "", nil, lazyerrors.Errorf("scalar: %w did not fit any case", err)
 		}
 	}
 
