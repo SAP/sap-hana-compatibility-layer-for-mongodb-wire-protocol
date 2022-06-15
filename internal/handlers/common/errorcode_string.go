@@ -14,6 +14,7 @@ func _() {
 	_ = x[ErrNamespaceExists-48]
 	_ = x[ErrCommandNotFound-59]
 	_ = x[ErrNotImplemented-238]
+	_ = x[ErrSortBadValue-15974]
 	_ = x[ErrRegexOptions-51075]
 }
 
