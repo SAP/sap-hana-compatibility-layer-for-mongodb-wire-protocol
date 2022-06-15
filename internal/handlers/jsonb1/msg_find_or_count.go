@@ -17,6 +17,7 @@ package jsonb1
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 
@@ -35,7 +36,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	unimplementedFields := []string{
 		"skip",
-		"sort",
 		"returnKey",
 		"showRecordId",
 		"tailable",
@@ -108,20 +108,36 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	if len(sortMap) != 0 {
 		sql += " ORDER BY"
 
-		for i, k := range sort.Keys() {
+		for i, sortKey := range sort.Keys() {
 			if i != 0 {
 				sql += ","
 			}
 
-			sql += " \"%s\" "
-			args = append(args, k)
-
-			order := sortMap[k].(int32)
-			if order > 0 {
-				sql += " ASC"
+			if strings.Contains(sortKey, ".") {
+				split := strings.Split(sortKey, ".")
+				count := 0
+				sql += " "
+				for _, s := range split {
+					if (len(split) - 1) == count {
+						sql += "\"" + s + "\""
+					} else {
+						sql += "\"" + s + "\"."
+					}
+					count += 1
+				}
 			} else {
-				sql += " DESC"
+				sql += "\"" + sortKey + "\" "
 			}
+
+			order := sortMap[sortKey].(int32)
+			if order == 1 {
+				sql += " ASC"
+			} else if order == -1 {
+				sql += " DESC"
+			} else {
+				return nil, common.NewErrorMessage(common.ErrSortBadValue, "")
+			}
+
 		}
 	}
 
@@ -135,6 +151,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		// TODO https://github.com/DocStore/HANA_HWY/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
+
 	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
 	if err != nil {
 		return nil, lazyerrors.Error(err)
