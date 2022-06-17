@@ -260,7 +260,7 @@ import (
 // 	return
 // }
 
-func WhereDocument(document types.Document) (sql string, err error) {
+func WhereDocument1(document types.Document) (sql string, err error) {
 	var args []any
 	sqlKeys := "{\"keys\": ["
 	count := 0
@@ -286,6 +286,9 @@ func WhereDocument(document types.Document) (sql string, err error) {
 			args = append(args, value)
 		case int32:
 			sql += "%d"
+			args = append(args, value)
+		case float64:
+			sql += "%f"
 			args = append(args, value)
 		case types.ObjectID:
 			sql += "%s"
@@ -386,7 +389,7 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 			args = append(args, value)
 		case types.Document:
 			sql += "%s"
-			argDoc, err1 := WhereDocument(value)
+			argDoc, err1 := WhereDocument1(value)
 
 			if err1 != nil {
 				err = lazyerrors.Errorf("scalar: %w", err1)
@@ -411,4 +414,180 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 	}
 
 	return
+}
+
+func Where(filter types.Document) (sql string, err error) {
+
+	for i, key := range filter.Keys() {
+
+		value := filter.Map()[key]
+
+		if i != 0 {
+			sql += " AND "
+		}
+		var kvSQL string
+		kvSQL, err = wherePair(key, value)
+
+		fmt.Println("kvSQL")
+		fmt.Println(kvSQL)
+
+		if err != nil {
+			return
+		}
+
+		sql += kvSQL
+
+	}
+
+	return
+}
+
+func wherePair(key string, value any) (kvSQL string, err error) {
+
+	// change to catch unsupported and show what is unsupported
+	if strings.HasPrefix(key, "$") {
+		return "", lazyerrors.Errorf("Does not support any thing with $")
+	}
+
+	vSQL, err := whereValue(value)
+	if err != nil {
+		return
+	}
+
+	kSQL := whereKey(key)
+	kvSQL = kSQL + " = " + vSQL
+
+	fmt.Println("kvSQL")
+	fmt.Println(kvSQL)
+
+	return
+}
+
+func whereKey(key string) (kSQL string) {
+
+	if strings.Contains(key, ".") {
+		splitKey := strings.Split(key, ".")
+		for i, k := range splitKey {
+
+			if i != 0 {
+				kSQL += "."
+			}
+
+			kSQL += "\"" + k + "\""
+
+		}
+	} else {
+		kSQL = "\"" + key + "\""
+	}
+
+	return
+}
+
+func whereValue(value any) (vSQL string, err error) {
+	var args []any
+	switch value := value.(type) {
+	case int32, int64:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		vSQL = "%d"
+		args = append(args, value)
+	case float64:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		vSQL = "%f"
+		args = append(args, value)
+	case string:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		vSQL = "'%s'"
+		args = append(args, value)
+	case bool:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		vSQL = "to_json_boolean(%t)"
+		args = append(args, value)
+	case types.Document:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		vSQL = "%s"
+		var docValue string
+		docValue, err = whereDocument(value)
+		args = append(args, docValue)
+	default:
+		fmt.Printf("%T\n", value)
+		fmt.Println(value)
+		err = lazyerrors.Errorf("Value for WHERE not fitting any supported datatypes.")
+		return
+
+	}
+
+	vSQL = fmt.Sprintf(vSQL, args...)
+	fmt.Println("vSQL")
+	fmt.Println(vSQL)
+
+	return
+
+}
+
+func whereDocument(doc types.Document) (docSQL string, err error) {
+
+	docSQL += "{"
+	var value any
+	var args []any
+	for i, key := range doc.Keys() {
+
+		if i != 0 {
+			docSQL += ", "
+		}
+
+		docSQL += "\"" + key + "\": "
+
+		value, err = doc.Get(key)
+
+		if err != nil {
+			return
+		}
+		fmt.Println("value in whereDocument")
+		fmt.Println(value)
+		switch value := value.(type) {
+		case int32, int64:
+			fmt.Printf("%T\n", value)
+			docSQL += "%d"
+			args = append(args, value)
+		case float64:
+			fmt.Printf("%T\n", value)
+			docSQL += "%f"
+			args = append(args, value)
+		case string:
+			fmt.Printf("%T\n", value)
+			docSQL += "'%s'"
+			args = append(args, value)
+		case bool:
+			fmt.Printf("%T\n", value)
+			docSQL += "%t"
+			args = append(args, value)
+		case types.Document:
+			fmt.Printf("%T\n", value)
+			docSQL += "%s"
+
+			var docValue string
+			docValue, err = whereDocument(value)
+			if err != nil {
+				return
+			}
+
+			args = append(args, docValue)
+
+		default:
+			fmt.Printf("%T\n HEre", value)
+
+			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet.")
+			return
+		}
+	}
+
+	docSQL = fmt.Sprintf(docSQL, args...) + "}"
+
+	return
+
 }
