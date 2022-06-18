@@ -610,9 +610,10 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
-		"$AND": "AND",
-		"$OR":  "OR",
+		"$AND": " AND ",
+		"$OR":  " OR ",
 	}
+
 	kvSQL += "("
 	fmt.Println("In logicExpression")
 	fmt.Printf("%T\n", value)
@@ -638,7 +639,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 				fmt.Println(expr)
 
 				if i != 0 {
-					kvSQL += " " + logicExprMap[key] + " "
+					kvSQL += logicExprMap[key]
 				}
 				var value any
 				var exprSQL string
@@ -679,5 +680,53 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 }
 
 func fieldExpression(key string, value any) (kvSQL string, err error) {
+
+	fieldExprMap := map[string]string{
+		"$gt":  " > ",
+		"$gte": " >= ",
+		"$lt":  " < ",
+		"$lte": " <= ",
+		"$eq":  "=",
+		"$ne":  "<>",
+	}
+	fmt.Println("In fieldExpressions")
+	fmt.Println("key")
+	fmt.Println(key)
+
+	kvSQL += whereKey(key)
+
+	switch value := value.(type) {
+	case types.Document:
+		fmt.Println("value")
+		fmt.Println(value)
+		var exprValue any
+		var vSQL string
+		for i, k := range value.Keys() {
+			if i == 1 {
+				err = lazyerrors.Errorf("Only one expression allowed")
+				return
+			}
+
+			if k == "$in" || k == "$nin" {
+				err = lazyerrors.Errorf("we have $in or $nin")
+				return
+			}
+			exprValue, err = value.Get(k)
+			if err != nil {
+				return
+			}
+			vSQL, err = whereValue(exprValue)
+			if err != nil {
+				return
+			}
+
+			kvSQL += fieldExprMap[k] + vSQL
+
+		}
+
+	default:
+		err = lazyerrors.Errorf("does not contain document")
+	}
+
 	return
 }
