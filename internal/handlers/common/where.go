@@ -417,7 +417,6 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 }
 
 func Where(filter types.Document) (sql string, err error) {
-
 	for i, key := range filter.Keys() {
 
 		value := filter.Map()[key]
@@ -427,9 +426,6 @@ func Where(filter types.Document) (sql string, err error) {
 		}
 		var kvSQL string
 		kvSQL, err = wherePair(key, value)
-
-		fmt.Println("kvSQL")
-		fmt.Println(kvSQL)
 
 		if err != nil {
 			return
@@ -443,13 +439,9 @@ func Where(filter types.Document) (sql string, err error) {
 }
 
 func wherePair(key string, value any) (kvSQL string, err error) {
-
-	// change to catch unsupported and show what is unsupported
 	if strings.HasPrefix(key, "$") {
 
 		kvSQL, err = logicExpression(key, value)
-		fmt.Println("logicExpression kvSQL")
-		fmt.Println(kvSQL)
 		return
 
 	}
@@ -458,14 +450,13 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	case types.Document:
 		if strings.HasPrefix(value.Keys()[0], "$") {
 			kvSQL, err = fieldExpression(key, value)
-			fmt.Println("fieldExpression kvSQL")
-			fmt.Println(kvSQL)
 			return
 		}
 	}
 
 	var vSQL string
 	vSQL, err = whereValue(value)
+
 	if err != nil {
 		return
 	}
@@ -473,14 +464,10 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	kSQL := whereKey(key)
 	kvSQL = kSQL + " = " + vSQL
 
-	fmt.Println("kvSQL")
-	fmt.Println(kvSQL)
-
 	return
 }
 
 func whereKey(key string) (kSQL string) {
-
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
 		for i, k := range splitKey {
@@ -503,50 +490,34 @@ func whereValue(value any) (vSQL string, err error) {
 	var args []any
 	switch value := value.(type) {
 	case int32, int64:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		vSQL = "%d"
 		args = append(args, value)
 	case float64:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		vSQL = "%f"
 		args = append(args, value)
 	case string:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		vSQL = "'%s'"
 		args = append(args, value)
 	case bool:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		vSQL = "to_json_boolean(%t)"
 		args = append(args, value)
 	case types.Document:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		vSQL = "%s"
 		var docValue string
 		docValue, err = whereDocument(value)
 		args = append(args, docValue)
 	default:
-		fmt.Printf("%T\n", value)
-		fmt.Println(value)
 		err = lazyerrors.Errorf("Value for WHERE not fitting any supported datatypes.")
 		return
 
 	}
 
 	vSQL = fmt.Sprintf(vSQL, args...)
-	fmt.Println("vSQL")
-	fmt.Println(vSQL)
 
 	return
-
 }
 
 func whereDocument(doc types.Document) (docSQL string, err error) {
-
 	docSQL += "{"
 	var value any
 	var args []any
@@ -563,27 +534,24 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 		if err != nil {
 			return
 		}
-		fmt.Println("value in whereDocument")
-		fmt.Println(value)
+
 		switch value := value.(type) {
 		case int32, int64:
-			fmt.Printf("%T\n", value)
 			docSQL += "%d"
 			args = append(args, value)
 		case float64:
-			fmt.Printf("%T\n", value)
 			docSQL += "%f"
 			args = append(args, value)
 		case string:
-			fmt.Printf("%T\n", value)
+
 			docSQL += "'%s'"
 			args = append(args, value)
 		case bool:
-			fmt.Printf("%T\n", value)
+
 			docSQL += "%t"
 			args = append(args, value)
 		case types.Document:
-			fmt.Printf("%T\n", value)
+
 			docSQL += "%s"
 
 			var docValue string
@@ -595,7 +563,6 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, docValue)
 
 		default:
-			fmt.Printf("%T\n HEre", value)
 
 			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet.")
 			return
@@ -605,7 +572,6 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	docSQL = fmt.Sprintf(docSQL, args...) + "}"
 
 	return
-
 }
 
 func logicExpression(key string, value any) (kvSQL string, err error) {
@@ -614,14 +580,15 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 		"$OR":  " OR ",
 	}
 
+	if _, ok := logicExprMap[key]; !ok {
+		err = fmt.Errorf("support for %s is not implemented yet", key)
+		return kvSQL, NewError(ErrNotImplemented, err)
+	}
+
 	kvSQL += "("
-	fmt.Println("In logicExpression")
-	fmt.Printf("%T\n", value)
+
 	switch value := value.(type) {
 	case *types.Array:
-		fmt.Println(value)
-		fmt.Println(value.Get(0))
-		fmt.Println(value.Get(1))
 		if value.Len() < 2 {
 			err = lazyerrors.Errorf("Need minimum to expressions")
 			return
@@ -635,8 +602,6 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 			}
 			switch expr := expr.(type) {
 			case types.Document:
-				fmt.Println("we have doc inside array")
-				fmt.Println(expr)
 
 				if i != 0 {
 					kvSQL += logicExprMap[key]
@@ -669,8 +634,9 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 		}
 
-		fmt.Println("kvSQL")
-		fmt.Println(kvSQL)
+	default:
+		err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+		return
 
 	}
 
@@ -680,7 +646,6 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 }
 
 func fieldExpression(key string, value any) (kvSQL string, err error) {
-
 	fieldExprMap := map[string]string{
 		"$gt":  " > ",
 		"$gte": " >= ",
@@ -689,16 +654,12 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$eq":  "=",
 		"$ne":  "<>",
 	}
-	fmt.Println("In fieldExpressions")
-	fmt.Println("key")
-	fmt.Println(key)
 
 	kvSQL += whereKey(key)
 
 	switch value := value.(type) {
 	case types.Document:
-		fmt.Println("value")
-		fmt.Println(value)
+
 		var exprValue any
 		var vSQL string
 		for i, k := range value.Keys() {
@@ -707,10 +668,12 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				return
 			}
 
-			if k == "$in" || k == "$nin" {
-				err = lazyerrors.Errorf("we have $in or $nin")
-				return
+			fieldExpr, ok := fieldExprMap[k]
+			if !ok {
+				err = fmt.Errorf("support for %s is not implemented yet", k)
+				return kvSQL, NewError(ErrNotImplemented, err)
 			}
+
 			exprValue, err = value.Get(k)
 			if err != nil {
 				return
@@ -720,12 +683,12 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				return
 			}
 
-			kvSQL += fieldExprMap[k] + vSQL
+			kvSQL += fieldExpr + vSQL
 
 		}
 
 	default:
-		err = lazyerrors.Errorf("does not contain document")
+		err = lazyerrors.Errorf("wrong use of filter")
 	}
 
 	return
