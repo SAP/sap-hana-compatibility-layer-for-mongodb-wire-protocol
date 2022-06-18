@@ -446,10 +446,26 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 
 	// change to catch unsupported and show what is unsupported
 	if strings.HasPrefix(key, "$") {
-		return "", lazyerrors.Errorf("Does not support any thing with $")
+
+		kvSQL, err = logicExpression(key, value)
+		fmt.Println("logicExpression kvSQL")
+		fmt.Println(kvSQL)
+		return
+
 	}
 
-	vSQL, err := whereValue(value)
+	switch value := value.(type) {
+	case types.Document:
+		if strings.HasPrefix(value.Keys()[0], "$") {
+			kvSQL, err = fieldExpression(key, value)
+			fmt.Println("fieldExpression kvSQL")
+			fmt.Println(kvSQL)
+			return
+		}
+	}
+
+	var vSQL string
+	vSQL, err = whereValue(value)
 	if err != nil {
 		return
 	}
@@ -590,4 +606,78 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 
 	return
 
+}
+
+func logicExpression(key string, value any) (kvSQL string, err error) {
+	logicExprMap := map[string]string{
+		"$AND": "AND",
+		"$OR":  "OR",
+	}
+	kvSQL += "("
+	fmt.Println("In logicExpression")
+	fmt.Printf("%T\n", value)
+	switch value := value.(type) {
+	case *types.Array:
+		fmt.Println(value)
+		fmt.Println(value.Get(0))
+		fmt.Println(value.Get(1))
+		if value.Len() < 2 {
+			err = lazyerrors.Errorf("Need minimum to expressions")
+			return
+		}
+		var expr any
+		for i := 0; i < value.Len(); i++ {
+
+			expr, err = value.Get(i)
+			if err != nil {
+				return
+			}
+			switch expr := expr.(type) {
+			case types.Document:
+				fmt.Println("we have doc inside array")
+				fmt.Println(expr)
+
+				if i != 0 {
+					kvSQL += " " + logicExprMap[key] + " "
+				}
+				var value any
+				var exprSQL string
+				for i, k := range expr.Keys() {
+
+					if i != 0 {
+						kvSQL += " AND "
+					}
+
+					value, err = expr.Get(k)
+					if err != nil {
+						return
+					}
+					exprSQL, err = wherePair(k, value)
+					if err != nil {
+						return
+					}
+
+					kvSQL += exprSQL
+
+				}
+
+			default:
+				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+				return
+			}
+
+		}
+
+		fmt.Println("kvSQL")
+		fmt.Println(kvSQL)
+
+	}
+
+	kvSQL += ")"
+
+	return
+}
+
+func fieldExpression(key string, value any) (kvSQL string, err error) {
+	return
 }
