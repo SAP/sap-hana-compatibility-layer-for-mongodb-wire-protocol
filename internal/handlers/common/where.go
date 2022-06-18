@@ -260,7 +260,7 @@ import (
 // 	return
 // }
 
-func WhereDocument(document types.Document) (sql string, err error) {
+func WhereDocument1(document types.Document) (sql string, err error) {
 	var args []any
 	sqlKeys := "{\"keys\": ["
 	count := 0
@@ -286,6 +286,9 @@ func WhereDocument(document types.Document) (sql string, err error) {
 			args = append(args, value)
 		case int32:
 			sql += "%d"
+			args = append(args, value)
+		case float64:
+			sql += "%f"
 			args = append(args, value)
 		case types.ObjectID:
 			sql += "%s"
@@ -386,7 +389,7 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 			args = append(args, value)
 		case types.Document:
 			sql += "%s"
-			argDoc, err1 := WhereDocument(value)
+			argDoc, err1 := WhereDocument1(value)
 
 			if err1 != nil {
 				err = lazyerrors.Errorf("scalar: %w", err1)
@@ -408,6 +411,284 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 			err = lazyerrors.Errorf("Scalar did not fit cases")
 			return
 		}
+	}
+
+	return
+}
+
+func Where(filter types.Document) (sql string, err error) {
+	for i, key := range filter.Keys() {
+
+		value := filter.Map()[key]
+
+		if i != 0 {
+			sql += " AND "
+		}
+		var kvSQL string
+		kvSQL, err = wherePair(key, value)
+
+		if err != nil {
+			return
+		}
+
+		sql += kvSQL
+
+	}
+
+	return
+}
+
+func wherePair(key string, value any) (kvSQL string, err error) {
+	if strings.HasPrefix(key, "$") {
+
+		kvSQL, err = logicExpression(key, value)
+		return
+
+	}
+
+	switch value := value.(type) {
+	case types.Document:
+		if strings.HasPrefix(value.Keys()[0], "$") {
+			kvSQL, err = fieldExpression(key, value)
+			return
+		}
+	}
+
+	var vSQL string
+	vSQL, err = whereValue(value)
+
+	if err != nil {
+		return
+	}
+
+	kSQL := whereKey(key)
+	kvSQL = kSQL + " = " + vSQL
+
+	return
+}
+
+func whereKey(key string) (kSQL string) {
+	if strings.Contains(key, ".") {
+		splitKey := strings.Split(key, ".")
+		for i, k := range splitKey {
+
+			if i != 0 {
+				kSQL += "."
+			}
+
+			kSQL += "\"" + k + "\""
+
+		}
+	} else {
+		kSQL = "\"" + key + "\""
+	}
+
+	return
+}
+
+func whereValue(value any) (vSQL string, err error) {
+	var args []any
+	switch value := value.(type) {
+	case int32, int64:
+		vSQL = "%d"
+		args = append(args, value)
+	case float64:
+		vSQL = "%f"
+		args = append(args, value)
+	case string:
+		vSQL = "'%s'"
+		args = append(args, value)
+	case bool:
+		vSQL = "to_json_boolean(%t)"
+		args = append(args, value)
+	case types.Document:
+		vSQL = "%s"
+		var docValue string
+		docValue, err = whereDocument(value)
+		args = append(args, docValue)
+	default:
+		err = lazyerrors.Errorf("Value for WHERE not fitting any supported datatypes.")
+		return
+
+	}
+
+	vSQL = fmt.Sprintf(vSQL, args...)
+
+	return
+}
+
+func whereDocument(doc types.Document) (docSQL string, err error) {
+	docSQL += "{"
+	var value any
+	var args []any
+	for i, key := range doc.Keys() {
+
+		if i != 0 {
+			docSQL += ", "
+		}
+
+		docSQL += "\"" + key + "\": "
+
+		value, err = doc.Get(key)
+
+		if err != nil {
+			return
+		}
+
+		switch value := value.(type) {
+		case int32, int64:
+			docSQL += "%d"
+			args = append(args, value)
+		case float64:
+			docSQL += "%f"
+			args = append(args, value)
+		case string:
+
+			docSQL += "'%s'"
+			args = append(args, value)
+		case bool:
+
+			docSQL += "%t"
+			args = append(args, value)
+		case types.Document:
+
+			docSQL += "%s"
+
+			var docValue string
+			docValue, err = whereDocument(value)
+			if err != nil {
+				return
+			}
+
+			args = append(args, docValue)
+
+		default:
+
+			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet.")
+			return
+		}
+	}
+
+	docSQL = fmt.Sprintf(docSQL, args...) + "}"
+
+	return
+}
+
+func logicExpression(key string, value any) (kvSQL string, err error) {
+	logicExprMap := map[string]string{
+		"$AND": " AND ",
+		"$OR":  " OR ",
+	}
+
+	if _, ok := logicExprMap[key]; !ok {
+		err = fmt.Errorf("support for %s is not implemented yet", key)
+		return kvSQL, NewError(ErrNotImplemented, err)
+	}
+
+	kvSQL += "("
+
+	switch value := value.(type) {
+	case *types.Array:
+		if value.Len() < 2 {
+			err = lazyerrors.Errorf("Need minimum to expressions")
+			return
+		}
+		var expr any
+		for i := 0; i < value.Len(); i++ {
+
+			expr, err = value.Get(i)
+			if err != nil {
+				return
+			}
+			switch expr := expr.(type) {
+			case types.Document:
+
+				if i != 0 {
+					kvSQL += logicExprMap[key]
+				}
+				var value any
+				var exprSQL string
+				for i, k := range expr.Keys() {
+
+					if i != 0 {
+						kvSQL += " AND "
+					}
+
+					value, err = expr.Get(k)
+					if err != nil {
+						return
+					}
+					exprSQL, err = wherePair(k, value)
+					if err != nil {
+						return
+					}
+
+					kvSQL += exprSQL
+
+				}
+
+			default:
+				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+				return
+			}
+
+		}
+
+	default:
+		err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+		return
+
+	}
+
+	kvSQL += ")"
+
+	return
+}
+
+func fieldExpression(key string, value any) (kvSQL string, err error) {
+	fieldExprMap := map[string]string{
+		"$gt":  " > ",
+		"$gte": " >= ",
+		"$lt":  " < ",
+		"$lte": " <= ",
+		"$eq":  "=",
+		"$ne":  "<>",
+	}
+
+	kvSQL += whereKey(key)
+
+	switch value := value.(type) {
+	case types.Document:
+
+		var exprValue any
+		var vSQL string
+		for i, k := range value.Keys() {
+			if i == 1 {
+				err = lazyerrors.Errorf("Only one expression allowed")
+				return
+			}
+
+			fieldExpr, ok := fieldExprMap[k]
+			if !ok {
+				err = fmt.Errorf("support for %s is not implemented yet", k)
+				return kvSQL, NewError(ErrNotImplemented, err)
+			}
+
+			exprValue, err = value.Get(k)
+			if err != nil {
+				return
+			}
+			vSQL, err = whereValue(exprValue)
+			if err != nil {
+				return
+			}
+
+			kvSQL += fieldExpr + vSQL
+
+		}
+
+	default:
+		err = lazyerrors.Errorf("wrong use of filter")
 	}
 
 	return

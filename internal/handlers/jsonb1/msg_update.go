@@ -207,7 +207,8 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 			updateargs = append(updateargs, value)
 		case types.Document:
 			updateSQL += "%s"
-			argDoc, err := common.WhereDocument(value)
+			// see if WhereDocument1() can be substituted with new whereDocument()
+			argDoc, err := common.WhereDocument1(value)
 			if err != nil {
 				return "", nil, lazyerrors.Errorf("scalar: %w", err)
 			}
