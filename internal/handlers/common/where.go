@@ -417,7 +417,12 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 }
 
 func Where(filter types.Document) (sql string, err error) {
+
 	for i, key := range filter.Keys() {
+
+		if i == 0 {
+			sql += " WHERE "
+		}
 
 		value := filter.Map()[key]
 
@@ -506,6 +511,17 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		vSQL = "NULL"
 		sign = " IS "
 		return
+	case types.ObjectID:
+		var bOBJ []byte
+		bOBJ, err = bson.ObjectID(value).MarshalJSON()
+		if err != nil {
+			return
+		}
+		oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+		oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+		vSQL = "%s"
+		args = append(args, string(oid))
+
 	case types.Document:
 		vSQL = "%s"
 		var docValue string

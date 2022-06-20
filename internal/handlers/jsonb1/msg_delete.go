@@ -44,9 +44,14 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	var deleted int32
 	for i := 0; i < docs.Len(); i++ {
+
 		doc, err := docs.Get(i)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
+		}
+		check := doc.(types.Document)
+		if err := common.Unimplemented(&check, "collation", "hint"); err != nil {
+			return nil, err
 		}
 
 		d := doc.(types.Document).Map()
@@ -60,11 +65,12 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if limit != 0 {
 			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s", collection)
 
-			whereSQL, whereArgs, err := common.WhereHANA(d["q"].(types.Document))
+			whereSQL, err := common.Where(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
-			qSQL += fmt.Sprintf(whereSQL, whereArgs...) + " LIMIT 1"
+
+			qSQL += whereSQL + " LIMIT 1"
 
 			rows, err := h.hanaPool.QueryContext(ctx, qSQL)
 			if err != nil {
@@ -85,7 +91,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			delSQL = " WHERE \"_id\".\"oid\" = '%s'"
 
 		} else {
-			delSQL, args, err = common.WhereHANA(d["q"].(types.Document))
+			delSQL, err = common.Where(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
