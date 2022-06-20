@@ -455,14 +455,15 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	}
 
 	var vSQL string
-	vSQL, err = whereValue(value)
+	var sign string
+	vSQL, sign, err = whereValue(value)
 
 	if err != nil {
 		return
 	}
 
 	kSQL := whereKey(key)
-	kvSQL = kSQL + " = " + vSQL
+	kvSQL = kSQL + sign + vSQL
 
 	return
 }
@@ -486,7 +487,7 @@ func whereKey(key string) (kSQL string) {
 	return
 }
 
-func whereValue(value any) (vSQL string, err error) {
+func whereValue(value any) (vSQL string, sign string, err error) {
 	var args []any
 	switch value := value.(type) {
 	case int32, int64:
@@ -501,6 +502,10 @@ func whereValue(value any) (vSQL string, err error) {
 	case bool:
 		vSQL = "to_json_boolean(%t)"
 		args = append(args, value)
+	case nil:
+		vSQL = "NULL"
+		sign = " IS "
+		return
 	case types.Document:
 		vSQL = "%s"
 		var docValue string
@@ -511,7 +516,7 @@ func whereValue(value any) (vSQL string, err error) {
 		return
 
 	}
-
+	sign = " = "
 	vSQL = fmt.Sprintf(vSQL, args...)
 
 	return
@@ -550,6 +555,8 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 
 			docSQL += "%t"
 			args = append(args, value)
+		case nil:
+			docSQL += " NULL "
 		case types.Document:
 
 			docSQL += "%s"
@@ -678,7 +685,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
-			vSQL, err = whereValue(exprValue)
+			vSQL, _, err = whereValue(exprValue)
 			if err != nil {
 				return
 			}
