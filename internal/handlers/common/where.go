@@ -417,7 +417,12 @@ func WhereHANA(filter types.Document) (sql string, args []any, err error) {
 }
 
 func Where(filter types.Document) (sql string, err error) {
+
 	for i, key := range filter.Keys() {
+
+		if i == 0 {
+			sql += " WHERE "
+		}
 
 		value := filter.Map()[key]
 
