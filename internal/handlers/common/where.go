@@ -506,6 +506,17 @@ func whereValue(value any) (vSQL string, err error) {
 	case bool:
 		vSQL = "to_json_boolean(%t)"
 		args = append(args, value)
+	case types.ObjectID:
+		var bOBJ []byte
+		bOBJ, err = bson.ObjectID(value).MarshalJSON()
+		if err != nil {
+			return
+		}
+		oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+		oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+		vSQL = "%s"
+		args = append(args, string(oid))
+
 	case types.Document:
 		vSQL = "%s"
 		var docValue string
