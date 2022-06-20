@@ -670,12 +670,13 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
-		"$gt":  " > ",
-		"$gte": " >= ",
-		"$lt":  " < ",
-		"$lte": " <= ",
-		"$eq":  "=",
-		"$ne":  "<>",
+		"$gt":     " > ",
+		"$gte":    " >= ",
+		"$lt":     " < ",
+		"$lte":    " <= ",
+		"$eq":     "=",
+		"$ne":     "<>",
+		"$exists": "IS",
 	}
 
 	kvSQL += whereKey(key)
@@ -701,9 +702,23 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
-			vSQL, _, err = whereValue(exprValue)
-			if err != nil {
-				return
+
+			if k == "$exists" {
+				switch exprValue := exprValue.(type) {
+				case bool:
+					if exprValue {
+						vSQL = " SET"
+					} else {
+						vSQL = " UNSET"
+					}
+				default:
+					return "", lazyerrors.Errorf("$exists only works with true or false")
+				}
+			} else {
+				vSQL, _, err = whereValue(exprValue)
+				if err != nil {
+					return
+				}
 			}
 
 			kvSQL += fieldExpr + vSQL
