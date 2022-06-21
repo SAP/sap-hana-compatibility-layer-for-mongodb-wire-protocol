@@ -79,8 +79,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			sql := fmt.Sprintf("select \"_id\" FROM %s", collection)
 			sql += whereSQL + notWhereSQL + " limit 1"
 
-			fmt.Println("updateOnesql")
-			fmt.Println(sql)
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
 			var objectID []byte
