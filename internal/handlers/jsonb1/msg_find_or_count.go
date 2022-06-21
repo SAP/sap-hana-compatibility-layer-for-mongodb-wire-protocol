@@ -98,7 +98,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	limit, _ := m["limit"].(int32)
 
 	if len(filter.Map()) != 0 {
-		//sql += " WHERE "
 		whereSQL, err := common.Where(filter)
 		if err != nil {
 			return nil, err

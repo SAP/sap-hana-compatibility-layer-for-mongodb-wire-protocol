@@ -240,7 +240,6 @@ func getUpdateKey(key string) (updateKey string) {
 }
 
 func getUpdateValue(value any) (updateValue string, err error) {
-
 	var updateArgs []any
 	switch value := value.(type) {
 	case string:
