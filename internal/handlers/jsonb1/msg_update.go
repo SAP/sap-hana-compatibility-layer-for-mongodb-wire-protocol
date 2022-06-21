@@ -316,6 +316,13 @@ func updateDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, value)
 		case nil:
 			docSQL += " NULL "
+		case types.ObjectID:
+			docSQL += "%s"
+			var bOBJ []byte
+			bOBJ, err = bson.ObjectID(value).MarshalJSON()
+			oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+			oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+			args = append(args, string(oid))
 		case types.Document:
 
 			docSQL += "%s"
