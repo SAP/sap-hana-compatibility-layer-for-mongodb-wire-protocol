@@ -15,11 +15,13 @@
 package jsonb1
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
+	"github.com/DocStore/HANA_HWY/internal/fjson"
 	"github.com/DocStore/HANA_HWY/internal/handlers/common"
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
@@ -62,46 +64,58 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		docM := doc.(types.Document).Map()
 
-		whereSQL, args, err := common.WhereHANA(docM["q"].(types.Document))
+		whereSQL, err := common.Where(docM["q"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
 
-		updateSQL, updateargs, err := updateMany(docM["u"].(types.Document))
+		updateSQL, notWhereSQL, err := update(docM["u"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-
+		var args []any
 		if docM["multi"] != true {
 
-			sql := fmt.Sprintf("select \"_id\".\"oid\" FROM %s", collection)
-			sql += whereSQL + " AND NOT (" + fmt.Sprintf(updateSQL, updateargs...) + ")" + " limit 1"
+			sql := fmt.Sprintf("select \"_id\" FROM %s", collection)
+			sql += whereSQL + notWhereSQL + " limit 1"
 
-			row := h.hanaPool.QueryRowContext(ctx, fmt.Sprintf(sql, args...))
+			row := h.hanaPool.QueryRowContext(ctx, sql)
 
-			var objectID string
+			var objectID []byte
 
 			err = row.Scan(&objectID)
 			if err != nil {
-				return nil, lazyerrors.Error(err)
+				err = nil
+				break
+			}
+
+			id, err := fjson.Unmarshal(objectID)
+			if err != nil {
+				return nil, err
+			}
+
+			try, err := getUpdateValue(id)
+			if err != nil {
+				return nil, err
 			}
 
 			countSQL := fmt.Sprintf("SELECT count(*) FROM %s", collection) + whereSQL
-			countRow := h.hanaPool.QueryRowContext(ctx, fmt.Sprintf(countSQL, args...))
+
+			countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
 
 			err = countRow.Scan(&selected)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 
-			whereSQL = "WHERE \"_id\".\"oid\" = '%s'"
+			whereSQL = "WHERE \"_id\" = %s"
 			var emptySlice []any
-			args = append(emptySlice, objectID)
+			args = append(emptySlice, try)
 		}
 
 		sql := fmt.Sprintf("UPDATE %s SET ", collection)
 
-		sql += fmt.Sprintf(updateSQL, updateargs...) + " " + fmt.Sprintf(whereSQL, args...)
+		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
 
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
@@ -133,7 +147,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	return &reply, nil
 }
 
-func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, err error) {
+func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err error) {
 	uninmplementedFields := []string{
 		"$currentDate",
 		"$inc",
@@ -163,68 +177,172 @@ func updateMany(updateVal types.Document) (updateSQL string, updateargs []any, e
 		"$replaceWith",
 	}
 
-	if err := common.Unimplemented(&updateVal, uninmplementedFields...); err != nil {
-		return "", nil, err
+	if err = common.Unimplemented(&updateVal, uninmplementedFields...); err != nil {
+		return
 	}
 
 	updateValMap := updateVal.Map()
 
 	if _, ok := updateValMap["$set"]; !ok {
-		return "", nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: replaceOne")
+		err = common.NewErrorMessage(common.ErrCommandNotFound, "no such command: replaceOne")
+		return
 	}
 
 	updateVal = updateValMap["$set"].(types.Document)
 
+	var updateValue string
+	i := 0
 	for key := range updateVal.Map() {
 
-		if strings.Contains(key, ".") {
-			split := strings.Split(key, ".")
-			count := 0
-			for _, s := range split {
-				if (len(split) - 1) == count {
-					updateSQL += "\"" + s + "\""
-				} else {
-					updateSQL += "\"" + s + "\"."
-				}
-				count += 1
-			}
-		} else {
-			updateSQL += "\"" + key + "\""
+		if i != 0 {
+			updateSQL += ", "
 		}
-
-		updateSQL += " = "
+		updateKey := getUpdateKey(key)
 
 		value, _ := updateVal.Get(key)
+
+		updateValue, err = getUpdateValue(value)
+		if err != nil {
+			return
+		}
+
+		updateSQL += updateKey + " = " + updateValue
+		i++
+	}
+
+	notWhereSQL, err = common.Where(updateVal)
+	notWhereSQL = " AND NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + " ) "
+
+	return
+}
+
+func getUpdateKey(key string) (updateKey string) {
+	if strings.Contains(key, ".") {
+		split := strings.Split(key, ".")
+		count := 0
+		for _, s := range split {
+			if (len(split) - 1) == count {
+				updateKey += "\"" + s + "\""
+			} else {
+				updateKey += "\"" + s + "\"."
+			}
+			count += 1
+		}
+	} else {
+		updateKey += "\"" + key + "\""
+	}
+
+	return
+}
+
+func getUpdateValue(value any) (updateValue string, err error) {
+
+	var updateArgs []any
+	switch value := value.(type) {
+	case string:
+		updateValue += "'%s'"
+		updateArgs = append(updateArgs, value)
+	case int64:
+		updateValue += "%d"
+		updateArgs = append(updateArgs, value)
+	case int32:
+		updateValue += "%d"
+		updateArgs = append(updateArgs, value)
+	case float64:
+		updateValue += "%f"
+		updateArgs = append(updateArgs, value)
+	case nil:
+		updateValue += "NULL"
+		return
+	case types.Document:
+		updateValue += "%s"
+		var argDoc string
+		argDoc, err = updateDocument(value)
+		if err != nil {
+			return
+		}
+
+		updateArgs = append(updateArgs, argDoc)
+	case types.ObjectID:
+		updateValue += "%s"
+		var bOBJ []byte
+		if bOBJ, err = bson.ObjectID(value).MarshalJSON(); err != nil {
+			err = lazyerrors.Errorf("scalar: %w", err)
+		}
+		oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+		oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+		updateArgs = append(updateArgs, string(oid))
+	default:
+		err = lazyerrors.Errorf("Value: %T is not supported for update", value)
+	}
+
+	updateValue = fmt.Sprintf(updateValue, updateArgs...)
+
+	return
+}
+
+func updateDocument(doc types.Document) (docSQL string, err error) {
+	docSQL += "{"
+	var value any
+	var args []any
+	for i, key := range doc.Keys() {
+
+		if i != 0 {
+			docSQL += ", "
+		}
+
+		docSQL += "\"" + key + "\": "
+
+		value, err = doc.Get(key)
+
+		if err != nil {
+			return
+		}
+
 		switch value := value.(type) {
+		case int32, int64:
+			docSQL += "%d"
+			args = append(args, value)
+		case float64:
+			docSQL += "%f"
+			args = append(args, value)
 		case string:
-			updateargs = append(updateargs, value)
-			updateSQL += "'%s'"
-		case int64:
-			updateargs = append(updateargs, value)
-		case int32:
 
-			updateSQL += "%d"
-			updateargs = append(updateargs, value)
-		case types.Document:
-			updateSQL += "%s"
-			// see if WhereDocument1() can be substituted with new whereDocument()
-			argDoc, err := common.WhereDocument1(value)
-			if err != nil {
-				return "", nil, lazyerrors.Errorf("scalar: %w", err)
-			}
+			docSQL += "'%s'"
+			args = append(args, value)
+		case bool:
 
-			updateargs = append(updateargs, argDoc)
+			docSQL += "%t"
+			args = append(args, value)
+		case nil:
+			docSQL += " NULL "
 		case types.ObjectID:
-			updateSQL += "%s"
+			docSQL += "%s"
 			var bOBJ []byte
-			if bOBJ, err = bson.ObjectID(value).MarshalJSON(); err != nil {
-				err = lazyerrors.Errorf("scalar: %w", err)
+			bOBJ, err = bson.ObjectID(value).MarshalJSON()
+			oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
+			oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
+			args = append(args, string(oid))
+		case types.Document:
+
+			docSQL += "%s"
+
+			var docValue string
+			docValue, err = updateDocument(value)
+			if err != nil {
+				return
 			}
-			updateargs = append(updateargs, string(bOBJ))
+
+			args = append(args, docValue)
+
 		default:
-			return "", nil, lazyerrors.Errorf("scalar: %w did not fit any case", err)
+
+			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet.")
+			return
 		}
 	}
+
+	docSQL = fmt.Sprintf(docSQL, args...) + "}"
 
 	return
 }
