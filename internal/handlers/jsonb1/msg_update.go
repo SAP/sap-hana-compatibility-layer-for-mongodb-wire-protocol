@@ -79,6 +79,8 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			sql := fmt.Sprintf("select \"_id\" FROM %s", collection)
 			sql += whereSQL + notWhereSQL + " limit 1"
 
+			fmt.Println("updateOnesql")
+			fmt.Println(sql)
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
 			var objectID []byte
@@ -116,7 +118,8 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		sql := fmt.Sprintf("UPDATE %s SET ", collection)
 
 		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
-
+		fmt.Println("updatesql")
+		fmt.Println(sql)
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
 			return nil, err
@@ -190,12 +193,14 @@ func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err
 
 	updateVal = updateValMap["$set"].(types.Document)
 
+	var isUnsetSQL string
 	var updateValue string
 	i := 0
 	for key := range updateVal.Map() {
 
 		if i != 0 {
 			updateSQL += ", "
+			isUnsetSQL += " OR "
 		}
 		updateKey := getUpdateKey(key)
 
@@ -207,11 +212,12 @@ func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err
 		}
 
 		updateSQL += updateKey + " = " + updateValue
+		isUnsetSQL += updateKey + " IS UNSET"
 		i++
 	}
 
 	notWhereSQL, err = common.Where(updateVal)
-	notWhereSQL = " AND NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + " ) "
+	notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
 
 	return
 }
