@@ -113,11 +113,10 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			args = append(emptySlice, try)
 		}
 
-		sql := fmt.Sprintf("UPDATE %s SET ", collection)
+		sql := fmt.Sprintf("UPDATE %s ", collection)
 
 		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
-		fmt.Println("updatesql")
-		fmt.Println(sql)
+
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
 			return nil, err
@@ -148,7 +147,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	return &reply, nil
 }
 
-func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err error) {
+func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err error) {
 	uninmplementedFields := []string{
 		"$currentDate",
 		"$inc",
@@ -157,7 +156,6 @@ func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err
 		"$mul",
 		"$rename",
 		"$setOnInsert",
-		"$unset",
 		"$",
 		"$[]",
 		"$[<identifier>]",
@@ -173,36 +171,61 @@ func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err
 		"$bit",
 		"$addFields",
 		"$project",
-		"$unset",
 		"$replaceRoot",
 		"$replaceWith",
 	}
 
-	if err = common.Unimplemented(&updateVal, uninmplementedFields...); err != nil {
+	if err = common.Unimplemented(&updateDoc, uninmplementedFields...); err != nil {
 		return
 	}
 
-	updateValMap := updateVal.Map()
+	updateMap := updateDoc.Map()
 
-	if _, ok := updateValMap["$set"]; !ok {
+	var isUnsetSQL string
+	var setDoc types.Document
+	var ok bool
+	if setDoc, ok = updateMap["$set"].(types.Document); ok {
+		updateSQL, notWhereSQL, isUnsetSQL, err = setFields(setDoc)
+		if err != nil {
+			return
+		}
+	}
+
+	var unSetSQL, isSetSQL string
+	if unSetDoc, ok := updateMap["$unset"].(types.Document); ok {
+		unSetSQL, isSetSQL = unsetFields(unSetDoc)
+	}
+
+	if isUnsetSQL != "" && isSetSQL != "" {
+		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
+		updateSQL += ", " + unSetSQL
+	} else if isUnsetSQL != "" {
+		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
+	} else if isSetSQL != "" {
+		notWhereSQL = " AND ( " + isSetSQL + " )"
+		updateSQL = unSetSQL
+	} else {
 		err = common.NewErrorMessage(common.ErrCommandNotFound, "no such command: replaceOne")
 		return
 	}
 
-	updateVal = updateValMap["$set"].(types.Document)
+	return
+}
 
-	var isUnsetSQL string
+func setFields(setDoc types.Document) (updateSQL string, notWhereSQL string, isUnsetSQL string, err error) {
+	updateSQL = " SET "
+
 	var updateValue string
 	i := 0
-	for key := range updateVal.Map() {
+	for key, value := range setDoc.Map() {
 
 		if i != 0 {
 			updateSQL += ", "
 			isUnsetSQL += " OR "
 		}
 		updateKey := getUpdateKey(key)
-
-		value, _ := updateVal.Get(key)
 
 		updateValue, err = getUpdateValue(value)
 		if err != nil {
@@ -214,8 +237,27 @@ func update(updateVal types.Document) (updateSQL string, notWhereSQL string, err
 		i++
 	}
 
-	notWhereSQL, err = common.Where(updateVal)
-	notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
+	return
+}
+
+func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string) {
+	unsetSQL = " UNSET "
+
+	i := 0
+	for key := range unSetDoc.Map() {
+
+		if i != 0 {
+			unsetSQL += ", "
+			isSetSQL += " OR "
+		}
+
+		updateKey := getUpdateKey(key)
+
+		unsetSQL += updateKey
+
+		isSetSQL += updateKey + " IS SET"
+
+	}
 
 	return
 }
