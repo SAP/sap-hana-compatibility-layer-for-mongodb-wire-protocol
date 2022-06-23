@@ -15,6 +15,7 @@
 package common
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/types"
@@ -63,10 +64,6 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 			continue
 		}
 
-		if strings.Contains(k, ".") {
-			err = lazyerrors.Errorf("Projection on nested documents is not implemented, yet.")
-			return
-		}
 		var v any
 		v, err = projection.Get(k)
 		if err != nil {
@@ -79,6 +76,10 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 				if exclusion {
 
 					err = lazyerrors.Errorf("Cannot do inclusion on field #{k} in exclusion projection")
+					return
+				}
+				if strings.Contains(k, ".") {
+					err = lazyerrors.Errorf("Projection on nested documents is not implemented, yet.")
 					return
 				}
 				inclusion = true
@@ -103,6 +104,10 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 			} else {
 				if exclusion {
 					err = lazyerrors.Errorf("Cannot do inclusion on field #{k} in exclusion projection")
+					return
+				}
+				if strings.Contains(k, ".") {
+					err = lazyerrors.Errorf("Projection on nested documents is not implemented, yet.")
 					return
 				}
 				inclusion = true
@@ -177,29 +182,86 @@ func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bo
 func projectDocument(doc *types.Document, projection types.Document, exclusion bool) (err error) {
 	projectionMap := projection.Map()
 
-	for k1 := range doc.Map() {
-		projectionVal, ok := projectionMap[k1]
+	for field := range projectionMap {
+		fmt.Println(field)
+		if strings.Contains(field, ".") {
+			var next any = doc
+			var previousS string
+			var previousDoc types.Document
+			var ppDoc types.Document
+			var ppS string
+			var projErr error
+			var reverse []string
+			for _, s := range strings.Split(field, ".") {
+				reverse = append([]string{s}, reverse...)
+				switch j := next.(type) {
+				case *types.Document:
+					ppDoc = previousDoc
+					previousS = s
+					next, projErr = j.Get(s)
+					if projErr != nil {
+						break
+					}
+				case types.Document:
+					ppDoc = previousDoc
+					ppS = previousS
+					previousS = s
+					previousDoc = j
+					next, projErr = j.Get(s)
 
-		if !ok {
-			continue
+					if projErr != nil {
+						break
+					}
+				default:
+
+				}
+
+			}
+			if projErr != nil {
+				continue
+			}
+			previousDoc.Remove(previousS)
+			ppDoc.Set(ppS, previousDoc)
+
+		} else {
+			doc.Remove(field)
 		}
 
-		switch projectionVal := projectionVal.(type) { // found in the projection
-		case bool: // field: bool
-			if !projectionVal {
-				doc.Remove(k1)
-			}
-
-		case int32, int64, float64: // field: number
-			var equal types.CompareResult
-			equal = 0
-			if types.CompareScalars(projectionVal, int32(0)) == equal {
-				doc.Remove(k1)
-			}
-		default:
-			return lazyerrors.Errorf("unsupported projection operation %s %v (%T)", k1, projectionVal, projectionVal)
-		}
 	}
+
+	// for k1 := range doc.Map() {
+	// 	projectionVal, ok := projectionMap[k1]
+
+	// 	fmt.Println(k1)
+	// 	if !ok {
+	// 		continue
+	// 	}
+
+	// 	switch projectionVal := projectionVal.(type) { // found in the projection
+	// 	case bool: // field: bool
+	// 		if !projectionVal {
+	// 			if strings.Contains(k1, ".") {
+	// 				fmt.Println(k1)
+	// 			} else {
+	// 				doc.Remove(k1)
+	// 			}
+	// 		}
+
+	// 	case int32, int64, float64: // field: number
+	// 		var equal types.CompareResult
+	// 		equal = 0
+	// 		if types.CompareScalars(projectionVal, int32(0)) == equal {
+	// 			if strings.Contains(k1, ".") {
+	// 				fmt.Println(k1)
+	// 			} else {
+	// 				doc.Remove(k1)
+	// 			}
+
+	// 		}
+	// 	default:
+	// 		return lazyerrors.Errorf("unsupported projection operation %s %v (%T)", k1, projectionVal, projectionVal)
+	// 	}
+	// }
 
 	return nil
 }
