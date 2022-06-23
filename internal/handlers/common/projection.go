@@ -15,15 +15,57 @@
 package common
 
 import (
+	"strings"
+
 	"github.com/DocStore/HANA_HWY/internal/types"
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
+
+func Projection(projection types.Document) (sql string, exclusion bool, err error) {
+	unimplementedFields := []string{
+		"$",
+		"$elemMatch",
+		"$meta",
+		"$slice",
+		"$comment",
+		"$rand",
+	}
+
+	if err = Unimplemented(&projection, unimplementedFields...); err != nil {
+		return
+	}
+
+	projectionMap := projection.Map()
+	if len(projectionMap) == 0 {
+		sql = "*"
+		return
+	}
+
+	inclusion, err := isProjectionInclusion(projection)
+	if err != nil {
+		return
+	}
+
+	if inclusion {
+		sql = inclusionProjection(projection)
+		return
+	} else {
+		exclusion = true
+		sql = "*"
+		return
+	}
+}
 
 func isProjectionInclusion(projection types.Document) (inclusion bool, err error) {
 	var exclusion bool
 	for _, k := range projection.Keys() {
 		if k == "_id" { // _id is a special case and can be both
 			continue
+		}
+
+		if strings.Contains(k, ".") {
+			err = lazyerrors.Errorf("Projection on nested documents is not implemented, yet.")
+			return
 		}
 		var v any
 		v, err = projection.Get(k)
@@ -74,60 +116,42 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 }
 
 func inclusionProjection(projection types.Document) (sql string) {
-	keysSQL := "{\"ignoreKeys\": \"keys\", \"keys\": '[\"_id\", \"ignoreKeys\" "
-	sql = ", \"_id\": \"_id\""
 
-	for _, k := range projection.Keys() {
+	sql = "{"
+	if id, err := projection.Get("_id"); err == nil {
+		switch id := id.(type) {
+		case bool:
+			if id {
+				sql += "\"_id\": \"_id\", "
+			}
+		case int32, int64, float64:
+			var equal types.CompareResult
+			equal = 0
+			if types.CompareScalars(id, int32(0)) != equal {
+				sql += "\"_id\": \"_id\", "
+			}
+		}
+	} else {
+		sql += "\"_id\": \"_id\", "
+	}
+
+	for i, k := range projection.Keys() {
 
 		if k == "_id" {
 			continue
 		}
-		keysSQL += ", \"" + k + "\""
-		sql += ", \"" + k + "\": \"" + k + "\""
+
+		if i != 0 {
+			sql += ", "
+		}
+
+		sql += "\"" + k + "\": \"" + k + "\""
 
 	}
 
-	keysSQL += "]'"
-	sql = keysSQL + sql + "}"
+	sql += "}"
 
 	return
-}
-
-func Projection(projection types.Document) (sql string, exclusion bool, projectBool bool, err error) {
-	unimplementedFields := []string{
-		"$",
-		"$elemMatch",
-		"$meta",
-		"$slice",
-		"$comment",
-		"$rand",
-	}
-
-	if err := Unimplemented(&projection, unimplementedFields...); err != nil {
-		return "", false, false, err
-	}
-
-	projectionMap := projection.Map()
-	if len(projectionMap) == 0 {
-		sql = "*"
-		return
-	}
-
-	projectBool = true
-
-	inclusion, err := isProjectionInclusion(projection)
-	if err != nil {
-		return
-	}
-
-	if inclusion {
-		sql = inclusionProjection(projection)
-		return
-	} else {
-		exclusion = true
-		sql = "*"
-		return
-	}
 }
 
 func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
@@ -157,17 +181,6 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 		projectionVal, ok := projectionMap[k1]
 
 		if !ok {
-			if k1 == "_id" { // if _id is not in projection map, do not do anything with it
-				continue
-			}
-			if k1 == "ignoreKeys" {
-				continue
-			}
-			if exclusion { // k1 from doc is absent in projection, remove from doc only if projection type inclusion
-				continue
-			}
-			// inclusion
-			doc.Remove(k1)
 			continue
 		}
 
@@ -175,18 +188,6 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 		case bool: // field: bool
 			if !projectionVal {
 				doc.Remove(k1)
-			} else { // inclusion
-				docVal := (doc.Map())[k1]
-				switch docVal.(type) {
-				case nil:
-					valType := (doc.Map())["ignoreKeys"]
-					switch keys := valType.(type) {
-					case *types.Array:
-						if !keys.Contains(k1) {
-							doc.Remove(k1)
-						}
-					}
-				}
 			}
 
 		case int32, int64, float64: // field: number
@@ -194,26 +195,11 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 			equal = 0
 			if types.CompareScalars(projectionVal, int32(0)) == equal {
 				doc.Remove(k1)
-			} else { // inclusion
-				docVal := (doc.Map())[k1]
-				switch docVal.(type) {
-				case nil:
-					valType := (doc.Map())["ignoreKeys"]
-					switch keys := valType.(type) {
-					case *types.Array:
-						if !keys.Contains(k1) {
-							doc.Remove(k1)
-						}
-					}
-				}
 			}
 		default:
 			return lazyerrors.Errorf("unsupported projection operation %s %v (%T)", k1, projectionVal, projectionVal)
 		}
 	}
 
-	if !exclusion {
-		doc.Remove("ignoreKeys")
-	}
 	return nil
 }
