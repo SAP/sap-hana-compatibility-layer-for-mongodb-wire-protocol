@@ -75,13 +75,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	_, isFindOp := m["find"].(string)
 	db := m["$db"].(string)
 
-	var exclusion, projectBool bool
+	var exclusion bool
 
 	if isFindOp { // enters here if find
 		var projectionSQL string
 
 		projectionIn, _ := m["projection"].(types.Document)
-		projectionSQL, exclusion, projectBool, err = common.Projection(projectionIn)
+		projectionSQL, exclusion, err = common.Projection(projectionIn)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -178,7 +178,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 			}
 		}
 
-		if projectBool {
+		if exclusion {
 			err = common.ProjectDocuments(&docs, m["projection"].(types.Document), exclusion)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
