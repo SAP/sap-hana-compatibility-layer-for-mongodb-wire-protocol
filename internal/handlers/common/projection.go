@@ -15,7 +15,6 @@
 package common
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/types"
@@ -61,7 +60,15 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 	var exclusion bool
 	for _, k := range projection.Keys() {
 		if k == "_id" { // _id is a special case and can be both
-			continue
+			var v any
+			v, err = projection.Get(k)
+			switch v := v.(type) {
+			case bool, int32, int64, float64:
+				continue
+			default:
+				err = lazyerrors.Errorf("unsupported operation %s %v (%T)", k, v, v)
+				return
+			}
 		}
 
 		var v any
@@ -121,7 +128,6 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 }
 
 func inclusionProjection(projection types.Document) (sql string) {
-
 	sql = "{"
 	if id, err := projection.Get("_id"); err == nil {
 		switch id := id.(type) {
@@ -183,7 +189,6 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 	projectionMap := projection.Map()
 
 	for field := range projectionMap {
-		fmt.Println(field)
 		if strings.Contains(field, ".") {
 			var next any = doc
 			var previousS string
@@ -191,12 +196,10 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 			var ppDoc types.Document
 			var ppS string
 			var projErr error
-			var reverse []string
 			for _, s := range strings.Split(field, ".") {
-				reverse = append([]string{s}, reverse...)
 				switch j := next.(type) {
 				case *types.Document:
-					ppDoc = previousDoc
+					previousDoc = *j
 					previousS = s
 					next, projErr = j.Get(s)
 					if projErr != nil {
@@ -215,7 +218,6 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 				default:
 
 				}
-
 			}
 			if projErr != nil {
 				continue
@@ -224,44 +226,26 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 			ppDoc.Set(ppS, previousDoc)
 
 		} else {
+			if field == "_id" {
+				idExclusion := projectionMap[field]
+				switch idExclusion := idExclusion.(type) {
+				case bool:
+					if !idExclusion {
+						doc.Remove(field)
+					}
+					continue
+				case int32, int64, float64:
+					var equal types.CompareResult
+					equal = 0
+					if types.CompareScalars(idExclusion, int32(0)) == equal {
+						doc.Remove(field)
+					}
+					continue
+				}
+			}
 			doc.Remove(field)
 		}
-
 	}
-
-	// for k1 := range doc.Map() {
-	// 	projectionVal, ok := projectionMap[k1]
-
-	// 	fmt.Println(k1)
-	// 	if !ok {
-	// 		continue
-	// 	}
-
-	// 	switch projectionVal := projectionVal.(type) { // found in the projection
-	// 	case bool: // field: bool
-	// 		if !projectionVal {
-	// 			if strings.Contains(k1, ".") {
-	// 				fmt.Println(k1)
-	// 			} else {
-	// 				doc.Remove(k1)
-	// 			}
-	// 		}
-
-	// 	case int32, int64, float64: // field: number
-	// 		var equal types.CompareResult
-	// 		equal = 0
-	// 		if types.CompareScalars(projectionVal, int32(0)) == equal {
-	// 			if strings.Contains(k1, ".") {
-	// 				fmt.Println(k1)
-	// 			} else {
-	// 				doc.Remove(k1)
-	// 			}
-
-	// 		}
-	// 	default:
-	// 		return lazyerrors.Errorf("unsupported projection operation %s %v (%T)", k1, projectionVal, projectionVal)
-	// 	}
-	// }
 
 	return nil
 }
