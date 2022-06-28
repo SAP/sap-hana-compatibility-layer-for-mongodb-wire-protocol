@@ -299,6 +299,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$eq":     "=",
 		"$ne":     "<>",
 		"$exists": "IS",
+		"$size":   "CARDINALITY",
 	}
 
 	kvSQL += whereKey(key)
@@ -335,6 +336,12 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 					}
 				default:
 					return "", lazyerrors.Errorf("$exists only works with true or false")
+				}
+			} else if k == "$size" {
+				kvSQL = fieldExpr + "(" + kvSQL + ")"
+				vSQL, fieldExpr, err = whereValue(exprValue)
+				if err != nil {
+					return
 				}
 			} else {
 				vSQL, _, err = whereValue(exprValue)
