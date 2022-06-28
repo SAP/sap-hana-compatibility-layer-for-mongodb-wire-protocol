@@ -300,6 +300,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$ne":     "<>",
 		"$exists": "IS",
 		"$size":   "CARDINALITY",
+		"$all":    "all",
 	}
 
 	kvSQL += whereKey(key)
@@ -343,6 +344,14 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				if err != nil {
 					return
 				}
+			} else if k == "$all" {
+
+				kvSQL, err = filterArray(kvSQL, key, exprValue)
+				if err != nil {
+					return
+				}
+				continue
+
 			} else {
 				vSQL, _, err = whereValue(exprValue)
 				if err != nil {
@@ -356,6 +365,34 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 
 	default:
 		err = lazyerrors.Errorf("wrong use of filter")
+	}
+
+	return
+}
+
+func filterArray(field string, arrayOperator string, valueArray any) (kvSQL string, err error) {
+
+	switch valueArray := valueArray.(type) {
+	case types.Document:
+		fmt.Println("doc")
+	case *types.Array:
+		var value string
+		var v any
+		for i := 0; i < valueArray.Len(); i++ {
+
+			if i != 0 {
+				kvSQL += " AND "
+			}
+			v, err = valueArray.Get(i)
+			if err != nil {
+				return
+			}
+			value, _, err = whereValue(v)
+			if err != nil {
+				return
+			}
+			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
+		}
 	}
 
 	return
