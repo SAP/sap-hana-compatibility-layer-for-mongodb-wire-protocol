@@ -17,6 +17,7 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
@@ -85,6 +86,12 @@ func whereKey(key string) (kSQL string) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
 		for i, k := range splitKey {
+
+			if kInt, err := strconv.Atoi(k); err == nil {
+				kIntSQL := "[" + "%d" + "]"
+				kSQL += fmt.Sprintf(kIntSQL, (kInt + 1))
+				continue
+			}
 
 			if i != 0 {
 				kSQL += "."
