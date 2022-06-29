@@ -28,6 +28,7 @@ import (
 
 func Where(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
+		fmt.Println("hey")
 
 		if i == 0 {
 			sql += " WHERE "
@@ -49,10 +50,14 @@ func Where(filter types.Document) (sql string, err error) {
 
 	}
 
+	fmt.Println(sql)
+
 	return
 }
 
 func wherePair(key string, value any) (kvSQL string, err error) {
+	fmt.Println("hey2")
+
 	if strings.HasPrefix(key, "$") {
 
 		kvSQL, err = logicExpression(key, value)
@@ -292,16 +297,18 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
-		"$gt":     " > ",
-		"$gte":    " >= ",
-		"$lt":     " < ",
-		"$lte":    " <= ",
-		"$eq":     "=",
-		"$ne":     "<>",
-		"$exists": "IS",
-		"$size":   "CARDINALITY",
-		"$all":    "all",
+		"$gt":        " > ",
+		"$gte":       " >= ",
+		"$lt":        " < ",
+		"$lte":       " <= ",
+		"$eq":        "=",
+		"$ne":        "<>",
+		"$exists":    "IS",
+		"$size":      "CARDINALITY",
+		"$all":       "all",
+		"$elemMatch": "elemMatch",
 	}
+	fmt.Println("hey3")
 
 	kvSQL += whereKey(key)
 
@@ -318,6 +325,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 
 			fieldExpr, ok := fieldExprMap[k]
 			if !ok {
+				fmt.Println("oh no")
 				err = fmt.Errorf("support for %s is not implemented yet", k)
 				return kvSQL, NewError(ErrNotImplemented, err)
 			}
@@ -326,6 +334,9 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
+
+			fmt.Println("K")
+			fmt.Println(k)
 
 			if k == "$exists" {
 				switch exprValue := exprValue.(type) {
@@ -344,7 +355,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				if err != nil {
 					return
 				}
-			} else if k == "$all" {
+			} else if k == "$all" || k == "$elemMatch" {
 
 				kvSQL, err = filterArray(kvSQL, key, exprValue)
 				if err != nil {
@@ -370,20 +381,51 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-func filterArray(field string, arrayOperator string, valueArray any) (kvSQL string, err error) {
+func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 
-	switch valueArray := valueArray.(type) {
+	fmt.Println("hey4")
+	fmt.Printf("%T\n", filters)
+
+	switch filters := filters.(type) {
 	case types.Document:
 		fmt.Println("doc")
-	case *types.Array:
-		var value string
-		var v any
-		for i := 0; i < valueArray.Len(); i++ {
+		kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES "
+		i := 0
+		for f, v := range filters.Map() {
 
 			if i != 0 {
 				kvSQL += " AND "
 			}
-			v, err = valueArray.Get(i)
+			fmt.Println(f)
+			fmt.Println(v)
+			var doc types.Document
+			doc, err = types.MakeDocument([]any{f, v}...)
+			if err != nil {
+				return
+			}
+			var sql string
+			sql, err = wherePair(strings.ReplaceAll(field, "\"", ""), doc)
+			if err != nil {
+				return
+			}
+			fmt.Println(sql)
+			kvSQL += sql
+			fmt.Println(kvSQL)
+			i++
+		}
+
+		kvSQL += " END "
+
+	case *types.Array:
+		fmt.Println("array")
+		var value string
+		var v any
+		for i := 0; i < filters.Len(); i++ {
+
+			if i != 0 {
+				kvSQL += " AND "
+			}
+			v, err = filters.Get(i)
 			if err != nil {
 				return
 			}
@@ -394,6 +436,6 @@ func filterArray(field string, arrayOperator string, valueArray any) (kvSQL stri
 			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
 		}
 	}
-
+	err = lazyerrors.Errorf("DONe")
 	return
 }
