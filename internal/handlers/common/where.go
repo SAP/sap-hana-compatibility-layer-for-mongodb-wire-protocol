@@ -189,7 +189,8 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, value)
 		case bool:
 
-			docSQL += "%t"
+			docSQL += "to_json_boolean(%t)"
+
 			args = append(args, value)
 		case nil:
 			docSQL += " NULL "
@@ -200,6 +201,13 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
 			oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
 			args = append(args, string(oid))
+		case *types.Array:
+			var sqlArray string
+
+			sqlArray, err = prepareArrayForSQL(value)
+
+			docSQL += sqlArray
+
 		case types.Document:
 
 			docSQL += "%s"
@@ -220,6 +228,61 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	}
 
 	docSQL = fmt.Sprintf(docSQL, args...) + "}"
+	fmt.Println("docSQL")
+	fmt.Println(docSQL)
+
+	return
+}
+
+func prepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
+	var value any
+	var args []any
+	sqlArray += "["
+	for i := 0; i < a.Len(); i++ {
+		if i != 0 {
+			sqlArray += ", "
+		}
+
+		value, err = a.Get(i)
+		if err != nil {
+			return
+		}
+
+		switch value := value.(type) {
+		case string, int32, int64, float64, types.ObjectID, nil:
+			var sql string
+			sql, _, err = whereValue(value)
+			sqlArray += sql
+		case *types.Array:
+			var sql string
+			sql, err = prepareArrayForSQL(value)
+			if err != nil {
+				return
+			}
+			sqlArray += "%s"
+			args = append(args, sql)
+
+		case types.Document:
+
+			sqlArray += "%s"
+
+			var docValue string
+			docValue, err = whereDocument(value)
+			if err != nil {
+				return
+			}
+
+			args = append(args, docValue)
+
+		default:
+
+			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet. And it is %T", value)
+			return
+		}
+	}
+
+	sqlArray += "]"
+	sqlArray = fmt.Sprintf(sqlArray, args...)
 
 	return
 }
@@ -389,7 +452,7 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 	switch filters := filters.(type) {
 	case types.Document:
 		fmt.Println("doc")
-		kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES "
+
 		i := 0
 		for f, v := range filters.Map() {
 
@@ -403,10 +466,27 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			if err != nil {
 				return
 			}
+			fmt.Println(doc)
 			var sql string
-			sql, err = wherePair(strings.ReplaceAll(field, "\"", ""), doc)
+			if strings.Contains(doc.Keys()[0], "$") {
+				sql, err = wherePair("element", doc)
+			} else {
+				var value any
+				element := "element." + doc.Keys()[0]
+				value, err = doc.Get(doc.Keys()[0])
+				if err != nil {
+					return
+				}
+				sql, err = wherePair(element, value)
+
+			}
+
 			if err != nil {
 				return
+			}
+
+			if i == 0 {
+				kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES "
 			}
 			fmt.Println(sql)
 			kvSQL += sql
@@ -436,6 +516,8 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
 		}
 	}
-	err = lazyerrors.Errorf("DONe")
+
+	fmt.Println(kvSQL)
+
 	return
 }
