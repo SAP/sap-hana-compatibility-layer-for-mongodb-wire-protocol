@@ -28,7 +28,6 @@ import (
 
 func Where(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
-		fmt.Println("hey")
 
 		if i == 0 {
 			sql += " WHERE "
@@ -50,14 +49,10 @@ func Where(filter types.Document) (sql string, err error) {
 
 	}
 
-	fmt.Println(sql)
-
 	return
 }
 
 func wherePair(key string, value any) (kvSQL string, err error) {
-	fmt.Println("hey2")
-
 	if strings.HasPrefix(key, "$") {
 
 		kvSQL, err = logicExpression(key, value)
@@ -228,8 +223,6 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	}
 
 	docSQL = fmt.Sprintf(docSQL, args...) + "}"
-	fmt.Println("docSQL")
-	fmt.Println(docSQL)
 
 	return
 }
@@ -371,7 +364,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$all":       "all",
 		"$elemMatch": "elemMatch",
 	}
-	fmt.Println("hey3")
 
 	kvSQL += whereKey(key)
 
@@ -388,7 +380,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 
 			fieldExpr, ok := fieldExprMap[k]
 			if !ok {
-				fmt.Println("oh no")
 				err = fmt.Errorf("support for %s is not implemented yet", k)
 				return kvSQL, NewError(ErrNotImplemented, err)
 			}
@@ -397,9 +388,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
-
-			fmt.Println("K")
-			fmt.Println(k)
 
 			if k == "$exists" {
 				switch exprValue := exprValue.(type) {
@@ -445,28 +433,19 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 }
 
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
-
-	fmt.Println("hey4")
-	fmt.Printf("%T\n", filters)
-
 	switch filters := filters.(type) {
 	case types.Document:
-		fmt.Println("doc")
-
 		i := 0
 		for f, v := range filters.Map() {
 
 			if i != 0 {
 				kvSQL += " AND "
 			}
-			fmt.Println(f)
-			fmt.Println(v)
 			var doc types.Document
 			doc, err = types.MakeDocument([]any{f, v}...)
 			if err != nil {
 				return
 			}
-			fmt.Println(doc)
 			var sql string
 			if strings.Contains(doc.Keys()[0], "$") {
 				sql, err = wherePair("element", doc)
@@ -488,16 +467,13 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			if i == 0 {
 				kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES "
 			}
-			fmt.Println(sql)
 			kvSQL += sql
-			fmt.Println(kvSQL)
 			i++
 		}
 
 		kvSQL += " END "
 
 	case *types.Array:
-		fmt.Println("array")
 		var value string
 		var v any
 		for i := 0; i < filters.Len(); i++ {
@@ -516,8 +492,6 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
 		}
 	}
-
-	fmt.Println(kvSQL)
 
 	return
 }
