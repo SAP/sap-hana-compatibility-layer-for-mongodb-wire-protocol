@@ -17,6 +17,7 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
@@ -85,6 +86,12 @@ func whereKey(key string) (kSQL string) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
 		for i, k := range splitKey {
+
+			if kInt, err := strconv.Atoi(k); err == nil {
+				kIntSQL := "[" + "%d" + "]"
+				kSQL += fmt.Sprintf(kIntSQL, (kInt + 1))
+				continue
+			}
 
 			if i != 0 {
 				kSQL += "."
@@ -177,7 +184,8 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, value)
 		case bool:
 
-			docSQL += "%t"
+			docSQL += "to_json_boolean(%t)"
+
 			args = append(args, value)
 		case nil:
 			docSQL += " NULL "
@@ -188,6 +196,13 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			oid := bytes.Replace(bOBJ, []byte{34}, []byte{39}, -1)
 			oid = bytes.Replace(oid, []byte{39}, []byte{34}, 2)
 			args = append(args, string(oid))
+		case *types.Array:
+			var sqlArray string
+
+			sqlArray, err = prepareArrayForSQL(value)
+
+			docSQL += sqlArray
+
 		case types.Document:
 
 			docSQL += "%s"
@@ -208,6 +223,59 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	}
 
 	docSQL = fmt.Sprintf(docSQL, args...) + "}"
+
+	return
+}
+
+func prepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
+	var value any
+	var args []any
+	sqlArray += "["
+	for i := 0; i < a.Len(); i++ {
+		if i != 0 {
+			sqlArray += ", "
+		}
+
+		value, err = a.Get(i)
+		if err != nil {
+			return
+		}
+
+		switch value := value.(type) {
+		case string, int32, int64, float64, types.ObjectID, nil:
+			var sql string
+			sql, _, err = whereValue(value)
+			sqlArray += sql
+		case *types.Array:
+			var sql string
+			sql, err = prepareArrayForSQL(value)
+			if err != nil {
+				return
+			}
+			sqlArray += "%s"
+			args = append(args, sql)
+
+		case types.Document:
+
+			sqlArray += "%s"
+
+			var docValue string
+			docValue, err = whereDocument(value)
+			if err != nil {
+				return
+			}
+
+			args = append(args, docValue)
+
+		default:
+
+			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet. And it is %T", value)
+			return
+		}
+	}
+
+	sqlArray += "]"
+	sqlArray = fmt.Sprintf(sqlArray, args...)
 
 	return
 }
@@ -285,13 +353,16 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
-		"$gt":     " > ",
-		"$gte":    " >= ",
-		"$lt":     " < ",
-		"$lte":    " <= ",
-		"$eq":     "=",
-		"$ne":     "<>",
-		"$exists": "IS",
+		"$gt":        " > ",
+		"$gte":       " >= ",
+		"$lt":        " < ",
+		"$lte":       " <= ",
+		"$eq":        "=",
+		"$ne":        "<>",
+		"$exists":    "IS",
+		"$size":      "CARDINALITY",
+		"$all":       "all",
+		"$elemMatch": "elemMatch",
 	}
 
 	kvSQL += whereKey(key)
@@ -329,6 +400,20 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				default:
 					return "", lazyerrors.Errorf("$exists only works with true or false")
 				}
+			} else if k == "$size" {
+				kvSQL = fieldExpr + "(" + kvSQL + ")"
+				vSQL, fieldExpr, err = whereValue(exprValue)
+				if err != nil {
+					return
+				}
+			} else if k == "$all" || k == "$elemMatch" {
+
+				kvSQL, err = filterArray(kvSQL, key, exprValue)
+				if err != nil {
+					return
+				}
+				continue
+
 			} else {
 				vSQL, _, err = whereValue(exprValue)
 				if err != nil {
@@ -342,6 +427,70 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 
 	default:
 		err = lazyerrors.Errorf("wrong use of filter")
+	}
+
+	return
+}
+
+func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
+	switch filters := filters.(type) {
+	case types.Document:
+		i := 0
+		for f, v := range filters.Map() {
+
+			if i != 0 {
+				kvSQL += " AND "
+			}
+			var doc types.Document
+			doc, err = types.MakeDocument([]any{f, v}...)
+			if err != nil {
+				return
+			}
+			var sql string
+			if strings.Contains(doc.Keys()[0], "$") {
+				sql, err = wherePair("element", doc)
+			} else {
+				var value any
+				element := "element." + doc.Keys()[0]
+				value, err = doc.Get(doc.Keys()[0])
+				if err != nil {
+					return
+				}
+				sql, err = wherePair(element, value)
+
+			}
+
+			if err != nil {
+				return
+			}
+
+			if i == 0 {
+				kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES "
+			}
+			kvSQL += sql
+			i++
+		}
+
+		kvSQL += " END "
+
+	case *types.Array:
+		var value string
+		var v any
+		for i := 0; i < filters.Len(); i++ {
+
+			if i != 0 {
+				kvSQL += " AND "
+			}
+			v, err = filters.Get(i)
+			if err != nil {
+				return
+			}
+			value, _, err = whereValue(v)
+			if err != nil {
+				return
+			}
+			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
+		}
 	}
 
 	return
