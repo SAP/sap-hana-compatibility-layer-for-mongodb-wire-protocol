@@ -199,7 +199,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 		case *types.Array:
 			var sqlArray string
 
-			sqlArray, err = prepareArrayForSQL(value)
+			sqlArray, err = PrepareArrayForSQL(value)
 
 			docSQL += sqlArray
 
@@ -227,7 +227,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	return
 }
 
-func prepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
+func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	var value any
 	var args []any
 	sqlArray += "["
@@ -248,7 +248,7 @@ func prepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 			sqlArray += sql
 		case *types.Array:
 			var sql string
-			sql, err = prepareArrayForSQL(value)
+			sql, err = PrepareArrayForSQL(value)
 			if err != nil {
 				return
 			}

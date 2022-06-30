@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/bson"
@@ -78,7 +79,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 			sql := fmt.Sprintf("select \"_id\" FROM %s", collection)
 			sql += whereSQL + notWhereSQL + " limit 1"
-
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
 			var objectID []byte
@@ -100,7 +100,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			}
 
 			countSQL := fmt.Sprintf("SELECT count(*) FROM %s", collection) + whereSQL
-
 			countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
 
 			err = countRow.Scan(&selected)
@@ -116,7 +115,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		sql := fmt.Sprintf("UPDATE %s ", collection)
 
 		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
-
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
 			return nil, err
@@ -185,7 +183,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	var setDoc types.Document
 	var ok bool
 	if setDoc, ok = updateMap["$set"].(types.Document); ok {
-		updateSQL, notWhereSQL, isUnsetSQL, err = setFields(setDoc)
+		updateSQL, isUnsetSQL, err = setFields(setDoc)
 		if err != nil {
 			return
 		}
@@ -198,10 +196,23 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 
 	if isUnsetSQL != "" && isSetSQL != "" {
 		notWhereSQL, err = common.Where(setDoc)
+		if err != nil {
+			if strings.Contains(err.Error(), "Value for WHERE") {
+				err = lazyerrors.Errorf("Cannot update field with array.")
+				return
+			}
+		}
+
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
 		updateSQL += ", " + unSetSQL
 	} else if isUnsetSQL != "" {
 		notWhereSQL, err = common.Where(setDoc)
+		if err != nil {
+			if strings.Contains(err.Error(), "Value for WHERE") {
+				err = lazyerrors.Errorf("Cannot update field with array.")
+				return
+			}
+		}
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
 	} else if isSetSQL != "" {
 		notWhereSQL = " AND ( " + isSetSQL + " )"
@@ -214,7 +225,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	return
 }
 
-func setFields(setDoc types.Document) (updateSQL string, notWhereSQL string, isUnsetSQL string, err error) {
+func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err error) {
 	updateSQL = " SET "
 
 	var updateValue string
@@ -264,18 +275,24 @@ func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string) {
 
 func getUpdateKey(key string) (updateKey string) {
 	if strings.Contains(key, ".") {
-		split := strings.Split(key, ".")
-		count := 0
-		for _, s := range split {
-			if (len(split) - 1) == count {
-				updateKey += "\"" + s + "\""
-			} else {
-				updateKey += "\"" + s + "\"."
+		splitKey := strings.Split(key, ".")
+		for i, k := range splitKey {
+
+			if kInt, err := strconv.Atoi(k); err == nil {
+				kIntSQL := "[" + "%d" + "]"
+				updateKey += fmt.Sprintf(kIntSQL, (kInt + 1))
+				continue
 			}
-			count += 1
+
+			if i != 0 {
+				updateKey += "."
+			}
+
+			updateKey += "\"" + k + "\""
+
 		}
 	} else {
-		updateKey += "\"" + key + "\""
+		updateKey = "\"" + key + "\""
 	}
 
 	return
@@ -299,6 +316,14 @@ func getUpdateValue(value any) (updateValue string, err error) {
 	case nil:
 		updateValue += "NULL"
 		return
+	case bool:
+		updateValue += "to_json_boolean(%t)"
+		updateArgs = append(updateArgs, value)
+	case *types.Array:
+		updateValue, err = common.PrepareArrayForSQL(value)
+		if err != nil {
+			return
+		}
 	case types.Document:
 		updateValue += "%s"
 		var argDoc string
@@ -322,7 +347,6 @@ func getUpdateValue(value any) (updateValue string, err error) {
 	}
 
 	updateValue = fmt.Sprintf(updateValue, updateArgs...)
-
 	return
 }
 
@@ -357,10 +381,17 @@ func updateDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, value)
 		case bool:
 
-			docSQL += "%t"
+			docSQL += "to_json_boolean(%t)"
 			args = append(args, value)
 		case nil:
 			docSQL += " NULL "
+		case *types.Array:
+			var arraySQL string
+			arraySQL, err = common.PrepareArrayForSQL(value)
+			docSQL += arraySQL
+			if err != nil {
+				return
+			}
 		case types.ObjectID:
 			docSQL += "%s"
 			var bOBJ []byte
@@ -388,6 +419,5 @@ func updateDocument(doc types.Document) (docSQL string, err error) {
 	}
 
 	docSQL = fmt.Sprintf(docSQL, args...) + "}"
-
 	return
 }
