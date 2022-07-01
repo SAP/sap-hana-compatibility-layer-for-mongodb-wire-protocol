@@ -143,3 +143,7 @@ func (a *Array) Contains(key string) bool {
 	}
 	return false
 }
+
+func (a *Array) Delete(index int) {
+	a.s = append(a.s[:index], a.s[index+1:]...)
+}
