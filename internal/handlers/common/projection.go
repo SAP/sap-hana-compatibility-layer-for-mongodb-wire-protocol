@@ -15,6 +15,7 @@
 package common
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/types"
@@ -187,23 +188,27 @@ func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bo
 
 func projectDocument(doc *types.Document, projection types.Document, exclusion bool) (err error) {
 	projectionMap := projection.Map()
-
 	for field := range projectionMap {
 		if strings.Contains(field, ".") {
 			var next any = doc
 			var previousS string
 			var previousDoc types.Document
+			var previousArray *types.Array
 			var ppDoc types.Document
 			var ppS string
+			var notFound bool
 			var projErr error
+			arrayCount := 0
+		forLoop:
 			for _, s := range strings.Split(field, ".") {
 				switch j := next.(type) {
 				case *types.Document:
 					previousDoc = *j
 					previousS = s
 					next, projErr = j.Get(s)
-					if projErr != nil {
-						break
+					if projErr != nil || next == nil {
+						notFound = true
+						break forLoop
 					}
 				case types.Document:
 					ppDoc = previousDoc
@@ -211,19 +216,49 @@ func projectDocument(doc *types.Document, projection types.Document, exclusion b
 					previousS = s
 					previousDoc = j
 					next, projErr = j.Get(s)
+					if projErr != nil || next == nil {
+						notFound = true
+						break forLoop
+					}
+					if arrayCount > 0 {
+						arrayCount--
+					}
+				case *types.Array:
+					ppDoc = previousDoc
+					ppS = previousS
+					previousS = s
+					previousArray = j
+					if sInt, convErr := strconv.Atoi(s); convErr == nil {
+						next, projErr = j.Get(sInt)
+					} else {
+						notFound = true
+						break forLoop
+					}
 
 					if projErr != nil {
-						break
+						notFound = true
+						break forLoop
 					}
+					arrayCount = 2
 				default:
-
+					notFound = true
+					continue
 				}
 			}
-			if projErr != nil {
+			if notFound {
 				continue
 			}
-			previousDoc.Remove(previousS)
-			ppDoc.Set(ppS, previousDoc)
+			if arrayCount == 0 {
+				previousDoc.Remove(previousS)
+				ppDoc.Set(ppS, previousDoc)
+			} else if arrayCount == 1 {
+				previousDoc.Remove(previousS)
+				sInt, _ := strconv.Atoi(ppS)
+				previousArray.Set(sInt, previousDoc)
+			} else if arrayCount == 2 {
+				sInt, _ := strconv.Atoi(previousS)
+				previousArray.Delete(sInt)
+			}
 
 		} else {
 			if field == "_id" {
