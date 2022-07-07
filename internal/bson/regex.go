@@ -23,6 +23,8 @@ package bson
 // 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 // )
 
+// Regex is not yet supported
+
 // // Regex represents BSON Regex data type.
 // type Regex types.Regex
 

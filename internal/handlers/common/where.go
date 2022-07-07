@@ -26,6 +26,8 @@ import (
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
 )
 
+// Creates the WHERE-clause of the SQL statement.
+// kvSQL stands for key-value SQL.
 func Where(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
 
@@ -52,8 +54,11 @@ func Where(filter types.Document) (sql string, err error) {
 	return
 }
 
+// Takes a {field: value} and converts it to SQL
+// vSQL: ValueSQL
+// kSQL: KeySQL
 func wherePair(key string, value any) (kvSQL string, err error) {
-	if strings.HasPrefix(key, "$") {
+	if strings.HasPrefix(key, "$") { // {$: value}
 
 		kvSQL, err = logicExpression(key, value)
 		return
@@ -62,7 +67,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 
 	switch value := value.(type) {
 	case types.Document:
-		if strings.HasPrefix(value.Keys()[0], "$") {
+		if strings.HasPrefix(value.Keys()[0], "$") { // {field: {$: value}}
 			kvSQL, err = fieldExpression(key, value)
 			return
 		}
@@ -82,6 +87,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	return
 }
 
+// Prepares the key (field) for SQL
 func whereKey(key string) (kSQL string) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -107,6 +113,7 @@ func whereKey(key string) (kSQL string) {
 	return
 }
 
+// Prepares the value for SQL
 func whereValue(value any) (vSQL string, sign string, err error) {
 	var args []any
 	switch value := value.(type) {
@@ -143,7 +150,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		docValue, err = whereDocument(value)
 		args = append(args, docValue)
 	default:
-		err = lazyerrors.Errorf("Value for WHERE not fitting any supported datatypes.")
+		err = lazyerrors.Errorf("Value %T not supported in filter", value)
 		return
 
 	}
@@ -153,6 +160,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 	return
 }
 
+// Prepares a document for fx value = {document}.
 func whereDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any
@@ -217,7 +225,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 
 		default:
 
-			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet. And it is %T", value)
+			err = lazyerrors.Errorf("The document used in filter contains a datatype not yet supported: %T", value)
 			return
 		}
 	}
@@ -227,6 +235,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	return
 }
 
+// Needed for when an array is inside of a document used in filter
 func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	var value any
 	var args []any
@@ -269,7 +278,7 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 
 		default:
 
-			err = lazyerrors.Errorf("whereDocument does not support this datatype, yet. And it is %T", value)
+			err = lazyerrors.Errorf("The document used in filter contains a datatype not yet supported: %T", value)
 			return
 		}
 	}
@@ -280,6 +289,7 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	return
 }
 
+// Used for for example $AND and $OR
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
 		"$AND": " AND ",
@@ -296,7 +306,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	switch value := value.(type) {
 	case *types.Array:
 		if value.Len() < 2 {
-			err = lazyerrors.Errorf("Need minimum to expressions")
+			err = lazyerrors.Errorf("Need minimum two expressions")
 			return
 		}
 		var expr any
@@ -334,14 +344,14 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 				}
 
 			default:
-				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead the datatype: %T", value)
 				return
 			}
 
 		}
 
 	default:
-		err = lazyerrors.Errorf("Found in array of logicExpression no document but instead %T", value)
+		err = lazyerrors.Errorf("Expected an array got %T", value)
 		return
 
 	}
@@ -351,6 +361,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
+// Used for {field: {$: value}}
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
 		"$gt":        " > ",
@@ -426,12 +437,13 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		}
 
 	default:
-		err = lazyerrors.Errorf("wrong use of filter")
+		err = lazyerrors.Errorf("In use of field expression a document was expected. Got instead: %T", value)
 	}
 
 	return
 }
 
+// Implement $all and $elemMatch using the FOR ANY
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 	switch filters := filters.(type) {
 	case types.Document:
@@ -491,6 +503,9 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			}
 			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
 		}
+	default:
+		err = lazyerrors.Errorf("If $all: Expected array. If $elemMatch: Expected document. Got instead: %T", filters)
+		return
 	}
 
 	return

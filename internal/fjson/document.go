@@ -75,6 +75,7 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Return a slice containing the fields of the JSON document. This enables order preservance.
 func getJSONKeys(docs []byte) (keys []string, error error) {
 	r := bytes.NewReader(docs)
 	dec := json.NewDecoder(r)
@@ -121,13 +122,9 @@ func getJSONKeys(docs []byte) (keys []string, error error) {
 			continue
 		}
 
+		// Continues when value
 		if i%2 == 0 {
 			i++
-			continue
-		}
-
-		if s == "]" {
-			isArray--
 			continue
 		}
 
@@ -143,6 +140,7 @@ func getJSONKeys(docs []byte) (keys []string, error error) {
 	return keys, nil
 }
 
+// MarshalJSON implements fjsontype interface. This is used by the wire protocol
 func (doc *Document) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	var b []byte
@@ -154,7 +152,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	buf.WriteByte('{')
 
 	objectId, _ := td.Get("_id")
-
+	// Puts field _id in the front of the document
 	switch objectId := objectId.(type) {
 	case types.ObjectID:
 		buf.Write([]byte("\"_id\""))
@@ -211,6 +209,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// MarshalJSON implements fjsontype interface. This is used by MongoDB operations.
 func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 	var buf bytes.Buffer
 	var b []byte
@@ -222,7 +221,7 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 	buf.WriteByte('{')
 
 	objectId, _ := td.Get("_id")
-
+	// Puts field _id in the front of the document
 	switch objectId := objectId.(type) {
 	case types.ObjectID:
 		buf.Write([]byte("\"_id\""))
@@ -234,7 +233,6 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 		}
 
 		buf.Write(b)
-		// buf.WriteByte(',')
 
 		idInserted = true
 	default:

@@ -33,7 +33,7 @@ import (
 	"github.com/DocStore/HANA_HWY/internal/wire"
 )
 
-// Mode represents FerretDB mode of operation.
+// Mode represents SAP HANA compatibility layer for MongoDB Wire Protocol mode of operation.
 type Mode string
 
 const (
@@ -42,7 +42,7 @@ const (
 	// ProxyMode only proxies requests to another wire protocol compatible service.
 	ProxyMode Mode = "proxy"
 	// DiffNormalMode both handles requests and proxies them, then logs the diff.
-	// Only the FerretDB response is sent to the client.
+	// Only the SAP HANA compatibility layer for MongoDB Wire Protocol response is sent to the client.
 	DiffNormalMode Mode = "diff-normal"
 	// DiffProxyMode both handles requests and proxies them, then logs the diff.
 	// Only the proxy response is sent to the client.

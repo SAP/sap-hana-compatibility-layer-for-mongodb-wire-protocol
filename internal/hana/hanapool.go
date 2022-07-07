@@ -207,7 +207,7 @@ func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error)
 	return res, nil
 }
 
-// DropTable drops FerretDB collection / PostgreSQL table.
+// DropTable drops collection
 //
 // It returns ErrNotExist is table does not exist.
 func (hanaPool *Hpool) DropTable(ctx context.Context, collection string) error {
@@ -226,7 +226,7 @@ func (hanaPool *Hpool) DropTable(ctx context.Context, collection string) error {
 	return err
 }
 
-// DropSchema drops FerretDB database / PostgreSQL schema.
+// DropSchema drops database
 //
 // It returns ErrNotExist if schema does not exist.
 // Still needs to be written for DOCSTORE
