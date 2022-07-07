@@ -46,7 +46,7 @@ type bsontype interface {
 }
 
 //go-sumtype:decl bsontype
-
+// In fromBSON the datatypes not yet supported are commented out.
 func fromBSON(v bsontype) any {
 	switch v := v.(type) {
 	case *Document:
@@ -103,7 +103,7 @@ func fromBSONHANA(v bsontype) (any, error) {
 	case *Int64:
 		return int64(*v), nil
 	default:
-		err := fmt.Errorf("Support for datatype %s not implemented yet", v)
+		err := fmt.Errorf("support for datatype %s not implemented yet", v)
 		return nil, err
 	}
 }

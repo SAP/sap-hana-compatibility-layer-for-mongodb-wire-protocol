@@ -437,6 +437,9 @@ func (doc Document) MarshalJSON() ([]byte, error) {
 	return fjson.Marshal(fromBSON(&doc))
 }
 
+// MarshalJSON implements bsontype interface. Makes sure that the wire protocol and the operations execute take different paths.
+// Important since they do not support the same datatypes. The wire protocol for example needs datetime while datetime is not supported
+// for CRUD operations
 func (doc Document) MarshalJSONHANA() ([]byte, error) {
 	v, err := fromBSONHANA((&doc))
 	if err != nil {

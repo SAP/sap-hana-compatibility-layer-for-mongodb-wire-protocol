@@ -79,6 +79,7 @@ func checkConsumed(dec *json.Decoder, r *bytes.Reader) error {
 	return nil
 }
 
+// Everything commented out is at the moment not supported.
 func fromFJSON(v fjsontype) any {
 	switch v := v.(type) {
 	case *Document:
@@ -113,6 +114,7 @@ func fromFJSON(v fjsontype) any {
 	panic("not reached") // for go-sumtype to work
 }
 
+// Used for wire protocol.
 func toFJSON(v any) fjsontype {
 	switch v := v.(type) {
 	case types.Document:
@@ -147,6 +149,7 @@ func toFJSON(v any) fjsontype {
 	panic("not reached")
 }
 
+// used for MongoDB operations.
 func toFJSONHANA(v any) (fjsontype, error) {
 	switch v := v.(type) {
 	case types.Document:
@@ -173,6 +176,7 @@ func toFJSONHANA(v any) (fjsontype, error) {
 }
 
 // Unmarshal decodes the given fjson-encoded data.
+// Everything commented is at the moment not supported.
 func Unmarshal(data []byte) (any, error) {
 	var v any
 	r := bytes.NewReader(data)
@@ -193,13 +197,6 @@ func Unmarshal(data []byte) (any, error) {
 		// 	var o Double
 		// 	err = o.UnmarshalJSON(data)
 		// 	res = &o
-		// case v["$k"] != nil:
-		// 	var o Document
-		// 	err = o.UnmarshalJSON(data)
-		// 	res = &o
-		// case v["keys"] != nil:
-		// 	var o Document
-		// 	err = o.UnmarshalJSON(data)
 		// 	res = &o
 		// case v["$b"] != nil:
 		// 	var o Binary
@@ -271,7 +268,7 @@ func Unmarshal(data []byte) (any, error) {
 	return fromFJSON(res), nil
 }
 
-// Marshal encodes given value into fjson.
+// Marshal encodes given value into fjson. Used for wire protocol.
 func Marshal(v any) ([]byte, error) {
 	if v == nil {
 		return []byte("null"), nil
@@ -285,6 +282,7 @@ func Marshal(v any) ([]byte, error) {
 	return b, nil
 }
 
+// Marshal encodes given value into fjson. Used for MongoDB operations.
 func MarshalHANA(v any) ([]byte, error) {
 	if v == nil {
 		return []byte("null"), nil
@@ -309,6 +307,7 @@ func MarshalHANA(v any) ([]byte, error) {
 	return b, nil
 }
 
+// Needed since the JSON package returns only numbers as Float64.
 func decoderNumber(data []byte) (any, error) {
 	var err error = nil
 	var num any

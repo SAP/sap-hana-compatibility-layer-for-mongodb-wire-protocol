@@ -14,6 +14,8 @@
 
 package bson
 
+// Is for right now not supported. But could be in the future.
+
 // import (
 // 	"bufio"
 // 	"bytes"

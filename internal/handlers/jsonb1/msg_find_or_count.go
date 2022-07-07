@@ -62,6 +62,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	docMap := document.Map()
 
+	// Checks if command printshardingstatus is used.
 	if isPrintShardingStatus(docMap) {
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
 	}
@@ -88,6 +89,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 		collection = m["find"].(string)
 		filter, _ = m["filter"].(types.Document)
+
 		sql = fmt.Sprintf(`select %s FROM %s`, projectionSQL, collection)
 	} else { // enters here if count
 		collection = m["count"].(string)
@@ -97,7 +99,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
 
-	if len(filter.Map()) != 0 {
+	if len(filter.Map()) != 0 { // There is given a filter
 		whereSQL, err := common.Where(filter)
 		if err != nil {
 			return nil, err
@@ -150,7 +152,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql += " LIMIT %d"
 		args = append(args, limit)
 	default:
-		// TODO https://github.com/DocStore/HANA_HWY/issues/79
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 
@@ -224,6 +225,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	return &reply, nil
 }
 
+// Checks if command PrintShardingStatus is being used.
 func isPrintShardingStatus(docMap map[string]any) bool {
 	if docMap["find"] == "shards" && docMap["$db"] == "config" {
 		return true

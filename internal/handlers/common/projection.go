@@ -128,6 +128,7 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 	return
 }
 
+// Prepares the SQL statement for what to include. This is using the json projection
 func inclusionProjection(projection types.Document) (sql string) {
 	sql = "{"
 	if id, err := projection.Get("_id"); err == nil {
@@ -166,6 +167,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 	return
 }
 
+// If it is an exclusion then this performs the exclusion on each document together with the function projectDocument
 func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
