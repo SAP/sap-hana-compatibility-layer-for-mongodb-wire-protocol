@@ -368,9 +368,9 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$gte":       " >= ",
 		"$lt":        " < ",
 		"$lte":       " <= ",
-		"$eq":        "=",
-		"$ne":        "<>",
-		"$exists":    "IS",
+		"$eq":        " = ",
+		"$ne":        " <> ",
+		"$exists":    " IS ",
 		"$size":      "CARDINALITY",
 		"$all":       "all",
 		"$elemMatch": "elemMatch",
@@ -404,9 +404,9 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				switch exprValue := exprValue.(type) {
 				case bool:
 					if exprValue {
-						vSQL = " SET"
+						vSQL = "SET"
 					} else {
-						vSQL = " UNSET"
+						vSQL = "UNSET"
 					}
 				default:
 					return "", lazyerrors.Errorf("$exists only works with true or false")

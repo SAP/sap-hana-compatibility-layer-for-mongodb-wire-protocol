@@ -121,7 +121,7 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 				inclusion = true
 			}
 		default:
-			err = lazyerrors.Errorf("unsupported operation %s %v (%T)", k, v, v)
+			err = lazyerrors.Errorf("Only $set and $unset are supported for update operations")
 			return
 		}
 	}
