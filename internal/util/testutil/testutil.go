@@ -105,10 +105,10 @@ package testutil
 // 	return strings.ReplaceAll(strings.ToLower(tb.Name()), "/", "_")
 // }
 
-// // CreateTable creates FerretDB collection / PostgreSQL table for testing.
+// // CreateCollection creates FerretDB collection / PostgreSQL table for testing.
 // //
 // // Name is stable for that test.
-// func CreateTable(ctx context.Context, tb testing.TB, pool *pg.Pool, db string) string {
+// func CreateCollection(ctx context.Context, tb testing.TB, pool *pg.Pool, db string) string {
 // 	tb.Helper()
 
 // 	if testing.Short() {
@@ -124,7 +124,7 @@ package testutil
 // 	}
 // 	require.NoError(tb, err)
 
-// 	err = pool.CreateTable(ctx, db, table)
+// 	err = pool.CreateCollection(ctx, db, table)
 // 	require.NoError(tb, err)
 
 // 	return table

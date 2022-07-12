@@ -39,6 +39,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	m := document.Map()
 
 	collection := m[document.Command()].(string)
+	db := m["$db"].(string)
 
 	docs, _ := m["deletes"].(*types.Array)
 
@@ -56,14 +57,14 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		d := doc.(types.Document).Map()
 
-		sql := fmt.Sprintf(`DELETE FROM %s`, collection)
+		sql := fmt.Sprintf(`DELETE FROM %s.%s`, db, collection)
 
 		limit, _ := d["limit"].(int32)
 
 		var delSQL string
 		var args []any
 		if limit != 0 { // if deleteOne()
-			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s", collection)
+			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s.%s", db, collection)
 
 			whereSQL, err := common.Where(d["q"].(types.Document))
 			if err != nil {

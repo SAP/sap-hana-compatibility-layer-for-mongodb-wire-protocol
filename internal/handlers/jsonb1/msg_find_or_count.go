@@ -90,10 +90,10 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		collection = m["find"].(string)
 		filter, _ = m["filter"].(types.Document)
 
-		sql = fmt.Sprintf(`SELECT %s FROM %s`, projectionSQL, collection)
+		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, db, collection)
 	} else { // enters here if count
 		collection = m["count"].(string)
-		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s`, collection)
+		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, db, collection)
 	}
 
 	sort, _ := m["sort"].(types.Document)

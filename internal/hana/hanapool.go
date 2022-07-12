@@ -8,9 +8,6 @@ import (
 	"strings"
 
 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v4"
 	"go.uber.org/zap"
 )
 
@@ -71,10 +68,15 @@ func CreatePool(connString string, logger *zap.Logger, lazy bool) (*Hpool, error
 
 }
 
-// Tables returns a sorted list of FerretDB collection / PostgreSQL table names.
+// Tables returns a sorted list of SAP HANA JSON Document Store collection names.
 func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) {
+
+	if err := hanaPool.CreateSchema(ctx, db); err != nil && err != ErrAlreadyExist {
+		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
+	}
+
 	sql := "SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';"
-	rows, err := hanaPool.QueryContext(ctx, sql, db)
+	rows, err := hanaPool.QueryContext(ctx, sql, strings.ToUpper(db))
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
@@ -96,7 +98,7 @@ func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) 
 	return res, nil
 }
 
-// Still needs to be written for DOCSTORE
+// CreateSchema creates a schema in SAP HANA JSON Document Store.
 func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
 	sql := `CREATE SCHEMA ` + db
 	_, err := hanaPool.ExecContext(ctx, sql)
@@ -108,11 +110,11 @@ func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
 	return err
 }
 
-// CreateTable creates a new FerretDB collection / PostgreSQL jsonb table.
+// CreateCollection creates a new SAP HANA JSON Document Store collection.
 //
-// It returns ErrAlreadyExist if table already exist.
-func (hanaPool *Hpool) CreateTable(ctx context.Context, collection string) error {
-	sql := `CREATE COLLECTION ` + collection
+// It returns ErrAlreadyExist if collection already exist.
+func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection string) error {
+	sql := `CREATE COLLECTION ` + db + "." + collection
 	_, err := hanaPool.ExecContext(ctx, sql)
 
 	if err != nil {
@@ -122,9 +124,9 @@ func (hanaPool *Hpool) CreateTable(ctx context.Context, collection string) error
 	return err
 }
 
-// Schemas returns a sorted list of FerretDB database / PostgreSQL schema names.
+// Schemas returns a sorted list of SAP HANA JSON Document Store schema names.
 func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
-	sql := "SELECT DISTINCT SCHEMA_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER'"
+	sql := "SELECT * FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'"
 	rows, err := hanaPool.QueryContext(ctx, sql)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
@@ -152,7 +154,7 @@ func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
 }
 
 // TableStats returns a set of statistics for a table.
-// Still needs to be written for DOCSTORE
+// Still needs to be written for SAP HANA JSON Document Store
 func (hanaPool *Hpool) TableStats(ctx context.Context, db, table string) (*TableStats, error) {
 	res := new(TableStats)
 	sql := `
@@ -178,7 +180,7 @@ func (hanaPool *Hpool) TableStats(ctx context.Context, db, table string) (*Table
 }
 
 // DBStats returns a set of statistics for a database.
-// Still needs to be written for DOCSTORE
+// Still needs to be written for SAP HANA JSON Document Store
 func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error) {
 	res := new(DBStats)
 	sql := `
@@ -209,19 +211,15 @@ func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error)
 
 // DropTable drops collection
 //
-// It returns ErrNotExist is table does not exist.
-func (hanaPool *Hpool) DropTable(ctx context.Context, collection string) error {
-	// TODO probably not CASCADE
-	sql := `DROP COLLECTION ` + collection
+// It returns ErrNotExist is collection does not exist.
+func (hanaPool *Hpool) DropTable(ctx context.Context, db, collection string) error {
+
+	sql := `DROP COLLECTION ` + db + "." + collection
 	_, err := hanaPool.ExecContext(ctx, sql)
 
 	if err != nil {
 		return ErrNotExist
 	}
-
-	//if e, ok := err.(*pgconn.PgError); ok && e.Code == pgerrcode.UndefinedTable {
-	//	return ErrNotExist
-	//}
 
 	return err
 }
@@ -229,14 +227,9 @@ func (hanaPool *Hpool) DropTable(ctx context.Context, collection string) error {
 // DropSchema drops database
 //
 // It returns ErrNotExist if schema does not exist.
-// Still needs to be written for DOCSTORE
 func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
-	sql := `DROP SCHEMA ` + pgx.Identifier{db}.Sanitize() + ` CASCADE`
+	sql := `DROP SCHEMA ` + db + " cascade"
 	_, err := hanaPool.ExecContext(ctx, sql)
-
-	if e, ok := err.(*pgconn.PgError); ok && e.Code == pgerrcode.InvalidSchemaName {
-		return ErrNotExist
-	}
 
 	return err
 }
