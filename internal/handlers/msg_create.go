@@ -60,13 +60,12 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	collection := m[document.Command()].(string)
 
-	//--- CreateSchema still needs to be implemented
 	db := m["$db"].(string)
-	// if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
-	// 	return nil, lazyerrors.Error(err)
-	// }
+	if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
+		return nil, lazyerrors.Error(err)
+	}
 
-	if err = h.hanaPool.CreateTable(ctx, collection); err != nil {
+	if err = h.hanaPool.CreateCollection(ctx, db, collection); err != nil {
 		if err == hana.ErrAlreadyExist {
 			return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: %s.%s", db, collection)
 		}

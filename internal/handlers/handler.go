@@ -190,7 +190,6 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	command := document.Command()
 
 	if command == "createindexes" {
-		// TODO https://github.com/FerretDB/FerretDB/issues/78
 		return h.jsonb1, nil
 	}
 
@@ -198,8 +197,8 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	db := m["$db"].(string)
 
 	var jsonbTableExist bool
-	sql := "SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = $1 AND table_name = $2"
-	rows, err := h.hanaPool.QueryContext(ctx, sql, db, strings.ToUpper(collection))
+	sql := "SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = $1 AND table_name = $2 AND TABLE_TYPE = 'COLLECTION'"
+	rows, err := h.hanaPool.QueryContext(ctx, sql, strings.ToUpper(db), strings.ToUpper(collection))
 	if err != nil {
 		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 	}
@@ -231,24 +230,16 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return h.jsonb1, nil
 		}
 
-		// check if SQL table exist
-		// tables, err := h.hanaPool.Tables(ctx, db)
-		// if err != nil {
-		// 	return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		// }
-		// if i := sort.SearchStrings(tables, collection); i < len(tables) && tables[i] == collection {
-		// 	return nil, nil
-		// }
+		if strings.EqualFold(command, "update") {
+			return nil, lazyerrors.Errorf("Collection %s does not exist", strings.ToUpper(collection))
+		}
 
-		//Not sure if this is needed
-		// create schema if needed
-		//if err := h.pgPool.CreateSchema(ctx, db); err != nil && err != pg.ErrAlreadyExist {
-		//if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
-		//	return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		//}
+		if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
+			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
+		}
 
 		// create table
-		if err := h.hanaPool.CreateTable(ctx, collection); err != nil {
+		if err := h.hanaPool.CreateCollection(ctx, db, collection); err != nil {
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 

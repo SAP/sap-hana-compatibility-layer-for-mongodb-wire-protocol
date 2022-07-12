@@ -907,7 +907,7 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 // 	})
 
 // 	t.Run("existing", func(t *testing.T) {
-// 		collection := testutil.CreateTable(ctx, t, pool, db)
+// 		collection := testutil.CreateCollection(ctx, t, pool, db)
 
 // 		actual := handle(ctx, t, handler, types.MustMakeDocument(
 // 			"create", collection,

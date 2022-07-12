@@ -1,11 +1,11 @@
 # HANA HWY
 
-HANA HWY is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. HANA HWY is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to DocStore, the database engine of HANA HWY. MongoDB drivers and shell will, when connected to HANA HWY, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from DocStore.  
-Perfect for companies looking to change from MongoDB to DocStore. 
+HANA HWY is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. HANA HWY is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to SAP HANA JSON Document Store, the database engine of HANA HWY. MongoDB drivers and shell will, when connected to HANA HWY, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from SAP HANA JSON Document Store.  
+Perfect for companies looking to change from MongoDB to SAP HANA JSON Document Store. 
 
 ## Scope
 
-HANA HWY will be compatible with MongoDB drivers and shell. The first version will implement the basic MongoDB CRUD operations and support all datatypes supported in DocStore.
+HANA HWY will be compatible with MongoDB drivers and shell. The first version will implement the basic MongoDB CRUD operations and support all datatypes supported in SAP HANA JSON Document Store.
 
 
 ## Current state
@@ -24,7 +24,7 @@ These steps describe a quick local setup on linux.
 - docker-compose (preferably without the need for sudo)
 - make
 
-Furthermore, a running HANA instance with DocStore enabled is necessary.
+Furthermore, a running HANA instance with SAP HANA JSON Document Store enabled is necessary.
 
 For the installation of Go-hdb see the following links:
 - [https://developers.sap.com/tutorials/hana-clients-install.html](url)

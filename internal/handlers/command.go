@@ -76,12 +76,12 @@ var commands = map[string]command{
 		help:    "Drops the collection.",
 		handler: (*Handler).MsgDrop,
 	},
-	// "dropdatabase": {
-	// 	// db.dropDatabase()
-	// 	name:    "dropDatabase",
-	// 	help:    "Deletes the database.",
-	// 	handler: (*Handler).MsgDropDatabase,
-	// },
+	"dropdatabase": {
+		// db.dropDatabase()
+		name:    "dropDatabase",
+		help:    "Deletes the database.",
+		handler: (*Handler).MsgDropDatabase,
+	},
 	// "getcmdlineopts": {
 	// 	// db.adminCommand( { getCmdLineOpts: 1  } )
 	// 	name:    "getCmdLineOpts",
