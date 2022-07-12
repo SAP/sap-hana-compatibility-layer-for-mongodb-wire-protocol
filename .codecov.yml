@@ -1,6 +1,6 @@
 ---
 codecov:
-  bot: ferretdb-bot
+  bot: compatibilitylayer-bot
 coverage:
   range: "40...60"
 github_checks:

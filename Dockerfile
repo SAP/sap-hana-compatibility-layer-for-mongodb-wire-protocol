@@ -1,17 +1,19 @@
-FROM scratch
+# Make one for SAP HANA compatibility layer for MongoDB Wire Protocol
 
-ARG TARGETARCH
+#FROM scratch
 
-ADD bin/ferretdb-${TARGETARCH} /ferretdb
+# ARG TARGETARCH
 
-EXPOSE 27017
+# ADD bin/ferretdb-${TARGETARCH} /ferretdb
 
-ENTRYPOINT [ "/ferretdb" ]
-CMD [ "-mode=diff-normal" ]
+# EXPOSE 27017
 
-LABEL org.opencontainers.image.source=https://github.com/FerretDB/FerretDB
-LABEL org.opencontainers.image.url=https://ferretdb.io/
-LABEL org.opencontainers.image.title=FerretDB
-LABEL org.opencontainers.image.description="A truly Open Source MongoDB alternative"
-LABEL org.opencontainers.image.vendor="FerretDB Inc."
-LABEL org.opencontainers.image.licenses="Apache-2.0"
+# ENTRYPOINT [ "/ferretdb" ]
+# CMD [ "-mode=diff-normal" ]
+
+# LABEL org.opencontainers.image.source=https://github.com/FerretDB/FerretDB
+# LABEL org.opencontainers.image.url=https://ferretdb.io/
+# LABEL org.opencontainers.image.title=FerretDB
+# LABEL org.opencontainers.image.description="A truly Open Source MongoDB alternative"
+# LABEL org.opencontainers.image.vendor="FerretDB Inc."
+# LABEL org.opencontainers.image.licenses="Apache-2.0"

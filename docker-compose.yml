@@ -5,7 +5,7 @@ services:
   # for compatibility testing and mongosh
   mongodb:
     image: mongo:5.0.5
-    container_name: ferretdb_mongodb
+    container_name: hana_mongodb
     ports:
       - 127.0.0.1:37017:27017
     extra_hosts:
