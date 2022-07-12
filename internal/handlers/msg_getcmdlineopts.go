@@ -17,17 +17,17 @@ package handlers
 import (
 	"context"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
-// MsgGetCmdLineOpts returns a document containing command line options used to start the given FerretDB.
+// MsgGetCmdLineOpts returns a document containing command line options used to start the given SAP HANA compatibility layer for MongoDB Wire Protocol.
 func (h *Handler) MsgGetCmdLineOpts(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	var reply wire.OpMsg
 	err := reply.SetSections(wire.OpMsgSection{
 		Documents: []types.Document{types.MustMakeDocument(
-			"argv", types.MustNewArray("ferretdb"),
+			"argv", types.MustNewArray("SAP HANA compatibility layer for MongoDB Wire Protocol"),
 			"parsed", types.MustMakeDocument(),
 			"ok", float64(1),
 		)},

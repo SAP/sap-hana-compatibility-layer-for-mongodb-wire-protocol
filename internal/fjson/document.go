@@ -21,8 +21,8 @@ import (
 	"io"
 	"log"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // Document represents BSON Document data type.

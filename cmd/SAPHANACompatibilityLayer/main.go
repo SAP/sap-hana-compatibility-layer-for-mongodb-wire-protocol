@@ -27,12 +27,12 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 
-	"github.com/DocStore/HANA_HWY/internal/clientconn"
-	"github.com/DocStore/HANA_HWY/internal/hana"
-	"github.com/DocStore/HANA_HWY/internal/handlers"
-	"github.com/DocStore/HANA_HWY/internal/util/debug"
-	"github.com/DocStore/HANA_HWY/internal/util/logging"
-	"github.com/DocStore/HANA_HWY/internal/util/version"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/clientconn"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/debug"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/logging"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/version"
 )
 
 //nolint:gochecknoglobals // flags are defined there to be visible in `bin/ferretdb-testcover -h` output
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	logger.Info(
-		"Starting HANA HWY "+info.Version+"...",
+		"Starting SAP HANA compatibility layer for MongoDB Wire Protocol "+info.Version+"...",
 		zap.String("version", info.Version),
 		zap.String("commit", info.Commit),
 		zap.String("branch", info.Branch),

@@ -14,7 +14,7 @@
 
 // Package fjson provides converters from/to FJSON.
 //
-// All BSON data types have three representations in FerretDB:
+// All BSON data types have three representations in SAP HANA compatibility layer for MongoDB Wire Protocol:
 //
 //  1. As they are used in handlers implementation (types package).
 //  2. As they are used in the wire protocol implementation (bson package).
@@ -51,8 +51,8 @@ import (
 
 	"github.com/AlekSi/pointer"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 type fjsontype interface {

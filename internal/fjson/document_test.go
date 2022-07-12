@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 )
 
 func convertDocument(d types.Document) *Document {

@@ -1,4 +1,4 @@
-module github.com/DocStore/HANA_HWY/tools
+module github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/tools
 
 go 1.18
 

@@ -14,7 +14,7 @@
 
 // Package types provides Go types matching BSON types without built-in Go equivalents.
 //
-// All BSON data types have three representations in FerretDB:
+// All BSON data types have three representations in SAP HANA compatibility layer for MongoDB Wire Protocol:
 //
 //  1. As they are used in handlers implementation (types package).
 //  2. As they are used in the wire protocol implementation (bson package).

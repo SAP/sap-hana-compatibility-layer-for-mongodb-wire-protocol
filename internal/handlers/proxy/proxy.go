@@ -20,8 +20,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // Handler "handles" messages by sending them to another wire protocol compatible service.

@@ -20,9 +20,9 @@ package handlers
 
 // 	"github.com/stretchr/testify/require"
 
-// 	"github.com/DocStore/HANA_HWY/internal/types"
-// 	"github.com/DocStore/HANA_HWY/internal/util/testutil"
-// 	"github.com/DocStore/HANA_HWY/internal/wire"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 // )
 
 // // TODO Rework to make them closer to other tests.

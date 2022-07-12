@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/DocStore/HANA_HWY/internal/handlers/common"
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/util/version"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/version"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // MsgGetLog is an administrative command that returns the most recent 1024 logged events.
@@ -48,7 +48,7 @@ func (h *Handler) MsgGetLog(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	var log types.Array
 	for _, line := range []string{
-		"Powered by HANA HWY " + mv.Version + " and SAP HANA " + hv + ".",
+		"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol " + mv.Version + " and SAP HANA " + hv + ".",
 	} {
 		b, err := json.Marshal(map[string]any{
 			"msg":  line,

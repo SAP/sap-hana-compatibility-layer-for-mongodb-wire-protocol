@@ -17,9 +17,9 @@ package handlers
 import (
 	"context"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // MsgWhatsMyURI is an internal command, returns the peerAddress of the handler.

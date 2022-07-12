@@ -17,9 +17,9 @@ package handlers
 import (
 	"context"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 func (h *Handler) MsgDBStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
@@ -45,7 +45,6 @@ func (h *Handler) MsgDBStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg,
 		Documents: []types.Document{types.MustMakeDocument(
 			"db", db,
 			"collections", stats.CountTables,
-			// TODO https://github.com/FerretDB/FerretDB/issues/176
 			"views", int32(0),
 			"objects", stats.CountRows,
 			"avgObjSize", float64(stats.SizeSchema)/float64(stats.CountRows),

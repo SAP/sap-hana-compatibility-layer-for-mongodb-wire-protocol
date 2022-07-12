@@ -17,7 +17,7 @@ package clientconn
 import "github.com/prometheus/client_golang/prometheus"
 
 const (
-	namespace = "HANA_HWY"
+	namespace = "SAP_HANA_compatibility_layer_for_MongoDB_Wire_Protocol"
 	subsystem = "client"
 )
 

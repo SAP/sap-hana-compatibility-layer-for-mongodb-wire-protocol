@@ -1,11 +1,11 @@
-# HANA HWY
+# SAP HANA compatibility layer for MongoDB Wire Protocol
 
-HANA HWY is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. HANA HWY is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to SAP HANA JSON Document Store, the database engine of HANA HWY. MongoDB drivers and shell will, when connected to HANA HWY, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from SAP HANA JSON Document Store.  
+SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](url)), an open-source alternative to MongoDB. SAP HANA compatibility layer is in the process of becoming a viable drop-in replacement for MongoDB. It works as a stateless proxy, converting MongoDB wire protocol queries to SQL. The SQL is then sent to SAP HANA JSON Document Store, the database engine of SAP HANA compatibility layer. MongoDB drivers and shell will, when connected to SAP HANA compatibility layer, behave as if it was connected to a MongoDB instance when in reality, everything is stored on and retrieved from SAP HANA JSON Document Store.  
 Perfect for companies looking to change from MongoDB to SAP HANA JSON Document Store. 
 
 ## Scope
 
-HANA HWY will be compatible with MongoDB drivers and shell. The first version will implement the basic MongoDB CRUD operations and support all datatypes supported in SAP HANA JSON Document Store.
+SAP HANA compatibility layer for MongoDB Wire Protocol will be compatible with MongoDB drivers and shell. The first version will implement the basic MongoDB CRUD operations and support all datatypes supported in SAP HANA JSON Document Store.
 
 
 ## Current state
@@ -32,15 +32,15 @@ For the installation of Go-hdb see the following links:
 
 2. Clone the repository
 
-3. After cloning, enter the folder HANA_HWY and open the file /cmd/hanahwy/main.go. Then insert a connect string for a HANA Cloud instance on line 47. Do the same in file /internal/hana/hanapool.go on line 51.
+3. After cloning, enter the folder sap-hana-compatibility-layer-for-mongodb-wire-protocol and open the file /cmd/SAPHANACompatibilityLayer/main.go. Then insert a connect string for a HANA Cloud instance on line 47. Do the same in file /internal/hana/hanapool.go on line 51.
 
-4. In the folder HANA_HWY run the following:
+4. In the folder sap-hana-compatibility-layer-for-mongodb-wire-protocol run the following:
 
 ```
 make init
 ```
 
-It will download all modules needed for running HANA HWY
+It will download all modules needed for running SAP HANA compatibility layer for MongoDB Wire Protocol
 
 5. Open three terminal windows
 
@@ -74,13 +74,13 @@ make mongosh-sudo
 6. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
 
 ```
-db.createCollection("firstHANAHWYCollection")
+db.createCollection("firstCollection")
 ```
 
 ```
-db.firstHANAHWYCollection.insertOne({we: "did", it: "!"})
+db.firstCollection.insertOne({we: "did", it: "!"})
 ```
 
 ```
-db.firstHANAHWYCollection.find()
+db.firstCollection.find()
 ```

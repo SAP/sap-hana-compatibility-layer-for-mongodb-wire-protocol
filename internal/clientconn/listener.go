@@ -25,10 +25,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/DocStore/HANA_HWY/internal/hana"
-	"github.com/DocStore/HANA_HWY/internal/handlers"
-	"github.com/DocStore/HANA_HWY/internal/util/ctxutil"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/ctxutil"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // Listener accepts incoming client connections.

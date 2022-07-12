@@ -241,8 +241,6 @@ func compareOrdered[T constraints.Ordered](a, b T) CompareResult {
 }
 
 // compareNumbers compares two numbers.
-//
-// TODO https://github.com/FerretDB/FerretDB/issues/371
 func compareNumbers(a float64, b int64) CompareResult {
 	return compareOrdered(a, float64(b))
 }

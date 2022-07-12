@@ -17,7 +17,7 @@ package common
 import (
 	"context"
 
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 type Storage interface {

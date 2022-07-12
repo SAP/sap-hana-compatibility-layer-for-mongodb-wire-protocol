@@ -20,8 +20,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // func setup(t *testing.T, poolOpts *testutil.PoolOpts) (context.Context, *Handler, *pg.Pool) {
@@ -876,7 +876,7 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 // 		assert.Equal(t, expected, actual)
 
 // 		// TODO test listCollections command once we have better cursor support
-// 		// https://github.com/DocStore/HANA_HWY/issues/79
+// 		// https://github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues/79
 
 // 		tables, err := pool.Tables(ctx, db)
 // 		require.NoError(t, err)

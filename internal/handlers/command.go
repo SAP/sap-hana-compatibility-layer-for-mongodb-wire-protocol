@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/DocStore/HANA_HWY/internal/handlers/common"
-	"github.com/DocStore/HANA_HWY/internal/types"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
-	"github.com/DocStore/HANA_HWY/internal/wire"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 type command struct {
@@ -109,13 +109,13 @@ var commands = map[string]command{
 	"ismaster": {
 		// db.isMaster()
 		name:    "isMaster",
-		help:    "Returns the role of the HANA HWY instance.",
+		help:    "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
 		handler: (*Handler).MsgHello,
 	},
 	"hello": {
 		// db.hello()
 		name:    "hello",
-		help:    "Returns the role of the HANA HWY instance.",
+		help:    "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
 		handler: (*Handler).MsgHello,
 	},
 	"listcollections": {

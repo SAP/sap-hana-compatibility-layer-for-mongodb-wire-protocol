@@ -17,8 +17,8 @@ package bson
 import (
 	"bufio"
 
-	"github.com/DocStore/HANA_HWY/internal/fjson"
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/fjson"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // CString represents BSON CString data type.

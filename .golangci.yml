@@ -32,7 +32,7 @@ linters-settings:
       See the License for the specific language governing permissions and
       limitations under the License.
   goimports:
-    local-prefixes: github.com/DocStore/HANA_HWY
+    local-prefixes: github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol
   gosimple:
     go: "1.18"
     checks: ["all"]

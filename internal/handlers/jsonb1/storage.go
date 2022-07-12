@@ -15,11 +15,11 @@
 package jsonb1
 
 import (
-	"github.com/DocStore/HANA_HWY/internal/hana"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 
 	"go.uber.org/zap"
 
-	"github.com/DocStore/HANA_HWY/internal/handlers/common"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
 )
 
 type storage struct {

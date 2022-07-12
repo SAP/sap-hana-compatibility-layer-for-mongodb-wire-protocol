@@ -18,9 +18,9 @@ package bson
 // 	"bufio"
 // 	"bytes"
 
-// 	"github.com/DocStore/HANA_HWY/internal/fjson"
-// 	"github.com/DocStore/HANA_HWY/internal/types"
-// 	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/fjson"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 // )
 
 // Regex is not yet supported

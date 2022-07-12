@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/DocStore/HANA_HWY/internal/util/lazyerrors"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // DateTime represents BSON DateTime data type.
@@ -55,7 +55,7 @@ func (dt *DateTime) UnmarshalJSON(data []byte) error {
 		return lazyerrors.Error(err)
 	}
 
-	// TODO Use .UTC(): https://github.com/FerretDB/FerretDB/issues/43
+	// TODO Use .UTC()
 	*dt = DateTime(time.UnixMilli(o.D))
 	return nil
 }
