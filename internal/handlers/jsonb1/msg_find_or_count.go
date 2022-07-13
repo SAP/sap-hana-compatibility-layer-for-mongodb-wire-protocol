@@ -93,6 +93,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, db, collection)
 	} else { // enters here if count
 		collection = m["count"].(string)
+		filter, _ = m["query"].(types.Document)
 		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, db, collection)
 	}
 
@@ -205,9 +206,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 			}
 		}
 
-		if count > limit && limit != 0 {
-			count = limit
-		}
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
