@@ -17,6 +17,7 @@ package jsonb1
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -79,7 +80,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if docM["multi"] != true { // If updateOne()
 
 			// We get the _id of the one document to update.
-			sql := fmt.Sprintf("select \"_id\" FROM %s.%s", db, collection)
+			sql := fmt.Sprintf("select {\"_id\": \"_id\"} FROM %s.%s", db, collection)
 			// notWhereSQL makes sure we do not update documents which do not need an update
 			sql += whereSQL + notWhereSQL + " limit 1"
 			row := h.hanaPool.QueryRowContext(ctx, sql)
@@ -97,7 +98,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 				return nil, err
 			}
 
-			try, err := getUpdateValue(id)
+			updateId, err := getUpdateValue(id.(types.Document).Map()["_id"])
 			if err != nil {
 				return nil, err
 			}
@@ -113,12 +114,13 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 			whereSQL = "WHERE \"_id\" = %s"
 			var emptySlice []any
-			args = append(emptySlice, try)
+			args = append(emptySlice, updateId)
 		}
 
 		sql := fmt.Sprintf("UPDATE %s.%s ", db, collection)
 
 		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
+
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
 			return nil, err
@@ -197,7 +199,10 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 
 	var unSetSQL, isSetSQL string
 	if unSetDoc, ok := updateMap["$unset"].(types.Document); ok {
-		unSetSQL, isSetSQL = unsetFields(unSetDoc)
+		if unSetSQL, isSetSQL, err = unsetFields(unSetDoc); err != nil {
+			return
+		}
+
 	}
 
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
@@ -239,6 +244,11 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 	i := 0
 	for key, value := range setDoc.Map() {
 
+		if strings.EqualFold(key, "_id") {
+			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
+			return
+		}
+
 		if i != 0 {
 			updateSQL += ", "
 			isUnsetSQL += " OR "
@@ -259,11 +269,16 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 }
 
 // Create SQL for unsetting fields
-func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string) {
+func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err error) {
 	unsetSQL = " UNSET "
 
 	i := 0
 	for key := range unSetDoc.Map() {
+
+		if strings.EqualFold(key, "_id") {
+			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
+			return
+		}
 
 		if i != 0 {
 			unsetSQL += ", "
