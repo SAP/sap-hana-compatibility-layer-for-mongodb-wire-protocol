@@ -202,7 +202,6 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 		if unSetSQL, isSetSQL, err = unsetFields(unSetDoc); err != nil {
 			return
 		}
-
 	}
 
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
