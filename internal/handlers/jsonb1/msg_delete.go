@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/fjson"
 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
@@ -64,7 +65,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		var delSQL string
 		var args []any
 		if limit != 0 { // if deleteOne()
-			qSQL := fmt.Sprintf("SELECT \"_id\".\"oid\" FROM %s.%s", db, collection)
+			qSQL := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
 
 			whereSQL, err := common.Where(d["q"].(types.Document))
 			if err != nil {
@@ -73,23 +74,27 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 			qSQL += whereSQL + " LIMIT 1"
 
-			rows, err := h.hanaPool.QueryContext(ctx, qSQL)
+			row := h.hanaPool.QueryRowContext(ctx, qSQL)
+
+			var objectID []byte
+			err = row.Scan(&objectID)
 			if err != nil {
-				return nil, lazyerrors.Error(err)
+				err = nil
+				continue
 			}
 
-			defer rows.Close()
-			var objectID string
-			for rows.Next() {
-				err = rows.Scan(&objectID)
-				if err != nil {
-					return nil, lazyerrors.Error(err)
-				}
-
+			id, err := fjson.Unmarshal(objectID)
+			if err != nil {
+				return nil, err
 			}
 
-			args = append(args, objectID)
-			delSQL = " WHERE \"_id\".\"oid\" = '%s'"
+			deleteId, err := getUpdateValue(id.(types.Document).Map()["_id"])
+			if err != nil {
+				return nil, err
+			}
+
+			args = append(args, deleteId)
+			delSQL = " WHERE \"_id\" = %s"
 
 		} else { // if deleteMany()
 			delSQL, err = common.Where(d["q"].(types.Document))
@@ -101,7 +106,6 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		sql += delSQL
 
 		sqlExec := fmt.Sprintf(sql, args...)
-
 		tag, err := h.hanaPool.ExecContext(ctx, sqlExec)
 		if err != nil {
 			// TODO check error code
