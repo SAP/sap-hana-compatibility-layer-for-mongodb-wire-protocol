@@ -90,8 +90,8 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if docM["multi"] != true { // If updateOne()
 
 			// We get the _id of the one document to update.
-			sql := fmt.Sprintf("select {\"_id\": \"_id\"} FROM %s.%s", db, collection)
-			sql += whereSQL + notWhereSQL + " limit 1"
+			sql := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
+			sql += whereSQL + notWhereSQL + " LIMIT 1"
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
 			var objectID []byte
