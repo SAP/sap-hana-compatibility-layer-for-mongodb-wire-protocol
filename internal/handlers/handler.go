@@ -181,6 +181,14 @@ func (h *Handler) handleOpQuery(ctx context.Context, query *wire.OpQuery) (*wire
 }
 
 func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Storage, error) {
+	available, err := h.hanaPool.JSONDocumentStoreAvailable(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !available {
+		return nil, lazyerrors.Errorf("The JSON Document Store feature is not available")
+	}
+
 	document, err := msg.Document()
 	if err != nil {
 		return nil, fmt.Errorf("Handler.msgStorage: %w", err)

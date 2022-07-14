@@ -226,3 +226,26 @@ func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
 
 	return err
 }
+
+func (hanaPool *Hpool) JSONDocumentStoreAvailable(ctx context.Context) (available bool, err error) {
+	sql := "SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'"
+
+	var object_count any
+
+	err = hanaPool.QueryRowContext(ctx, sql).Scan(&object_count)
+	if err != nil {
+		return
+	}
+
+	if object_count == nil {
+		return
+	}
+
+	if object_count.(int64) >= 0 {
+		available = true
+		return
+	}
+
+	err = lazyerrors.Errorf("No clear answer on whether DocStore is activated or not")
+	return
+}
