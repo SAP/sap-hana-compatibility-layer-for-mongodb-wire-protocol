@@ -58,7 +58,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	db := m["$db"].(string)
 	docs, _ := m["updates"].(*types.Array)
 
-	var selected, updated int32
+	var selected, updated, matched int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
 		if err != nil {
@@ -71,17 +71,26 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-
+		// notWhereSQL makes sure we do not update documents which do not need an update
 		updateSQL, notWhereSQL, err := update(docM["u"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+
+		// Get amount of documents that fits the filter. MatchCount
+		countSQL := fmt.Sprintf("SELECT count(*) FROM %s.%s", db, collection) + whereSQL
+		countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
+
+		err = countRow.Scan(&matched)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
 		var args []any
 		if docM["multi"] != true { // If updateOne()
 
 			// We get the _id of the one document to update.
 			sql := fmt.Sprintf("select {\"_id\": \"_id\"} FROM %s.%s", db, collection)
-			// notWhereSQL makes sure we do not update documents which do not need an update
 			sql += whereSQL + notWhereSQL + " limit 1"
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
@@ -89,8 +98,9 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 			err = row.Scan(&objectID)
 			if err != nil {
+				selected += matched
 				err = nil
-				break
+				continue
 			}
 
 			id, err := fjson.Unmarshal(objectID)
@@ -103,23 +113,15 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 				return nil, err
 			}
 
-			// Get amount of documents that fits the filter. MatchCount
-			countSQL := fmt.Sprintf("SELECT count(*) FROM %s.%s", db, collection) + whereSQL
-			countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
-
-			err = countRow.Scan(&selected)
-			if err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-
 			whereSQL = "WHERE \"_id\" = %s"
 			var emptySlice []any
 			args = append(emptySlice, updateId)
+			notWhereSQL = ""
 		}
 
 		sql := fmt.Sprintf("UPDATE %s.%s ", db, collection)
 
-		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
+		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...) + notWhereSQL
 
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
@@ -128,12 +130,13 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		// Set modifiedCount
 		if docM["multi"] != true {
-			updated = 1
+			updated += 1
+			selected += matched
 		} else {
 			rowsaffected, _ := tag.RowsAffected()
 
 			updated += int32(rowsaffected)
-			selected = updated
+			selected += matched
 		}
 	}
 
