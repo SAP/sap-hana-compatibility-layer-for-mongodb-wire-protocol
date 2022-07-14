@@ -210,10 +210,11 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
 		notWhereSQL, err = common.Where(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value for WHERE") {
-				err = lazyerrors.Errorf("Cannot update field with array.")
+			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
+				err = lazyerrors.Errorf("Cannot update field with array")
 				return
 			}
+			return
 		}
 
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
@@ -221,10 +222,11 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	} else if isUnsetSQL != "" { // If only unsetting fields
 		notWhereSQL, err = common.Where(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value for WHERE") {
-				err = lazyerrors.Errorf("Cannot update field with array.")
+			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
+				err = lazyerrors.Errorf("Cannot update field with array")
 				return
 			}
+			return
 		}
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
 	} else if isSetSQL != "" { // If only setting fields
