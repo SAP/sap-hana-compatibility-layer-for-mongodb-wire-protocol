@@ -255,7 +255,12 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 			updateSQL += ", "
 			isUnsetSQL += " OR "
 		}
-		updateKey := getUpdateKey(key)
+
+		var updateKey string
+		updateKey, err = getUpdateKey(key)
+		if err != nil {
+			return
+		}
 
 		updateValue, err = getUpdateValue(value)
 		if err != nil {
@@ -287,7 +292,11 @@ func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err
 			isSetSQL += " OR "
 		}
 
-		updateKey := getUpdateKey(key)
+		var updateKey string
+		updateKey, err = getUpdateKey(key)
+		if err != nil {
+			return
+		}
 
 		unsetSQL += updateKey
 
@@ -299,14 +308,21 @@ func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err
 }
 
 // Prepares the key (field) for SQL statement
-func getUpdateKey(key string) (updateKey string) {
+func getUpdateKey(key string) (updateKey string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
+
+		var isInt bool
 		for i, k := range splitKey {
 
-			if kInt, err := strconv.Atoi(k); err == nil {
+			if kInt, convErr := strconv.Atoi(k); convErr == nil {
+				if isInt {
+					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					return
+				}
 				kIntSQL := "[" + "%d" + "]"
 				updateKey += fmt.Sprintf(kIntSQL, (kInt + 1))
+				isInt = true
 				continue
 			}
 
@@ -315,6 +331,8 @@ func getUpdateKey(key string) (updateKey string) {
 			}
 
 			updateKey += "\"" + k + "\""
+
+			isInt = false
 
 		}
 	} else {

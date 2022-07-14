@@ -81,21 +81,32 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
-	kSQL := whereKey(key)
+	var kSQL string
+	kSQL, err = whereKey(key)
+	if err != nil {
+		return
+	}
+
 	kvSQL = kSQL + sign + vSQL
 
 	return
 }
 
 // Prepares the key (field) for SQL
-func whereKey(key string) (kSQL string) {
+func whereKey(key string) (kSQL string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
+		var isInt bool
 		for i, k := range splitKey {
 
-			if kInt, err := strconv.Atoi(k); err == nil {
+			if kInt, convErr := strconv.Atoi(k); convErr == nil {
+				if isInt {
+					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					return
+				}
 				kIntSQL := "[" + "%d" + "]"
 				kSQL += fmt.Sprintf(kIntSQL, (kInt + 1))
+				isInt = true
 				continue
 			}
 
@@ -104,6 +115,8 @@ func whereKey(key string) (kSQL string) {
 			}
 
 			kSQL += "\"" + k + "\""
+
+			isInt = false
 
 		}
 	} else {
@@ -376,7 +389,12 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$elemMatch": "elemMatch",
 	}
 
-	kvSQL += whereKey(key)
+	var kSQL string
+	kSQL, err = whereKey(key)
+	if err != nil {
+		return
+	}
+	kvSQL += kSQL
 
 	switch value := value.(type) {
 	case types.Document:
