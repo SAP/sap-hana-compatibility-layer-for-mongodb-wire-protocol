@@ -305,12 +305,19 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 // Used for for example $AND and $OR
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
-		"$AND": " AND ",
-		"$OR":  " OR ",
+		"$and": " AND ",
+		"$or":  " OR ",
 	}
 
-	if _, ok := logicExprMap[key]; !ok {
+	lowerKey := strings.ToLower(key)
+
+	var logicExpr string
+	var ok bool
+	if logicExpr, ok = logicExprMap[lowerKey]; !ok {
 		err = fmt.Errorf("support for %s is not implemented yet", key)
+		if strings.EqualFold(key, "$not") {
+			err = fmt.Errorf("unknown top level: %s. If you are trying to negate an entire expression, use $nor", key)
+		}
 		return kvSQL, NewError(ErrNotImplemented, err)
 	}
 
@@ -333,7 +340,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 			case types.Document:
 
 				if i != 0 {
-					kvSQL += logicExprMap[key]
+					kvSQL += logicExpr
 				}
 				var value any
 				var exprSQL string
@@ -386,7 +393,8 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$exists":    " IS ",
 		"$size":      "CARDINALITY",
 		"$all":       "all",
-		"$elemMatch": "elemMatch",
+		"$elemmatch": "elemMatch",
+		"$not":       " NOT ",
 	}
 
 	var kSQL string
@@ -407,7 +415,9 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				return
 			}
 
-			fieldExpr, ok := fieldExprMap[k]
+			lowerK := strings.ToLower(k)
+
+			fieldExpr, ok := fieldExprMap[lowerK]
 			if !ok {
 				err = fmt.Errorf("support for %s is not implemented yet", k)
 				return kvSQL, NewError(ErrNotImplemented, err)
@@ -418,7 +428,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				return
 			}
 
-			if k == "$exists" {
+			if lowerK == "$exists" {
 				switch exprValue := exprValue.(type) {
 				case bool:
 					if exprValue {
@@ -429,19 +439,38 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				default:
 					return "", lazyerrors.Errorf("$exists only works with true or false")
 				}
-			} else if k == "$size" {
+			} else if lowerK == "$size" {
 				kvSQL = fieldExpr + "(" + kvSQL + ")"
 				vSQL, fieldExpr, err = whereValue(exprValue)
 				if err != nil {
 					return
 				}
-			} else if k == "$all" || k == "$elemMatch" {
-
+			} else if lowerK == "$all" || lowerK == "$elemmatch" {
 				kvSQL, err = filterArray(kvSQL, key, exprValue)
 				if err != nil {
 					return
 				}
 				continue
+			} else if lowerK == "$not" {
+				var fieldSQL string
+				expr := value.Map()[k]
+				fieldSQL, err = fieldExpression(key, expr)
+				fieldSQL = "(" + fieldExpr + fieldSQL + " OR " + kSQL + " IS UNSET) "
+				if err != nil {
+					err = lazyerrors.Errorf("Wrong use of $not")
+					return
+				}
+
+				kvSQL = fieldSQL
+				return
+			} else if lowerK == "$ne" {
+				kvSQL = "(" + kvSQL
+				vSQL, _, err = whereValue(exprValue)
+				if err != nil {
+					return
+				}
+
+				vSQL += " OR " + kSQL + " IS UNSET)"
 
 			} else {
 				vSQL, _, err = whereValue(exprValue)
@@ -479,6 +508,11 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			var sql string
 			if strings.Contains(doc.Keys()[0], "$") {
 				sql, err = wherePair("element", doc)
+
+				if strings.EqualFold(doc.Keys()[0], "$not") {
+					sqlSlice := strings.Split(sql, "OR")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
+				}
 			} else {
 				var value any
 				element := "element." + doc.Keys()[0]
@@ -486,8 +520,14 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 				if err != nil {
 					return
 				}
-				sql, err = wherePair(element, value)
 
+				sql, err = wherePair(element, value)
+				if _, ok := value.(types.Document); ok {
+					if _, getErr := value.(types.Document).Get("$not"); getErr == nil {
+						sqlSlice := strings.Split(sql, "OR")
+						sql = sqlSlice[0] + " OR " + strings.Replace(sqlSlice[1], "UNSET", "NULL", 1)
+					}
+				}
 			}
 
 			if err != nil {
