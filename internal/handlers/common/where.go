@@ -48,13 +48,12 @@ func Where(filter types.Document) (sql string, err error) {
 		}
 
 		sql += kvSQL
-
 	}
 
 	return
 }
 
-// Takes a {field: value} and converts it to SQL
+// wherePair takes a {field: value} and converts it to SQL
 // vSQL: ValueSQL
 // kSQL: KeySQL
 func wherePair(key string, value any) (kvSQL string, err error) {
@@ -88,6 +87,10 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	}
 
 	kvSQL = kSQL + sign + vSQL
+
+	if isNor {
+		kvSQL = "(" + kvSQL + " AND " + kSQL + " IS SET)"
+	}
 
 	return
 }
@@ -302,11 +305,17 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	return
 }
 
+var (
+	isNor      bool
+	norCounter int
+)
+
 // Used for for example $AND and $OR
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
 		"$and": " AND ",
 		"$or":  " OR ",
+		"$nor": " AND NOT (",
 	}
 
 	lowerKey := strings.ToLower(key)
@@ -321,11 +330,18 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 		return kvSQL, NewError(ErrNotImplemented, err)
 	}
 
+	var localIsNor bool
+	if strings.EqualFold(key, "$nor") {
+		localIsNor = true
+		isNor = true
+		norCounter++
+	}
+
 	kvSQL += "("
 
 	switch value := value.(type) {
 	case *types.Array:
-		if value.Len() < 2 {
+		if value.Len() < 2 && !isNor {
 			err = lazyerrors.Errorf("Need minimum two expressions")
 			return
 		}
@@ -339,9 +355,13 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 			switch expr := expr.(type) {
 			case types.Document:
 
+				if i == 0 && localIsNor {
+					kvSQL += " NOT ("
+				}
 				if i != 0 {
 					kvSQL += logicExpr
 				}
+
 				var value any
 				var exprSQL string
 				for i, k := range expr.Keys() {
@@ -367,7 +387,9 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead the datatype: %T", value)
 				return
 			}
-
+			if localIsNor {
+				kvSQL += ")"
+			}
 		}
 
 	default:
@@ -378,6 +400,12 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 	kvSQL += ")"
 
+	if localIsNor {
+		norCounter--
+		if norCounter == 0 {
+			isNor = false
+		}
+	}
 	return
 }
 
@@ -402,6 +430,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 	if err != nil {
 		return
 	}
+
 	kvSQL += kSQL
 
 	switch value := value.(type) {
@@ -427,7 +456,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
-
+			var sign string
 			if lowerK == "$exists" {
 				switch exprValue := exprValue.(type) {
 				case bool:
@@ -465,21 +494,31 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				return
 			} else if lowerK == "$ne" {
 				kvSQL = "(" + kvSQL
-				vSQL, _, err = whereValue(exprValue)
+				vSQL, sign, err = whereValue(exprValue)
 				if err != nil {
 					return
+				}
+				if strings.EqualFold(sign, " IS ") {
+					fieldExpr = " IS NOT "
 				}
 
 				vSQL += " OR " + kSQL + " IS UNSET)"
 
 			} else {
-				vSQL, _, err = whereValue(exprValue)
+				vSQL, sign, err = whereValue(exprValue)
 				if err != nil {
 					return
+				}
+
+				if strings.EqualFold(sign, " IS ") {
+					fieldExpr = sign
 				}
 			}
 
 			kvSQL += fieldExpr + vSQL
+			if isNor {
+				kvSQL = "(" + kvSQL + " AND " + kSQL + " IS SET)"
+			}
 
 		}
 
@@ -513,6 +552,10 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 					sqlSlice := strings.Split(sql, "OR")
 					sql = strings.Replace(sqlSlice[0], "(", "", 1)
 				}
+				if strings.Contains(sql, " IS SET") {
+					sqlSlice := strings.Split(sql, " AND ")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
+				}
 			} else {
 				var value any
 				element := "element." + doc.Keys()[0]
@@ -524,9 +567,13 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 				sql, err = wherePair(element, value)
 				if _, ok := value.(types.Document); ok {
 					if _, getErr := value.(types.Document).Get("$not"); getErr == nil {
-						sqlSlice := strings.Split(sql, "OR")
-						sql = sqlSlice[0] + " OR " + strings.Replace(sqlSlice[1], "UNSET", "NULL", 1)
+						replaceIndex := strings.LastIndex(sql, "UNSET")
+						sql = sql[:replaceIndex] + strings.Replace(sql[replaceIndex:], "UNSET", "NULL", 1)
 					}
+				}
+				if strings.Contains(sql, " IS SET") {
+					sqlSlice := strings.Split(sql, " AND ")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
 				}
 			}
 
