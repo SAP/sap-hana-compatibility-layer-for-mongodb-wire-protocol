@@ -423,6 +423,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$all":       "all",
 		"$elemmatch": "elemMatch",
 		"$not":       " NOT ",
+		"$regex":     " LIKE ",
 	}
 
 	var kSQL string
@@ -431,7 +432,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
-	kvSQL += kSQL
+	// kvSQL += kSQL
 
 	switch value := value.(type) {
 	case types.Document:
@@ -439,10 +440,11 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		var exprValue any
 		var vSQL string
 		for i, k := range value.Keys() {
-			if i == 1 {
-				err = lazyerrors.Errorf("Only one expression allowed")
-				return
+
+			if i != 0 {
+				kvSQL += " AND "
 			}
+			kvSQL += kSQL
 
 			lowerK := strings.ToLower(k)
 
@@ -503,6 +505,8 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				}
 
 				vSQL += " OR " + kSQL + " IS UNSET)"
+			} else if lowerK == "$regex" {
+				vSQL, err = regex(exprValue)
 
 			} else {
 				vSQL, sign, err = whereValue(exprValue)
@@ -612,6 +616,66 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 		err = lazyerrors.Errorf("If $all: Expected array. If $elemMatch: Expected document. Got instead: %T", filters)
 		return
 	}
+
+	return
+}
+
+func regex(value any) (vSQL string, err error) {
+
+	switch value := value.(type) {
+	case string:
+		var dot bool
+		for i, s := range value {
+			if i == 0 {
+				if s == '^' {
+					continue
+				}
+				if s == '.' {
+					dot = true
+					continue
+				}
+				vSQL += "%" + string(s)
+				continue
+			}
+
+			if dot && s != '*' {
+				vSQL += "%_"
+				dot = false
+			}
+
+			if i == len(value)-1 {
+				if s == '$' {
+					continue
+				}
+				if s == '*' {
+					vSQL += "%%"
+					continue
+				}
+				if s == '.' {
+					vSQL += "_%"
+					continue
+				}
+				vSQL += string(s) + "%"
+				continue
+			}
+
+			if s == '.' {
+				vSQL += "_"
+				continue
+			} else if s == '*' {
+				vSQL += "%"
+				continue
+			}
+
+			vSQL += string(s)
+
+		}
+	default:
+		err = lazyerrors.Errorf("Only $regex: 'pattern' suppoerted")
+		return
+	}
+
+	vSQL = "'" + vSQL + "'"
 
 	return
 }
