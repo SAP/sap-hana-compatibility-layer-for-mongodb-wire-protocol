@@ -149,6 +149,13 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		vSQL = "NULL"
 		sign = " IS "
 		return
+	case types.Regex:
+		vSQL, err = regex(value)
+		if err != nil {
+			return
+		}
+		sign = " LIKE "
+		return
 	case types.ObjectID:
 		var bOBJ []byte
 		bOBJ, err = bson.ObjectID(value).MarshalJSON()
@@ -432,8 +439,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
-	// kvSQL += kSQL
-
 	switch value := value.(type) {
 	case types.Document:
 
@@ -622,8 +627,22 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 
 func regex(value any) (vSQL string, err error) {
 
+	if regex, ok := value.(types.Regex); ok {
+		value = regex.Pattern
+		if regex.Options != "" {
+			err = lazyerrors.Errorf("The use of $options with regular expressions is not supported")
+			return
+		}
+	}
+
+	var escape bool
 	switch value := value.(type) {
 	case string:
+		if strings.Contains(value, "(?i)") || strings.Contains(value, "(?-i)") {
+			err = lazyerrors.Errorf("The use of (?i) and (?-i) with regular expressions is not supported")
+			return
+		}
+
 		var dot bool
 		for i, s := range value {
 			if i == 0 {
@@ -632,6 +651,11 @@ func regex(value any) (vSQL string, err error) {
 				}
 				if s == '.' {
 					dot = true
+					continue
+				}
+				if s == '%' || s == '_' {
+					vSQL += "%" + "^" + string(s)
+					escape = true
 					continue
 				}
 				vSQL += "%" + string(s)
@@ -655,6 +679,11 @@ func regex(value any) (vSQL string, err error) {
 					vSQL += "_%"
 					continue
 				}
+				if s == '%' || s == '_' {
+					vSQL += "^" + string(s) + "%"
+					escape = true
+					continue
+				}
 				vSQL += string(s) + "%"
 				continue
 			}
@@ -665,17 +694,24 @@ func regex(value any) (vSQL string, err error) {
 			} else if s == '*' {
 				vSQL += "%"
 				continue
+			} else if s == '%' || s == '_' {
+				vSQL += "^" + string(s)
+				escape = true
+				continue
 			}
 
 			vSQL += string(s)
 
 		}
 	default:
-		err = lazyerrors.Errorf("Only $regex: 'pattern' suppoerted")
+		err = lazyerrors.Errorf("Expected either a JavaScript regular expression objects (i.e. /pattern/) or string containing a pattern. Got instead type %T", value)
 		return
 	}
 
 	vSQL = "'" + vSQL + "'"
+	if escape {
+		vSQL += " ESCAPE '^' "
+	}
 
 	return
 }

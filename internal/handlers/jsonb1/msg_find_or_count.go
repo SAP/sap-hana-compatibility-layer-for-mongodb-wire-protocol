@@ -100,13 +100,12 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	sort, _ := m["sort"].(types.Document)
 	limit, _ := m["limit"].(int32)
 
+	var whereSQL string
 	if len(filter.Map()) != 0 { // There is given a filter
-		whereSQL, err := common.Where(filter)
+		whereSQL, err = common.Where(filter)
 		if err != nil {
 			return nil, err
 		}
-
-		sql += whereSQL
 	}
 
 	sortMap := sort.Map()
@@ -156,7 +155,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}
 
-	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...))
+	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...)+whereSQL)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}

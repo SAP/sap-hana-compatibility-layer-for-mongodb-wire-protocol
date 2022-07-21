@@ -100,8 +100,8 @@ func fromFJSON(v fjsontype) any {
 		return time.Time(*v)
 	case nil:
 		return nil
-	// case *Regex:
-	// 	return types.Regex(*v)
+	case *Regex:
+		return types.Regex(*v)
 	case *Int64:
 		return int64(*v)
 	case *Int32:
@@ -135,8 +135,8 @@ func toFJSON(v any) fjsontype {
 		return pointer.To(DateTime(v))
 	case nil:
 		return nil
-	// case types.Regex:
-	// 	return pointer.To(Regex(v))
+	case types.Regex:
+		return pointer.To(Regex(v))
 	case int64:
 		return pointer.To(Int64(v))
 	case int32:
