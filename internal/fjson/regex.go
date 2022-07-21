@@ -14,63 +14,63 @@
 
 package fjson
 
-// import (
-// 	"bytes"
-// 	"encoding/json"
+import (
+	"bytes"
+	"encoding/json"
 
-// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-// 	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-// )
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+)
 
 // Regex represents BSON Regex data type.
-// type Regex types.Regex
+type Regex types.Regex
 
-// // fjsontype implements fjsontype interface.
-// func (regex *Regex) fjsontype() {}
+// fjsontype implements fjsontype interface.
+func (regex *Regex) fjsontype() {}
 
-// type regexJSON struct {
-// 	R string `json:"$r"`
-// 	O string `json:"o"`
-// }
+type regexJSON struct {
+	R string `json:"$r"`
+	O string `json:"o"`
+}
 
-// // UnmarshalJSON implements fjsontype interface.
-// func (regex *Regex) UnmarshalJSON(data []byte) error {
-// 	if bytes.Equal(data, []byte("null")) {
-// 		panic("null data")
-// 	}
+// UnmarshalJSON implements fjsontype interface.
+func (regex *Regex) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		panic("null data")
+	}
 
-// 	r := bytes.NewReader(data)
-// 	dec := json.NewDecoder(r)
-// 	dec.DisallowUnknownFields()
+	r := bytes.NewReader(data)
+	dec := json.NewDecoder(r)
+	dec.DisallowUnknownFields()
 
-// 	var o regexJSON
-// 	if err := dec.Decode(&o); err != nil {
-// 		return lazyerrors.Error(err)
-// 	}
-// 	if err := checkConsumed(dec, r); err != nil {
-// 		return lazyerrors.Error(err)
-// 	}
+	var o regexJSON
+	if err := dec.Decode(&o); err != nil {
+		return lazyerrors.Error(err)
+	}
+	if err := checkConsumed(dec, r); err != nil {
+		return lazyerrors.Error(err)
+	}
 
-// 	*regex = Regex{
-// 		Pattern: o.R,
-// 		Options: o.O,
-// 	}
-// 	return nil
-// }
+	*regex = Regex{
+		Pattern: o.R,
+		Options: o.O,
+	}
+	return nil
+}
 
-// // MarshalJSON implements fjsontype interface.
-// func (regex *Regex) MarshalJSON() ([]byte, error) {
-// 	res, err := json.Marshal(regexJSON{
-// 		R: regex.Pattern,
-// 		O: regex.Options,
-// 	})
-// 	if err != nil {
-// 		return nil, lazyerrors.Error(err)
-// 	}
-// 	return res, nil
-// }
+// MarshalJSON implements fjsontype interface.
+func (regex *Regex) MarshalJSON() ([]byte, error) {
+	res, err := json.Marshal(regexJSON{
+		R: regex.Pattern,
+		O: regex.Options,
+	})
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+	return res, nil
+}
 
-// // check interfaces
-// var (
-// 	_ fjsontype = (*Regex)(nil)
-// )
+// check interfaces
+var (
+	_ fjsontype = (*Regex)(nil)
+)

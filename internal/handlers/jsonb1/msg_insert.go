@@ -55,6 +55,16 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		d := doc.(types.Document)
 
+		var unique bool
+		var errMsg error
+		if unique, errMsg, err = common.IsIdUnique(d.Map()["_id"], db, collection, ctx, h.hanaPool); err != nil {
+			return nil, err
+		}
+		if !unique {
+			err = errMsg
+			return nil, err
+		}
+
 		sql := fmt.Sprintf("INSERT INTO %s.%s VALUES ($1)", db, collection)
 
 		b, err := bson.MustConvertDocument(d).MarshalJSONHANA()

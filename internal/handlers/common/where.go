@@ -48,13 +48,12 @@ func Where(filter types.Document) (sql string, err error) {
 		}
 
 		sql += kvSQL
-
 	}
 
 	return
 }
 
-// Takes a {field: value} and converts it to SQL
+// wherePair takes a {field: value} and converts it to SQL
 // vSQL: ValueSQL
 // kSQL: KeySQL
 func wherePair(key string, value any) (kvSQL string, err error) {
@@ -81,21 +80,36 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
-	kSQL := whereKey(key)
+	var kSQL string
+	kSQL, err = whereKey(key)
+	if err != nil {
+		return
+	}
+
 	kvSQL = kSQL + sign + vSQL
+
+	if isNor {
+		kvSQL = "(" + kvSQL + " AND " + kSQL + " IS SET)"
+	}
 
 	return
 }
 
 // Prepares the key (field) for SQL
-func whereKey(key string) (kSQL string) {
+func whereKey(key string) (kSQL string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
+		var isInt bool
 		for i, k := range splitKey {
 
-			if kInt, err := strconv.Atoi(k); err == nil {
+			if kInt, convErr := strconv.Atoi(k); convErr == nil {
+				if isInt {
+					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					return
+				}
 				kIntSQL := "[" + "%d" + "]"
 				kSQL += fmt.Sprintf(kIntSQL, (kInt + 1))
+				isInt = true
 				continue
 			}
 
@@ -104,6 +118,8 @@ func whereKey(key string) (kSQL string) {
 			}
 
 			kSQL += "\"" + k + "\""
+
+			isInt = false
 
 		}
 	} else {
@@ -132,6 +148,13 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 	case nil:
 		vSQL = "NULL"
 		sign = " IS "
+		return
+	case types.Regex:
+		vSQL, err = regex(value)
+		if err != nil {
+			return
+		}
+		sign = " LIKE "
 		return
 	case types.ObjectID:
 		var bOBJ []byte
@@ -289,23 +312,43 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	return
 }
 
+var (
+	isNor      bool
+	norCounter int
+)
+
 // Used for for example $AND and $OR
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
-		"$AND": " AND ",
-		"$OR":  " OR ",
+		"$and": " AND ",
+		"$or":  " OR ",
+		"$nor": " AND NOT (",
 	}
 
-	if _, ok := logicExprMap[key]; !ok {
+	lowerKey := strings.ToLower(key)
+
+	var logicExpr string
+	var ok bool
+	if logicExpr, ok = logicExprMap[lowerKey]; !ok {
 		err = fmt.Errorf("support for %s is not implemented yet", key)
+		if strings.EqualFold(key, "$not") {
+			err = fmt.Errorf("unknown top level: %s. If you are trying to negate an entire expression, use $nor", key)
+		}
 		return kvSQL, NewError(ErrNotImplemented, err)
+	}
+
+	var localIsNor bool
+	if strings.EqualFold(key, "$nor") {
+		localIsNor = true
+		isNor = true
+		norCounter++
 	}
 
 	kvSQL += "("
 
 	switch value := value.(type) {
 	case *types.Array:
-		if value.Len() < 2 {
+		if value.Len() < 2 && !isNor {
 			err = lazyerrors.Errorf("Need minimum two expressions")
 			return
 		}
@@ -319,9 +362,13 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 			switch expr := expr.(type) {
 			case types.Document:
 
-				if i != 0 {
-					kvSQL += logicExprMap[key]
+				if i == 0 && localIsNor {
+					kvSQL += " NOT ("
 				}
+				if i != 0 {
+					kvSQL += logicExpr
+				}
+
 				var value any
 				var exprSQL string
 				for i, k := range expr.Keys() {
@@ -347,7 +394,9 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 				err = lazyerrors.Errorf("Found in array of logicExpression no document but instead the datatype: %T", value)
 				return
 			}
-
+			if localIsNor {
+				kvSQL += ")"
+			}
 		}
 
 	default:
@@ -358,6 +407,12 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 
 	kvSQL += ")"
 
+	if localIsNor {
+		norCounter--
+		if norCounter == 0 {
+			isNor = false
+		}
+	}
 	return
 }
 
@@ -373,10 +428,16 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		"$exists":    " IS ",
 		"$size":      "CARDINALITY",
 		"$all":       "all",
-		"$elemMatch": "elemMatch",
+		"$elemmatch": "elemMatch",
+		"$not":       " NOT ",
+		"$regex":     " LIKE ",
 	}
 
-	kvSQL += whereKey(key)
+	var kSQL string
+	kSQL, err = whereKey(key)
+	if err != nil {
+		return
+	}
 
 	switch value := value.(type) {
 	case types.Document:
@@ -384,12 +445,15 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		var exprValue any
 		var vSQL string
 		for i, k := range value.Keys() {
-			if i == 1 {
-				err = lazyerrors.Errorf("Only one expression allowed")
-				return
-			}
 
-			fieldExpr, ok := fieldExprMap[k]
+			if i != 0 {
+				kvSQL += " AND "
+			}
+			kvSQL += kSQL
+
+			lowerK := strings.ToLower(k)
+
+			fieldExpr, ok := fieldExprMap[lowerK]
 			if !ok {
 				err = fmt.Errorf("support for %s is not implemented yet", k)
 				return kvSQL, NewError(ErrNotImplemented, err)
@@ -399,8 +463,8 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
-
-			if k == "$exists" {
+			var sign string
+			if lowerK == "$exists" {
 				switch exprValue := exprValue.(type) {
 				case bool:
 					if exprValue {
@@ -411,28 +475,59 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				default:
 					return "", lazyerrors.Errorf("$exists only works with true or false")
 				}
-			} else if k == "$size" {
+			} else if lowerK == "$size" {
 				kvSQL = fieldExpr + "(" + kvSQL + ")"
 				vSQL, fieldExpr, err = whereValue(exprValue)
 				if err != nil {
 					return
 				}
-			} else if k == "$all" || k == "$elemMatch" {
-
+			} else if lowerK == "$all" || lowerK == "$elemmatch" {
 				kvSQL, err = filterArray(kvSQL, key, exprValue)
 				if err != nil {
 					return
 				}
 				continue
+			} else if lowerK == "$not" {
+				var fieldSQL string
+				expr := value.Map()[k]
+				fieldSQL, err = fieldExpression(key, expr)
+				fieldSQL = "(" + fieldExpr + fieldSQL + " OR " + kSQL + " IS UNSET) "
+				if err != nil {
+					err = lazyerrors.Errorf("Wrong use of $not")
+					return
+				}
 
-			} else {
-				vSQL, _, err = whereValue(exprValue)
+				kvSQL = fieldSQL
+				return
+			} else if lowerK == "$ne" {
+				kvSQL = "(" + kvSQL
+				vSQL, sign, err = whereValue(exprValue)
 				if err != nil {
 					return
+				}
+				if strings.EqualFold(sign, " IS ") {
+					fieldExpr = " IS NOT "
+				}
+
+				vSQL += " OR " + kSQL + " IS UNSET)"
+			} else if lowerK == "$regex" {
+				vSQL, err = regex(exprValue)
+
+			} else {
+				vSQL, sign, err = whereValue(exprValue)
+				if err != nil {
+					return
+				}
+
+				if strings.EqualFold(sign, " IS ") {
+					fieldExpr = sign
 				}
 			}
 
 			kvSQL += fieldExpr + vSQL
+			if isNor {
+				kvSQL = "(" + kvSQL + " AND " + kSQL + " IS SET)"
+			}
 
 		}
 
@@ -461,6 +556,15 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			var sql string
 			if strings.Contains(doc.Keys()[0], "$") {
 				sql, err = wherePair("element", doc)
+
+				if strings.EqualFold(doc.Keys()[0], "$not") {
+					sqlSlice := strings.Split(sql, "OR")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
+				}
+				if strings.Contains(sql, " IS SET") {
+					sqlSlice := strings.Split(sql, " AND ")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
+				}
 			} else {
 				var value any
 				element := "element." + doc.Keys()[0]
@@ -468,8 +572,18 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 				if err != nil {
 					return
 				}
-				sql, err = wherePair(element, value)
 
+				sql, err = wherePair(element, value)
+				if _, ok := value.(types.Document); ok {
+					if _, getErr := value.(types.Document).Get("$not"); getErr == nil {
+						replaceIndex := strings.LastIndex(sql, "UNSET")
+						sql = sql[:replaceIndex] + strings.Replace(sql[replaceIndex:], "UNSET", "NULL", 1)
+					}
+				}
+				if strings.Contains(sql, " IS SET") {
+					sqlSlice := strings.Split(sql, " AND ")
+					sql = strings.Replace(sqlSlice[0], "(", "", 1)
+				}
 			}
 
 			if err != nil {
@@ -506,6 +620,97 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 	default:
 		err = lazyerrors.Errorf("If $all: Expected array. If $elemMatch: Expected document. Got instead: %T", filters)
 		return
+	}
+
+	return
+}
+
+func regex(value any) (vSQL string, err error) {
+
+	if regex, ok := value.(types.Regex); ok {
+		value = regex.Pattern
+		if regex.Options != "" {
+			err = lazyerrors.Errorf("The use of $options with regular expressions is not supported")
+			return
+		}
+	}
+
+	var escape bool
+	switch value := value.(type) {
+	case string:
+		if strings.Contains(value, "(?i)") || strings.Contains(value, "(?-i)") {
+			err = lazyerrors.Errorf("The use of (?i) and (?-i) with regular expressions is not supported")
+			return
+		}
+
+		var dot bool
+		for i, s := range value {
+			if i == 0 {
+				if s == '^' {
+					continue
+				}
+				if s == '.' {
+					dot = true
+					continue
+				}
+				if s == '%' || s == '_' {
+					vSQL += "%" + "^" + string(s)
+					escape = true
+					continue
+				}
+				vSQL += "%" + string(s)
+				continue
+			}
+
+			if dot && s != '*' {
+				vSQL += "%_"
+				dot = false
+			}
+
+			if i == len(value)-1 {
+				if s == '$' {
+					continue
+				}
+				if s == '*' {
+					vSQL += "%%"
+					continue
+				}
+				if s == '.' {
+					vSQL += "_%"
+					continue
+				}
+				if s == '%' || s == '_' {
+					vSQL += "^" + string(s) + "%"
+					escape = true
+					continue
+				}
+				vSQL += string(s) + "%"
+				continue
+			}
+
+			if s == '.' {
+				vSQL += "_"
+				continue
+			} else if s == '*' {
+				vSQL += "%"
+				continue
+			} else if s == '%' || s == '_' {
+				vSQL += "^" + string(s)
+				escape = true
+				continue
+			}
+
+			vSQL += string(s)
+
+		}
+	default:
+		err = lazyerrors.Errorf("Expected either a JavaScript regular expression objects (i.e. /pattern/) or string containing a pattern. Got instead type %T", value)
+		return
+	}
+
+	vSQL = "'" + vSQL + "'"
+	if escape {
+		vSQL += " ESCAPE '^' "
 	}
 
 	return

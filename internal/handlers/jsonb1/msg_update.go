@@ -17,6 +17,7 @@ package jsonb1
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -57,7 +58,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	db := m["$db"].(string)
 	docs, _ := m["updates"].(*types.Array)
 
-	var selected, updated int32
+	var selected, updated, matched int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
 		if err != nil {
@@ -70,26 +71,36 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-
+		// notWhereSQL makes sure we do not update documents which do not need an update
 		updateSQL, notWhereSQL, err := update(docM["u"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
+
+		// Get amount of documents that fits the filter. MatchCount
+		countSQL := fmt.Sprintf("SELECT count(*) FROM %s.%s", db, collection) + whereSQL
+		countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
+
+		err = countRow.Scan(&matched)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+
 		var args []any
 		if docM["multi"] != true { // If updateOne()
 
 			// We get the _id of the one document to update.
-			sql := fmt.Sprintf("select \"_id\" FROM %s.%s", db, collection)
-			// notWhereSQL makes sure we do not update documents which do not need an update
-			sql += whereSQL + notWhereSQL + " limit 1"
+			sql := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
+			sql += whereSQL + notWhereSQL + " LIMIT 1"
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
 			var objectID []byte
 
 			err = row.Scan(&objectID)
 			if err != nil {
+				selected += matched
 				err = nil
-				break
+				continue
 			}
 
 			id, err := fjson.Unmarshal(objectID)
@@ -97,28 +108,21 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 				return nil, err
 			}
 
-			try, err := getUpdateValue(id)
+			updateId, err := getUpdateValue(id.(types.Document).Map()["_id"])
 			if err != nil {
 				return nil, err
 			}
 
-			// Get amount of documents that fits the filter. MatchCount
-			countSQL := fmt.Sprintf("SELECT count(*) FROM %s.%s", db, collection) + whereSQL
-			countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
-
-			err = countRow.Scan(&selected)
-			if err != nil {
-				return nil, lazyerrors.Error(err)
-			}
-
 			whereSQL = "WHERE \"_id\" = %s"
 			var emptySlice []any
-			args = append(emptySlice, try)
+			args = append(emptySlice, updateId)
+			notWhereSQL = ""
 		}
 
 		sql := fmt.Sprintf("UPDATE %s.%s ", db, collection)
 
-		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...)
+		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...) + notWhereSQL
+
 		tag, err := h.hanaPool.ExecContext(ctx, sql)
 		if err != nil {
 			return nil, err
@@ -126,12 +130,13 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		// Set modifiedCount
 		if docM["multi"] != true {
-			updated = 1
+			updated += 1
+			selected += matched
 		} else {
 			rowsaffected, _ := tag.RowsAffected()
 
 			updated += int32(rowsaffected)
-			selected = updated
+			selected += matched
 		}
 	}
 
@@ -197,16 +202,19 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 
 	var unSetSQL, isSetSQL string
 	if unSetDoc, ok := updateMap["$unset"].(types.Document); ok {
-		unSetSQL, isSetSQL = unsetFields(unSetDoc)
+		if unSetSQL, isSetSQL, err = unsetFields(unSetDoc); err != nil {
+			return
+		}
 	}
 
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
 		notWhereSQL, err = common.Where(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value for WHERE") {
-				err = lazyerrors.Errorf("Cannot update field with array.")
+			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
+				err = lazyerrors.Errorf("Cannot update field with array")
 				return
 			}
+			return
 		}
 
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
@@ -214,10 +222,11 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	} else if isUnsetSQL != "" { // If only unsetting fields
 		notWhereSQL, err = common.Where(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value for WHERE") {
-				err = lazyerrors.Errorf("Cannot update field with array.")
+			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
+				err = lazyerrors.Errorf("Cannot update field with array")
 				return
 			}
+			return
 		}
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
 	} else if isSetSQL != "" { // If only setting fields
@@ -239,11 +248,21 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 	i := 0
 	for key, value := range setDoc.Map() {
 
+		if strings.EqualFold(key, "_id") {
+			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
+			return
+		}
+
 		if i != 0 {
 			updateSQL += ", "
 			isUnsetSQL += " OR "
 		}
-		updateKey := getUpdateKey(key)
+
+		var updateKey string
+		updateKey, err = getUpdateKey(key)
+		if err != nil {
+			return
+		}
 
 		updateValue, err = getUpdateValue(value)
 		if err != nil {
@@ -259,18 +278,27 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 }
 
 // Create SQL for unsetting fields
-func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string) {
+func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err error) {
 	unsetSQL = " UNSET "
 
 	i := 0
 	for key := range unSetDoc.Map() {
+
+		if strings.EqualFold(key, "_id") {
+			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
+			return
+		}
 
 		if i != 0 {
 			unsetSQL += ", "
 			isSetSQL += " OR "
 		}
 
-		updateKey := getUpdateKey(key)
+		var updateKey string
+		updateKey, err = getUpdateKey(key)
+		if err != nil {
+			return
+		}
 
 		unsetSQL += updateKey
 
@@ -282,14 +310,21 @@ func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string) {
 }
 
 // Prepares the key (field) for SQL statement
-func getUpdateKey(key string) (updateKey string) {
+func getUpdateKey(key string) (updateKey string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
+
+		var isInt bool
 		for i, k := range splitKey {
 
-			if kInt, err := strconv.Atoi(k); err == nil {
+			if kInt, convErr := strconv.Atoi(k); convErr == nil {
+				if isInt {
+					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					return
+				}
 				kIntSQL := "[" + "%d" + "]"
 				updateKey += fmt.Sprintf(kIntSQL, (kInt + 1))
+				isInt = true
 				continue
 			}
 
@@ -298,6 +333,8 @@ func getUpdateKey(key string) (updateKey string) {
 			}
 
 			updateKey += "\"" + k + "\""
+
+			isInt = false
 
 		}
 	} else {

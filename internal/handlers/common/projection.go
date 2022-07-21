@@ -65,7 +65,9 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 			v, err = projection.Get(k)
 			switch v := v.(type) {
 			case bool, int32, int64, float64:
-				continue
+				if len(projection.Map()) != 1 {
+					continue
+				}
 			default:
 				err = lazyerrors.Errorf("unsupported operation %s %v (%T)", k, v, v)
 				return
@@ -135,12 +137,20 @@ func inclusionProjection(projection types.Document) (sql string) {
 		switch id := id.(type) {
 		case bool:
 			if id {
+				if len(projection.Map()) == 1 {
+					sql += "\"_id\": \"_id\"}"
+					return
+				}
 				sql += "\"_id\": \"_id\", "
 			}
 		case int32, int64, float64:
 			var equal types.CompareResult
 			equal = 0
 			if types.CompareScalars(id, int32(0)) != equal {
+				if len(projection.Map()) == 1 {
+					sql += "\"_id\": \"_id\"}"
+					return
+				}
 				sql += "\"_id\": \"_id\", "
 			}
 		}

@@ -206,12 +206,12 @@ func (doc *Document) ReadFrom(r *bufio.Reader) error {
 		case tagNull:
 			doc.m[string(ename)] = nil
 
-		// case tagRegex:
-		// 	var v Regex
-		// 	if err := v.ReadFrom(bufr); err != nil {
-		// 		return lazyerrors.Errorf("bson.Document.ReadFrom (Regex): %w", err)
-		// 	}
-		// 	doc.m[string(ename)] = types.Regex(v)
+		case tagRegex:
+			var v Regex
+			if err := v.ReadFrom(bufr); err != nil {
+				return lazyerrors.Errorf("bson.Document.ReadFrom (Regex): %w", err)
+			}
+			doc.m[string(ename)] = types.Regex(v)
 
 		case tagInt32:
 			var v Int32
@@ -358,14 +358,14 @@ func (doc Document) MarshalBinary() ([]byte, error) {
 				return nil, lazyerrors.Error(err)
 			}
 
-		// case types.Regex:
-		// 	bufw.WriteByte(byte(tagRegex))
-		// 	if err := ename.WriteTo(bufw); err != nil {
-		// 		return nil, lazyerrors.Error(err)
-		// 	}
-		// 	if err := Regex(elV).WriteTo(bufw); err != nil {
-		// 		return nil, lazyerrors.Error(err)
-		// 	}
+		case types.Regex:
+			bufw.WriteByte(byte(tagRegex))
+			if err := ename.WriteTo(bufw); err != nil {
+				return nil, lazyerrors.Error(err)
+			}
+			if err := Regex(elV).WriteTo(bufw); err != nil {
+				return nil, lazyerrors.Error(err)
+			}
 
 		case int32:
 			bufw.WriteByte(byte(tagInt32))

@@ -42,16 +42,15 @@ type DBStats struct {
 }
 
 func CreatePool(connString string, logger *zap.Logger, lazy bool) (*Hpool, error) {
-
-	//Option 1, retrieve the connection parameters from the hdbuserstore
-	//host, port, user name and password come from the hdbuserstore key USER1UserKey
+	// Option 1, retrieve the connection parameters from the hdbuserstore
+	// host, port, user name and password come from the hdbuserstore key USER1UserKey
 	connectString := "please-insert-sap-hana-url-here"
 
-	//Option 2, specify the connection parameters
-	//connectString := "please-insert-sap-hana-url-here"
+	// Option 2, specify the connection parameters
+	// connectString := "please-insert-sap-hana-url-here"
 
-	//encrypt and sslValidateCertificate should be true for HANA Cloud connections
-	//As of SAP HANA Client 2.6, connections on port 443 enable encryption by default
+	// encrypt and sslValidateCertificate should be true for HANA Cloud connections
+	// As of SAP HANA Client 2.6, connections on port 443 enable encryption by default
 
 	fmt.Println("Connect String is " + connectString)
 
@@ -65,12 +64,10 @@ func CreatePool(connString string, logger *zap.Logger, lazy bool) (*Hpool, error
 	}
 
 	return res, err
-
 }
 
 // Tables returns a sorted list of SAP HANA JSON Document Store collection names.
 func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) {
-
 	if err := hanaPool.CreateSchema(ctx, db); err != nil && err != ErrAlreadyExist {
 		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 	}
@@ -102,7 +99,6 @@ func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) 
 func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
 	sql := `CREATE SCHEMA ` + db
 	_, err := hanaPool.ExecContext(ctx, sql)
-
 	if err != nil {
 		return ErrAlreadyExist
 	}
@@ -116,7 +112,6 @@ func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
 func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection string) error {
 	sql := `CREATE COLLECTION ` + db + "." + collection
 	_, err := hanaPool.ExecContext(ctx, sql)
-
 	if err != nil {
 		return ErrAlreadyExist
 	}
@@ -213,10 +208,8 @@ func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error)
 //
 // It returns ErrNotExist is collection does not exist.
 func (hanaPool *Hpool) DropTable(ctx context.Context, db, collection string) error {
-
 	sql := `DROP COLLECTION ` + db + "." + collection
 	_, err := hanaPool.ExecContext(ctx, sql)
-
 	if err != nil {
 		return ErrNotExist
 	}
@@ -232,4 +225,27 @@ func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
 	_, err := hanaPool.ExecContext(ctx, sql)
 
 	return err
+}
+
+func (hanaPool *Hpool) JSONDocumentStoreAvailable(ctx context.Context) (available bool, err error) {
+	sql := "SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'"
+
+	var object_count any
+
+	err = hanaPool.QueryRowContext(ctx, sql).Scan(&object_count)
+	if err != nil {
+		return
+	}
+
+	if object_count == nil {
+		return
+	}
+
+	if object_count.(int64) >= 0 {
+		available = true
+		return
+	}
+
+	err = lazyerrors.Errorf("No clear answer on whether DocStore is activated or not")
+	return
 }

@@ -67,8 +67,8 @@ func fromBSON(v bsontype) any {
 		return time.Time(*v)
 	case nil:
 		return nil
-	// case *Regex:
-	// 	return types.Regex(*v)
+	case *Regex:
+		return types.Regex(*v)
 	case *Int32:
 		return int32(*v)
 	// case *Timestamp:
@@ -129,8 +129,8 @@ func toBSON(v any) bsontype {
 		return pointer.To(DateTime(v))
 	case nil:
 		return nil
-	// case types.Regex:
-	// 	return pointer.To(Regex(v))
+	case types.Regex:
+		return pointer.To(Regex(v))
 	case int32:
 		return pointer.To(Int32(v))
 	// case types.Timestamp:
