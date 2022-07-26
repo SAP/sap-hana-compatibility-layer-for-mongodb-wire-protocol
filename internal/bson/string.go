@@ -1,0 +1,100 @@
+// Copyright 2021 FerretDB Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bson
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
+	"io"
+
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/fjson"
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+)
+
+// String represents BSON String data type.
+type String string
+
+func (str *String) bsontype() {}
+
+// ReadFrom implements bsontype interface.
+func (str *String) ReadFrom(r *bufio.Reader) error {
+	var l int32
+	if err := binary.Read(r, binary.LittleEndian, &l); err != nil {
+		return lazyerrors.Error(err)
+	}
+	if l <= 0 {
+		return lazyerrors.Errorf("invalid length %d", l)
+	}
+
+	b := make([]byte, l)
+	if n, err := io.ReadFull(r, b); err != nil {
+		return lazyerrors.Errorf("expected %d, read %d: %w", len(b), n, err)
+	}
+
+	if b[l-1] != 0 {
+		return lazyerrors.Errorf("unexpected terminating byte %#02x", b[l-1])
+	}
+
+	*str = String(b[:l-1])
+	return nil
+}
+
+// WriteTo implements bsontype interface.
+func (str String) WriteTo(w *bufio.Writer) error {
+	v, err := str.MarshalBinary()
+	if err != nil {
+		return lazyerrors.Error(err)
+	}
+
+	_, err = w.Write(v)
+	if err != nil {
+		return lazyerrors.Error(err)
+	}
+
+	return nil
+}
+
+// MarshalBinary implements bsontype interface.
+func (str String) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+
+	binary.Write(&buf, binary.LittleEndian, int32(len(str)+1))
+	buf.Write([]byte(str))
+	buf.WriteByte(0)
+
+	return buf.Bytes(), nil
+}
+
+// UnmarshalJSON implements bsontype interface.
+func (str *String) UnmarshalJSON(data []byte) error {
+	var strJ fjson.String
+	if err := strJ.UnmarshalJSON(data); err != nil {
+		return err
+	}
+
+	*str = String(strJ)
+	return nil
+}
+
+// MarshalJSON implements bsontype interface.
+func (str String) MarshalJSON() ([]byte, error) {
+	return fjson.Marshal(fromBSON(&str))
+}
+
+// check interfaces
+var (
+	_ bsontype = (*String)(nil)
+)

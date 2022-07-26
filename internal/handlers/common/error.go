@@ -1,0 +1,116 @@
+// Copyright 2021 FerretDB Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package common
+
+import (
+	"errors"
+	"fmt"
+
+	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+)
+
+//go:generate ../../../bin/stringer -linecomment -type ErrorCode
+
+// ErrorCode represents wire protocol error code.
+type ErrorCode int32
+
+// for complete list of MongoDB error codes see:
+// https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.yml
+const (
+	// For ProtocolError only.
+	errInternalError = ErrorCode(1) // InternalError
+
+	ErrBadValue          = ErrorCode(2)     // BadValue
+	ErrNamespaceNotFound = ErrorCode(26)    // NamespaceNotFound
+	ErrNamespaceExists   = ErrorCode(48)    // NamespaceExists
+	ErrCommandNotFound   = ErrorCode(59)    // CommandNotFound
+	ErrNotImplemented    = ErrorCode(238)   // NotImplemented
+	ErrSortBadValue      = ErrorCode(15974) // SortBadValue
+	ErrRegexOptions      = ErrorCode(51075) // Location51075
+)
+
+// Error represents wire protocol error.
+type Error struct {
+	code ErrorCode
+	err  error
+}
+
+// NewError creates a new wire protocol error.
+//
+// Code can't be zero, err can't be nil.
+func NewError(code ErrorCode, err error) error {
+	if code == 0 {
+		panic("code is 0")
+	}
+	if err == nil {
+		panic("err is nil")
+	}
+	return &Error{
+		code: code,
+		err:  err,
+	}
+}
+
+// NewErrorMessage creates a new wire protocol error with message.
+//
+// Code can't be zero, message can't be empty.
+func NewErrorMessage(code ErrorCode, msg string, args ...any) error {
+	if msg == "" {
+		panic("msg is empty")
+	}
+	return NewError(code, fmt.Errorf(msg, args...))
+}
+
+// Error implements error interface.
+func (e *Error) Error() string {
+	return fmt.Sprintf("%[1]s (%[1]d): %[2]v", e.code, e.err)
+}
+
+// Unwrap implements standard error unwrapping interface.
+func (e *Error) Unwrap() error {
+	return e.err
+}
+
+// Document returns wire protocol error document.
+func (e *Error) Document() types.Document {
+	return types.MustMakeDocument(
+		"ok", float64(0),
+		"errmsg", e.err.Error(),
+		"code", int32(e.code),
+		"codeName", e.code.String(),
+	)
+}
+
+// ProtocolError converts any error to wire protocol error.
+//
+// Nil panics, *Error (possibly wrapped) is returned unwrapped with true,
+// any other value is wrapped with InternalError and returned with false.
+func ProtocolError(err error) (*Error, bool) {
+	if err == nil {
+		panic("err is nil")
+	}
+
+	var e *Error
+	if errors.As(err, &e) {
+		return e, true
+	}
+
+	return NewError(errInternalError, err).(*Error), false
+}
+
+// check interfaces
+var (
+	_ error = (*Error)(nil)
+)

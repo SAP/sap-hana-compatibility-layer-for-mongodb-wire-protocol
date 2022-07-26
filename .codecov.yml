@@ -1,0 +1,7 @@
+---
+codecov:
+  bot: compatibilitylayer-bot
+coverage:
+  range: "40...60"
+github_checks:
+  annotations: false
