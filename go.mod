@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/common v0.34.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/exp v0.0.0-20220104160115-025e73f80486
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	golang.org/x/text v0.3.7
 )
