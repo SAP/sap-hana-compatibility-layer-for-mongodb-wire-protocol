@@ -35,13 +35,13 @@ import (
 // 	pool := testutil.Pool(ctx, t, poolOpts)
 // 	l := zaptest.NewLogger(t)
 // 	sql := sql.NewStorage(pool, l.Sugar())
-// 	jsonb1 := jsonb1.NewStorage(pool, l)
+// 	crud := crud.NewStorage(pool, l)
 // 	handler := New(&NewOpts{
 // 		PgPool:        pool,
 // 		Logger:        l,
 // 		PeerAddr:      "127.0.0.1:12345",
 // 		SQLStorage:    sql,
-// 		JSONB1Storage: jsonb1,
+// 		CrudStorage: crud,
 // 		Metrics:       NewMetrics(),
 // 	})
 
