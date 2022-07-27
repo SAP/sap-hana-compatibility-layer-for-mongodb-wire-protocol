@@ -17,9 +17,9 @@ package handlers
 import (
 	"context"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // MsgGetCmdLineOpts returns a document containing command line options used to start the given SAP HANA compatibility layer for MongoDB Wire Protocol.

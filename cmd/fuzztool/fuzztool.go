@@ -19,7 +19,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/logging"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/logging"
 )
 
 func main() {
