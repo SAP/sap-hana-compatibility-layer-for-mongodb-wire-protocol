@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"go.uber.org/zap"
 )
 

@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 )
 
 //go:generate ../../../bin/stringer -linecomment -type ErrorCode
