@@ -33,8 +33,9 @@ func (dt *DateTime) String() string {
 	return time.Time(*dt).Format(time.RFC3339Nano)
 }
 
+// $da should be changed if ever datetime is supported for storing
 type dateTimeJSON struct {
-	D int64 `json:"da"`
+	D int64 `json:"$da"`
 }
 
 // UnmarshalJSON implements fjsontype interface.
