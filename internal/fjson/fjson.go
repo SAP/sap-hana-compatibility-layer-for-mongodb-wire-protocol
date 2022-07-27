@@ -206,10 +206,10 @@ func Unmarshal(data []byte) (any, error) {
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
-		// case v["da"] != nil:
-		// 	var o DateTime
-		// 	err = o.UnmarshalJSON(data)
-		// 	res = &o
+		case v["$da"] != nil:
+			var o DateTime
+			err = o.UnmarshalJSON(data)
+			res = &o
 		// case v["$r"] != nil:
 		// 	var o Regex
 		// 	err = o.UnmarshalJSON(data)
