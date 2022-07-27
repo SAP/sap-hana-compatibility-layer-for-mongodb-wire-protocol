@@ -17,7 +17,8 @@ jobs:
       - name: Run init
         run: make init
 
-      - name: trick the system 1
+        # Avoids problem with SAP/go-hdb/driver not being in GOROOT
+      - name: Make empty driver package
         run: mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP ; 
              mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb ;
              mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb/driver ;
