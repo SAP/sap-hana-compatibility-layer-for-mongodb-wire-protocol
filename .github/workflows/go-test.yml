@@ -1,8 +1,10 @@
 name: go test
 on: [push, pull_request]
+
 jobs:
-  Test:
+  test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -11,6 +13,16 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
-          
-      - name: Test
-        run: go test ./... -v
+
+      - name: Run init
+        run: make init
+
+      - name: trick the system 1
+        run: mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP ; 
+             mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb ;
+             mkdir /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb/driver ;
+             touch /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb/driver/trick.go ;
+             echo 'package driver' >> /opt/hostedtoolcache/go/1.18.4/x64/src/SAP/go-hdb/driver/trick.go
+
+      - name: Run tests
+        run: make test
