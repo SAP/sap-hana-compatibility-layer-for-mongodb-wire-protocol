@@ -5,10 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -41,17 +43,28 @@ type DBStats struct {
 	CountIndexes int32
 }
 
+type connectionString struct {
+	Connect struct {
+		ConnectString string `yaml:"connectString"`
+	} `yaml:"connect"`
+}
+
 func CreatePool(connString string, logger *zap.Logger, lazy bool) (*Hpool, error) {
-	// Option 1, retrieve the connection parameters from the hdbuserstore
-	// host, port, user name and password come from the hdbuserstore key USER1UserKey
-	connectString := "please-insert-sap-hana-url-here"
+	// Get connectString for SAP HANA Cloud instance from connect.yml
+	f, err := os.Open("connect.yml")
+	if err != nil {
+		lazyerrors.Error(err)
+	}
+	defer f.Close()
 
-	// Option 2, specify the connection parameters
-	// connectString := "please-insert-sap-hana-url-here"
+	var connect connectionString
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(&connect)
+	if err != nil {
+		lazyerrors.Error(err)
+	}
 
-	// encrypt and sslValidateCertificate should be true for HANA Cloud connections
-	// As of SAP HANA Client 2.6, connections on port 443 enable encryption by default
-
+	connectString := connect.Connect.ConnectString
 	fmt.Println("Connect String is " + connectString)
 
 	db, err := sql.Open("hdb", connectString)

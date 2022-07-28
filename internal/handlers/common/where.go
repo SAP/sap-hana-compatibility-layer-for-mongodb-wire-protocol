@@ -512,7 +512,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				vSQL += " OR " + kSQL + " IS UNSET)"
 			} else if lowerK == "$regex" {
 				vSQL, err = regex(exprValue)
-
 			} else {
 				vSQL, sign, err = whereValue(exprValue)
 				if err != nil {
@@ -626,7 +625,6 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 }
 
 func regex(value any) (vSQL string, err error) {
-
 	if regex, ok := value.(types.Regex); ok {
 		value = regex.Pattern
 		if regex.Options != "" {
