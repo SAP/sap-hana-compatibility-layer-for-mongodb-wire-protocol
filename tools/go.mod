@@ -12,7 +12,7 @@ require (
 	github.com/reviewdog/reviewdog v0.14.1
 	golang.org/x/perf v0.0.0-20211012211434-03971e389cd3
 	golang.org/x/tools v0.1.10
-	mvdan.cc/gofumpt v0.2.1
+	mvdan.cc/gofumpt v0.3.1
 )
 
 require (
