@@ -51,8 +51,8 @@ import (
 
 	"github.com/AlekSi/pointer"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 type fjsontype interface {
@@ -206,10 +206,10 @@ func Unmarshal(data []byte) (any, error) {
 			var o ObjectID
 			err = o.UnmarshalJSON(data)
 			res = &o
-		// case v["da"] != nil:
-		// 	var o DateTime
-		// 	err = o.UnmarshalJSON(data)
-		// 	res = &o
+		case v["$da"] != nil:
+			var o DateTime
+			err = o.UnmarshalJSON(data)
+			res = &o
 		// case v["$r"] != nil:
 		// 	var o Regex
 		// 	err = o.UnmarshalJSON(data)

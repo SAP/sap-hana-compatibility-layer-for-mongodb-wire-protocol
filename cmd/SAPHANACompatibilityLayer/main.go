@@ -26,15 +26,15 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/clientconn"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/debug"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/logging"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/version"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/clientconn"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/debug"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/logging"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/version"
 )
 
-//nolint:gochecknoglobals // flags are defined there to be visible in `bin/ferretdb-testcover -h` output
+//nolint:gochecknoglobals // flags are defined there to be visible in `bin/SAPHANACompatibilitylayer-testcover -h` output
 var (
 	debugAddrF       = flag.String("debug-addr", "127.0.0.1:8088", "debug address")
 	listenAddrF      = flag.String("listen-addr", "127.0.0.1:27017", "listen address")
