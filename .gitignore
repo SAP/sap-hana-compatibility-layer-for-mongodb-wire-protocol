@@ -8,6 +8,7 @@ old.txt
 new.txt
 .vscode
 .idea
+connect.yml
 
 internal/util/version/version.txt
 internal/util/version/branch.txt
