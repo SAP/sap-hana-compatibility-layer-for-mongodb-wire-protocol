@@ -20,8 +20,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // func setup(t *testing.T, poolOpts *testutil.PoolOpts) (context.Context, *Handler, *pg.Pool) {
@@ -35,13 +35,13 @@ import (
 // 	pool := testutil.Pool(ctx, t, poolOpts)
 // 	l := zaptest.NewLogger(t)
 // 	sql := sql.NewStorage(pool, l.Sugar())
-// 	jsonb1 := jsonb1.NewStorage(pool, l)
+// 	crud := crud.NewStorage(pool, l)
 // 	handler := New(&NewOpts{
 // 		PgPool:        pool,
 // 		Logger:        l,
 // 		PeerAddr:      "127.0.0.1:12345",
 // 		SQLStorage:    sql,
-// 		JSONB1Storage: jsonb1,
+// 		CrudStorage: crud,
 // 		Metrics:       NewMetrics(),
 // 	})
 
@@ -876,7 +876,7 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 // 		assert.Equal(t, expected, actual)
 
 // 		// TODO test listCollections command once we have better cursor support
-// 		// https://github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues/79
+// 		// https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues/79
 
 // 		tables, err := pool.Tables(ctx, db)
 // 		require.NoError(t, err)

@@ -20,14 +20,14 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 
 	"go.uber.org/zap"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 type Handler struct {
@@ -35,17 +35,17 @@ type Handler struct {
 	hanaPool      *hana.Hpool
 	peerAddr      string
 	l             *zap.Logger
-	jsonb1        common.Storage
+	crud          common.Storage
 	metrics       *Metrics
 	lastRequestID int32
 }
 
 type NewOpts struct {
-	HanaPool      *hana.Hpool
-	Logger        *zap.Logger
-	JSONB1Storage common.Storage
-	Metrics       *Metrics
-	PeerAddr      string
+	HanaPool    *hana.Hpool
+	Logger      *zap.Logger
+	CrudStorage common.Storage
+	Metrics     *Metrics
+	PeerAddr    string
 }
 
 func New(opts *NewOpts) *Handler {
@@ -53,7 +53,7 @@ func New(opts *NewOpts) *Handler {
 		hanaPool: opts.HanaPool,
 		l:        opts.Logger,
 
-		jsonb1:   opts.JSONB1Storage,
+		crud:     opts.CrudStorage,
 		metrics:  opts.Metrics,
 		peerAddr: opts.PeerAddr,
 	}
@@ -198,7 +198,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	command := document.Command()
 
 	if command == "createindexes" {
-		return h.jsonb1, nil
+		return h.crud, nil
 	}
 
 	collection := m[command].(string)
@@ -228,14 +228,14 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	switch command {
 	case "delete", "find", "count":
 		if jsonbTableExist {
-			return h.jsonb1, nil
+			return h.crud, nil
 		}
 
 		return nil, lazyerrors.Errorf("Collection %s does not exist", strings.ToUpper(collection))
 
 	case "insert", "update":
 		if jsonbTableExist {
-			return h.jsonb1, nil
+			return h.crud, nil
 		}
 
 		if strings.EqualFold(command, "update") {
@@ -252,7 +252,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		}
 
 		h.l.Info("Created collection.", zap.String("schema", db), zap.String("table", collection))
-		return h.jsonb1, nil
+		return h.crud, nil
 
 	default:
 		panic(fmt.Sprintf("unhandled command %q", command))

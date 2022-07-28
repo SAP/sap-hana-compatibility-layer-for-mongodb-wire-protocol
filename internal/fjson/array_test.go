@@ -17,7 +17,7 @@ package fjson
 import (
 	"testing"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 )
 
 func convertArray(a *types.Array) *Array {

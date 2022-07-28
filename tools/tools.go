@@ -15,7 +15,7 @@
 //go:build tools
 // +build tools
 
-package tools // import "github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/tools"
+package tools // import "github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/tools"
 
 import (
 	_ "github.com/BurntSushi/go-sumtype"
