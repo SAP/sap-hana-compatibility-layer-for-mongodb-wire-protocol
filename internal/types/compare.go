@@ -16,10 +16,11 @@ package types
 
 import (
 	"bytes"
-	"constraints"
 	"fmt"
 	"math"
 	"time"
+
+	"golang.org/x/exp/constraints"
 )
 
 // compareResult represents the result of a comparison.

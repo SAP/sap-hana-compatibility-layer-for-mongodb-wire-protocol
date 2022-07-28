@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 )
 
 func convertDocument(d types.Document) *Document {
@@ -184,7 +184,7 @@ var (
 			"string", types.MustNewArray("foo", ""),
 		)),
 		j: `{"bool":[true,false],` +
-			`"datetime":[{"da":1627378542123},{"da":-62135596800000}],"double":[42.13],` +
+			`"datetime":[{"$da":1627378542123},{"$da":-62135596800000}],"double":[42.13],` +
 			`"int32":[42,0],"int64":[223372036854775807],` +
 			`"objectID":[{"oid":"420000000000000000000000"},{"oid":"000000000000000000000000"}],` +
 			`"string":["foo",""]}`,

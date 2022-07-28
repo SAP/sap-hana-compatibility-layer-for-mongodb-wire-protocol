@@ -14,35 +14,35 @@
 
 package bson
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/AlekSi/pointer"
-// )
+	"github.com/AlekSi/pointer"
+)
 
-// var regexTestCases = []testCase{{
-// 	name: "normal",
-// 	v:    pointer.To(Regex{Pattern: "hoffman", Options: "i"}),
-// 	b:    []byte{0x68, 0x6f, 0x66, 0x66, 0x6d, 0x61, 0x6e, 0x00, 0x69, 0x00},
-// }, {
-// 	name: "empty",
-// 	v:    pointer.To(Regex{Pattern: "", Options: ""}),
-// 	b:    []byte{0x00, 0x00},
-// }, {
-// 	name: "EOF",
-// 	b:    []byte{0x00},
-// 	bErr: `EOF`,
-// }}
+var regexTestCases = []testCase{{
+	name: "normal",
+	v:    pointer.To(Regex{Pattern: "hoffman", Options: "i"}),
+	b:    []byte{0x68, 0x6f, 0x66, 0x66, 0x6d, 0x61, 0x6e, 0x00, 0x69, 0x00},
+}, {
+	name: "empty",
+	v:    pointer.To(Regex{Pattern: "", Options: ""}),
+	b:    []byte{0x00, 0x00},
+}, {
+	name: "EOF",
+	b:    []byte{0x00},
+	bErr: `EOF`,
+}}
 
-// func TestRegex(t *testing.T) {
-// 	t.Parallel()
-// 	testBinary(t, regexTestCases, func() bsontype { return new(Regex) })
-// }
+func TestRegex(t *testing.T) {
+	t.Parallel()
+	testBinary(t, regexTestCases, func() bsontype { return new(Regex) })
+}
 
-// func FuzzRegex(f *testing.F) {
-// 	fuzzBinary(f, regexTestCases, func() bsontype { return new(Regex) })
-// }
+func FuzzRegex(f *testing.F) {
+	fuzzBinary(f, regexTestCases, func() bsontype { return new(Regex) })
+}
 
-// func BenchmarkRegex(b *testing.B) {
-// 	benchmark(b, regexTestCases, func() bsontype { return new(Regex) })
-// }
+func BenchmarkRegex(b *testing.B) {
+	benchmark(b, regexTestCases, func() bsontype { return new(Regex) })
+}

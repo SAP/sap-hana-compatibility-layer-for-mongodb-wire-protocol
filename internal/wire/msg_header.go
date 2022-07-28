@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 //go:generate ../../bin/stringer -linecomment -type OpCode

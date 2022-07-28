@@ -20,10 +20,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/bson"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/bson"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // Creates the WHERE-clause of the SQL statement.
@@ -512,7 +512,6 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				vSQL += " OR " + kSQL + " IS UNSET)"
 			} else if lowerK == "$regex" {
 				vSQL, err = regex(exprValue)
-
 			} else {
 				vSQL, sign, err = whereValue(exprValue)
 				if err != nil {
@@ -626,7 +625,6 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 }
 
 func regex(value any) (vSQL string, err error) {
-
 	if regex, ok := value.(types.Regex); ok {
 		value = regex.Pattern
 		if regex.Options != "" {

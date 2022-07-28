@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
 // DateTime represents BSON DateTime data type.
@@ -33,8 +33,9 @@ func (dt *DateTime) String() string {
 	return time.Time(*dt).Format(time.RFC3339Nano)
 }
 
+// $da should be changed if ever datetime is supported for storing
 type dateTimeJSON struct {
-	D int64 `json:"da"`
+	D int64 `json:"$da"`
 }
 
 // UnmarshalJSON implements fjsontype interface.

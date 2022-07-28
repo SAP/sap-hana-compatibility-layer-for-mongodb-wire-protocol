@@ -25,12 +25,12 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 	"go.uber.org/zap"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/jsonb1"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/proxy"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/crud"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/proxy"
 
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
-	"github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
 // Mode represents SAP HANA compatibility layer for MongoDB Wire Protocol mode of operation.
@@ -76,7 +76,7 @@ func newConn(opts *newConnOpts) (*conn, error) {
 
 	peerAddr := opts.netConn.RemoteAddr().String()
 
-	jsonb1H := jsonb1.NewStorage(opts.hanaPool, l)
+	crudH := crud.NewStorage(opts.hanaPool, l)
 
 	var p *proxy.Handler
 	if opts.mode != NormalMode {
@@ -87,11 +87,11 @@ func newConn(opts *newConnOpts) (*conn, error) {
 	}
 
 	handlerOpts := &handlers.NewOpts{
-		HanaPool:      opts.hanaPool,
-		Logger:        l,
-		PeerAddr:      peerAddr,
-		JSONB1Storage: jsonb1H,
-		Metrics:       opts.handlersMetrics,
+		HanaPool:    opts.hanaPool,
+		Logger:      l,
+		CrudStorage: crudH,
+		Metrics:     opts.handlersMetrics,
+		PeerAddr:    peerAddr,
 	}
 
 	return &conn{

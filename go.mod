@@ -1,4 +1,4 @@
-module github.wdf.sap.corp/DocStore/sap-hana-compatibility-layer-for-mongodb-wire-protocol
+module github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol
 
 go 1.18
 
@@ -8,12 +8,13 @@ require (
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_golang v1.12.2
-	github.com/prometheus/common v0.34.0
-	github.com/stretchr/testify v1.7.0
+	github.com/prometheus/common v0.37.0
+	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/exp v0.0.0-20220104160115-025e73f80486
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	golang.org/x/text v0.3.7
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -34,5 +35,4 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
