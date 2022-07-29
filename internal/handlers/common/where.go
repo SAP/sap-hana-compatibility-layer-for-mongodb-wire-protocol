@@ -104,7 +104,13 @@ func whereKey(key string) (kSQL string, err error) {
 
 			if kInt, convErr := strconv.Atoi(k); convErr == nil {
 				if isInt {
+					kSQL = ""
 					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					return
+				}
+				if kInt < 0 {
+					kSQL = ""
+					err = lazyerrors.Errorf("Negative array index is not allowed")
 					return
 				}
 				kIntSQL := "[" + "%d" + "]"
@@ -157,6 +163,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		sign = " LIKE "
 		return
 	case types.ObjectID:
+		fmt.Println(value)
 		var bOBJ []byte
 		bOBJ, err = bson.ObjectID(value).MarshalJSON()
 		if err != nil {
@@ -660,16 +667,29 @@ func regex(value any) (vSQL string, err error) {
 				continue
 			}
 
-			if dot && s != '*' {
+			if dot && s != '*' && i == 1 {
 				vSQL += "%_"
-				dot = false
+				if s != '.' {
+					dot = false
+				} else {
+					continue
+				}
 			}
 
 			if i == len(value)-1 {
+				if dot && s != '*' {
+					vSQL += "_"
+					if s == '.' {
+						vSQL += "_%"
+						continue
+					} else {
+						dot = false
+					}
+				}
 				if s == '$' {
 					continue
 				}
-				if s == '*' {
+				if s == '*' && dot {
 					vSQL += "%%"
 					continue
 				}
@@ -686,11 +706,21 @@ func regex(value any) (vSQL string, err error) {
 				continue
 			}
 
-			if s == '.' {
+			if dot && s != '*' {
 				vSQL += "_"
+				if s == '.' {
+					continue
+				} else {
+					dot = false
+				}
+			}
+
+			if s == '.' {
+				dot = true
 				continue
-			} else if s == '*' {
+			} else if s == '*' && dot {
 				vSQL += "%"
+				dot = false
 				continue
 			} else if s == '%' || s == '_' {
 				vSQL += "^" + string(s)
