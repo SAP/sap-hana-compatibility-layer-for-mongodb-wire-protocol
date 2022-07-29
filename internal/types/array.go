@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2021 FerretDB Inc.
+//
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Copyright 2021 FerretDB Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
