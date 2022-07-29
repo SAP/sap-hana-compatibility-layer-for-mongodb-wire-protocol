@@ -210,10 +210,10 @@ func Unmarshal(data []byte) (any, error) {
 			var o DateTime
 			err = o.UnmarshalJSON(data)
 			res = &o
-		// case v["$r"] != nil:
-		// 	var o Regex
-		// 	err = o.UnmarshalJSON(data)
-		// 	res = &o
+		case v["$r"] != nil:
+			var o Regex
+			err = o.UnmarshalJSON(data)
+			res = &o
 		// case v["ts"] != nil:
 		// 	var o Timestamp
 		// 	err = o.UnmarshalJSON(data)
