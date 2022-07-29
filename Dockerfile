@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 FerretDB Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Make one for SAP HANA compatibility layer for MongoDB Wire Protocol
 
 #FROM scratch

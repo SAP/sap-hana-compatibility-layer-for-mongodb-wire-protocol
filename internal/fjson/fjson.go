@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2021 FerretDB Inc.
+//
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Copyright 2021 FerretDB Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +30,7 @@
 //
 // JSON mapping for storage
 //
+// ATTENTION: The following desciption of datatypes is not all up-to-date
 // Composite/pointer types
 //  Document:   {"$k": ["<key 1>", "<key 2>", ...], "<key 1>": <value 1>, "<key 2>": <value 2>, ...}
 //  Array:      JSON array
