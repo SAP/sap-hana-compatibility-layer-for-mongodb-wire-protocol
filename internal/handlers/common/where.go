@@ -169,7 +169,6 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		sign = " LIKE "
 		return
 	case types.ObjectID:
-		fmt.Println(value)
 		var bOBJ []byte
 		bOBJ, err = bson.ObjectID(value).MarshalJSON()
 		if err != nil {
@@ -287,7 +286,7 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 		}
 
 		switch value := value.(type) {
-		case string, int32, int64, float64, types.ObjectID, nil:
+		case string, int32, int64, float64, types.ObjectID, nil, bool:
 			var sql string
 			sql, _, err = whereValue(value)
 			sqlArray += sql
@@ -314,7 +313,7 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 
 		default:
 
-			err = lazyerrors.Errorf("The document used in filter contains a datatype not yet supported: %T", value)
+			err = lazyerrors.Errorf("The array used in filter contains a datatype not yet supported: %T", value)
 			return
 		}
 	}
@@ -372,6 +371,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 			if err != nil {
 				return
 			}
+
 			switch expr := expr.(type) {
 			case types.Document:
 
@@ -495,7 +495,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 					return
 				}
 			} else if lowerK == "$all" || lowerK == "$elemmatch" {
-				kvSQL, err = filterArray(kvSQL, key, exprValue)
+				kvSQL, err = filterArray(kvSQL, fieldExpr, exprValue)
 				if err != nil {
 					return
 				}
@@ -554,6 +554,10 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 	switch filters := filters.(type) {
 	case types.Document:
+		if strings.EqualFold(arrayOperator, "all") {
+			err = lazyerrors.Errorf("$all requires an array of expression not a document")
+			return
+		}
 		i := 0
 		for f, v := range filters.Map() {
 
@@ -612,6 +616,10 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 		kvSQL += " END "
 
 	case *types.Array:
+		if strings.EqualFold(arrayOperator, "elemmatch") {
+			err = lazyerrors.Errorf("$elemMatch requires a document of expression not an array")
+			return
+		}
 		var value string
 		var v any
 		for i := 0; i < filters.Len(); i++ {
