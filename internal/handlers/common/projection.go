@@ -184,7 +184,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 }
 
 // If it is an exclusion then this performs the exclusion on each document together with the function projectDocument
-func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bool) (err error) {
+func ProjectDocuments(docs *types.Array, projection types.Document) (err error) {
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
 		if errGet != nil {
@@ -192,7 +192,7 @@ func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bo
 		}
 		switch docv := (*doc).(type) {
 		case types.Document:
-			err = projectDocument(&docv, projection, exclusion)
+			err = projectDocument(&docv, projection)
 			*doc = docv
 		default:
 			err = lazyerrors.Errorf("Array contains a type not being types.Document")
@@ -204,7 +204,7 @@ func ProjectDocuments(docs *types.Array, projection types.Document, exclusion bo
 	return nil
 }
 
-func projectDocument(doc *types.Document, projection types.Document, exclusion bool) (err error) {
+func projectDocument(doc *types.Document, projection types.Document) (err error) {
 	projectionMap := projection.Map()
 	for field := range projectionMap {
 		if strings.Contains(field, ".") {

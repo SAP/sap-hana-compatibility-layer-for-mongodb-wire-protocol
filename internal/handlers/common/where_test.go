@@ -393,8 +393,8 @@ type testCaseFilterArray struct {
 func TestFilterArray(t *testing.T) {
 	filterArrayTestCases := []testCaseFilterArray{
 		{
-			name: "$elemMatch with comparison test", r1: "\"nested\".\"field\"", r2: "elemMatch", r3: types.MustMakeDocument("$gte", int32(9), "$lte", int64(11)),
-			e: expectedWhereKey{sql: "FOR ANY \"element\" IN \"nested\".\"field\" SATISFIES \"element\" >= 9 AND \"element\" <= 11 END ", err: nil},
+			name: "$elemMatch with comparison test", r1: "\"nested\".\"field\"", r2: "elemMatch", r3: types.MustMakeDocument("$gte", int32(9)),
+			e: expectedWhereKey{sql: "FOR ANY \"element\" IN \"nested\".\"field\" SATISFIES \"element\" >= 9 END ", err: nil},
 		},
 		{
 			name: "$elemMatch with field: value test", r1: "\"nested\".\"field\"", r2: "elemMatch", r3: types.MustMakeDocument("field", float64(14.241234)),
