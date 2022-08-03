@@ -150,6 +150,14 @@ func (a *Array) Contains(key string) bool {
 	return false
 }
 
-func (a *Array) Delete(index int) {
+func (a *Array) Delete(index int) (err error) {
+	l := a.Len()
+
+	if index >= l {
+		return fmt.Errorf("types.Array.Delete: index %d is out of bounds [0-%d)", index, l)
+	}
+
 	a.s = append(a.s[:index], a.s[index+1:]...)
+
+	return err
 }
