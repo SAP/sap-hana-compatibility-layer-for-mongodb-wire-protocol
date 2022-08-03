@@ -186,7 +186,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		}
 
 		if exclusion {
-			err = common.ProjectDocuments(&docs, m["projection"].(types.Document), exclusion)
+			err = common.ProjectDocuments(&docs, m["projection"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}

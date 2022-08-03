@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2021 FerretDB Inc.
 //
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2021 FerretDB Inc.
@@ -78,4 +80,58 @@ func TestValidate(t *testing.T) {
 			assert.Equal(t, tc.err, err)
 		})
 	}
+
+	t.Run("convertDocument", func(t *testing.T) {
+		t.Parallel()
+
+		d := MustMakeDocument("field", "value")
+
+		convertedDoc := MustConvertDocument(d)
+
+		assert.Equal(t, MustMakeDocument("field", "value"), convertedDoc)
+
+		m := map[string]any{"field": 12}
+
+		var k []string
+		k = append(k, "field")
+
+		d1 := Document{m: m, keys: k}
+
+		convertedDoc, err := ConvertDocument(d1)
+		assert.Equal(t, d1, convertedDoc)
+		assert.EqualError(t, err, `types.ConvertDocument: types.Document.validate: types.validateValue: unsupported type: int (12)`)
+
+		k = nil
+		m = nil
+		d2 := Document{m: m, keys: k}
+		convertedDoc, err = ConvertDocument(d2)
+		expectDoc := Document{map[string]any{}, []string{}}
+		assert.Nil(t, err)
+		assert.Equal(t, expectDoc, convertedDoc)
+	})
+
+	t.Run("Set and Remove", func(t *testing.T) {
+		t.Parallel()
+
+		d := MustMakeDocument("field1", "value", "field2", int32(1))
+
+		d.Remove("field1")
+
+		assert.Equal(t, MustMakeDocument("field2", int32(1)), d)
+
+		d.Remove("field1")
+
+		assert.Equal(t, MustMakeDocument("field2", int32(1)), d)
+
+		err := d.Set("field1", "value")
+		assert.Nil(t, err)
+		assert.Equal(t, MustMakeDocument("field2", int32(1), "field1", "value"), d)
+
+		err = d.Set("field3", 12)
+		assert.EqualError(t, err, `types.Document.validate: types.validateValue: unsupported type: int (12)`)
+
+		err = d.Set("", int32(12))
+		assert.EqualError(t, err, `types.Document.Set: invalid key: ""`)
+
+	})
 }
