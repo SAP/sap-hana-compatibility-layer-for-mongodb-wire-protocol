@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: sap-hana-compatibility-layer-for-mongodb-wire-protocol
-Upstream-Contact: <YOUR-CONTACT (MAIL ADDRESS ETC.)>
+Upstream-Contact: Lucas Bojer <lucas.bojer@sap.com>
 Source: https://github.com/sap/sap-hana-compatibility-layer-for-mongodb-wire-protocol
 Disclaimer: The code in this project may include calls to APIs ("API Calls") of
  SAP or third-party products or services developed outside of this project
