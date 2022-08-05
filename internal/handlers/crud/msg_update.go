@@ -225,7 +225,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
 		updateSQL += ", " + unSetSQL
-	} else if isUnsetSQL != "" { // If only unsetting fields
+	} else if isUnsetSQL != "" { // If only setting fields
 		notWhereSQL, err = common.Where(setDoc)
 		if err != nil {
 			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
@@ -235,7 +235,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 			return
 		}
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " )) "
-	} else if isSetSQL != "" { // If only setting fields
+	} else if isSetSQL != "" { // If only unsetting fields
 		notWhereSQL = " AND ( " + isSetSQL + " )"
 		updateSQL = unSetSQL
 	} else {
@@ -251,8 +251,10 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 	updateSQL = " SET "
 
 	var updateValue string
-	i := 0
-	for key, value := range setDoc.Map() {
+
+	for i, key := range setDoc.Keys() {
+
+		value, _ := setDoc.Get(key)
 
 		if strings.EqualFold(key, "_id") {
 			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
@@ -287,8 +289,7 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err error) {
 	unsetSQL = " UNSET "
 
-	i := 0
-	for key := range unSetDoc.Map() {
+	for i, key := range unSetDoc.Keys() {
 
 		if strings.EqualFold(key, "_id") {
 			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
