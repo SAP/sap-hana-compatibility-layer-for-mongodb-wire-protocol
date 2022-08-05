@@ -75,7 +75,6 @@ func TestArray(t *testing.T) {
 		errSub, err = aSub.Subslice(1, 0)
 		assert.Nil(t, errSub)
 		assert.EqualError(t, err, `types.Array.Subslice: high index 0 is less low index 1`)
-
 	})
 
 	t.Run("Set", func(t *testing.T) {
@@ -94,7 +93,6 @@ func TestArray(t *testing.T) {
 
 		err = a.Set(2, 2)
 		assert.EqualError(t, err, `types.Array.Set: types.validateValue: unsupported type: int (2)`)
-
 	})
 
 	t.Run("Contains", func(t *testing.T) {
@@ -109,7 +107,6 @@ func TestArray(t *testing.T) {
 		b = a.Contains("keY2")
 
 		assert.False(t, b)
-
 	})
 
 	t.Run("Append and Delete", func(t *testing.T) {
@@ -141,6 +138,5 @@ func TestArray(t *testing.T) {
 		ptr, err = a.GetPointer(2)
 		assert.Nil(t, err)
 		assert.EqualValues(t, any("key3"), *ptr)
-
 	})
 }

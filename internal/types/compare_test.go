@@ -174,6 +174,5 @@ func TestCompare(t *testing.T) {
 
 		result = CompareScalars(integer64, "not int")
 		assert.Equal(t, CompareResult(3), result)
-
 	})
 }
