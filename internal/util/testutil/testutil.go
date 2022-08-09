@@ -18,22 +18,17 @@
 
 package testutil
 
-// import (
-// 	"context"
-// 	"strings"
-// 	"testing"
+import (
+	"context"
+	"testing"
+)
 
-// 	"github.com/stretchr/testify/require"
-// 	"go.uber.org/zap/zaptest"
+func Ctx(tb testing.TB) context.Context {
+	tb.Helper()
 
-// )
-
-// func Ctx(tb testing.TB) context.Context {
-// 	tb.Helper()
-
-// 	// TODO
-// 	return context.Background()
-// }
+	// TODO
+	return context.Background()
+}
 
 // // PoolOpts represents options for creating a connection pool.
 // type PoolOpts struct {
