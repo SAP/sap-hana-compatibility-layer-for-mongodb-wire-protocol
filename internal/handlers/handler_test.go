@@ -419,11 +419,13 @@ func TestDatabaseCommand(t *testing.T) {
 
 		mock.ExpectQuery("Select VERSION from \"SYS\".\"M_DATABASE\";").WillReturnRows(row)
 		strTime := string(time.Now().UTC().Format("2006-01-02T15:04:05.999Z07:00"))
+		mv := version.Get()
+
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
 			"totalLinesWritten", int32(1),
 			"log", types.MustNewArray(
-				"{\"c\":\"STORAGE\",\"ctx\":\"initandlisten\",\"id\":42000,\"msg\":\"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol a7e3000-dirty and SAP HANA 1.\",\"s\":\"I\",\"t\":{\"$date\":\""+strTime+"\"},\"tags\":[\"startupWarnings\"]}",
+				"{\"c\":\"STORAGE\",\"ctx\":\"initandlisten\",\"id\":42000,\"msg\":\"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol "+mv.Version+" and SAP HANA 1.\",\"s\":\"I\",\"t\":{\"$date\":\""+strTime+"\"},\"tags\":[\"startupWarnings\"]}",
 			),
 			"ok", float64(1),
 		)
