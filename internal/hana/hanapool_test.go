@@ -5,6 +5,8 @@
 package hana
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -12,7 +14,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
+
+	expectedBytes := []byte(expectedSQL)
+	actualBytes := []byte(actualSQL)
+
+	for i, a := range actualBytes {
+		if i >= len(expectedBytes) {
+			return nil
+		}
+
+		e := expectedBytes[i]
+
+		if e != a {
+			return fmt.Errorf(`could not match actual sql: "%s" with expected regexp "%s"`, actualSQL, expectedSQL)
+		}
+	}
+
+	return nil
+})
+
 func TestHanapool(t *testing.T) {
+
+	t.Run("Get tables", func(t *testing.T) {
+		t.Parallel()
+
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
+
+		if err != nil {
+			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		}
+		defer db.Close()
+
+		row := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable")
+		args := []driver.Value{"TESTDATABASE"}
+		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnError(fmt.Errorf("error"))
+		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(row)
+
+		h := Hpool{
+			db,
+		}
+
+		ctx := testutil.Ctx(t)
+		tables, err := h.Tables(ctx, "testDatabase")
+
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"testTable"}, tables)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
 
 	t.Run("create schema", func(t *testing.T) {
 		t.Parallel()
@@ -58,6 +110,86 @@ func TestHanapool(t *testing.T) {
 		err = h.CreateCollection(ctx, "database", "collection")
 
 		assert.Nil(t, err)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("Drop table", func(t *testing.T) {
+		t.Parallel()
+
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
+
+		if err != nil {
+			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		}
+		defer db.Close()
+
+		mock.ExpectExec("DROP COLLECTION testDatabase.testCollection").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		h := Hpool{
+			db,
+		}
+
+		ctx := testutil.Ctx(t)
+		err = h.DropTable(ctx, "testDatabase", "testCollection")
+
+		assert.Nil(t, err)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("Drop schema", func(t *testing.T) {
+		t.Parallel()
+
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
+
+		if err != nil {
+			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		}
+		defer db.Close()
+
+		mock.ExpectExec("DROP SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		h := Hpool{
+			db,
+		}
+
+		ctx := testutil.Ctx(t)
+		err = h.DropSchema(ctx, "testDatabase")
+
+		assert.Nil(t, err)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("Check availability", func(t *testing.T) {
+		t.Parallel()
+
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
+
+		if err != nil {
+			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		}
+		defer db.Close()
+
+		row := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
+
+		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row)
+		h := Hpool{
+			db,
+		}
+
+		ctx := testutil.Ctx(t)
+		isAvailable, err := h.JSONDocumentStoreAvailable(ctx)
+
+		assert.Nil(t, err)
+		assert.Equal(t, true, isAvailable)
 
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
