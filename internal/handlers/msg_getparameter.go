@@ -18,26 +18,26 @@
 
 package handlers
 
-import (
-	"context"
+// import (
+// 	"context"
 
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
-)
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+// )
 
-// MsgGetParameter OpMsg used to get parameter.
-func (h *Handler) MsgGetParameter(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	var reply wire.OpMsg
-	err := reply.SetSections(wire.OpMsgSection{
-		Documents: []types.Document{types.MustMakeDocument(
-			"version", versionValue,
-			"ok", float64(1),
-		)},
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// // MsgGetParameter OpMsg used to get parameter.
+// func (h *Handler) MsgGetParameter(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+// 	var reply wire.OpMsg
+// 	err := reply.SetSections(wire.OpMsgSection{
+// 		Documents: []types.Document{types.MustMakeDocument(
+// 			"version", versionValue,
+// 			"ok", float64(1),
+// 		)},
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return &reply, nil
-}
+// 	return &reply, nil
+// }

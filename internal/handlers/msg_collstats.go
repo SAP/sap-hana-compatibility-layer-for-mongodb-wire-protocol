@@ -18,50 +18,42 @@
 
 package handlers
 
-import (
-	"context"
-
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
-)
-
 // MsgCollStats returns a set of statistics for a collection.
 // To function hanapool.TableStats needs to be implemented for DocStore
-func (h *Handler) MsgCollStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	document, err := msg.Document()
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// func (h *Handler) MsgCollStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+// 	document, err := msg.Document()
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	m := document.Map()
-	collection := m["collStats"].(string)
-	db, ok := m["$db"].(string)
-	if !ok {
-		return nil, lazyerrors.New("no db")
-	}
+// 	m := document.Map()
+// 	collection := m["collStats"].(string)
+// 	db, ok := m["$db"].(string)
+// 	if !ok {
+// 		return nil, lazyerrors.New("no db")
+// 	}
 
-	stats, err := h.hanaPool.TableStats(ctx, db, collection)
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// 	stats, err := h.hanaPool.TableStats(ctx, db, collection)
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	var reply wire.OpMsg
-	err = reply.SetSections(wire.OpMsgSection{
-		Documents: []types.Document{types.MustMakeDocument(
-			"ns", db+"."+collection,
-			"count", stats.Rows,
-			"size", stats.SizeTotal,
-			"storageSize", stats.SizeTable,
-			"totalIndexSize", stats.SizeIndexes,
-			"totalSize", stats.SizeTotal,
-			"scaleFactor", int32(1),
-			"ok", float64(1),
-		)},
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// 	var reply wire.OpMsg
+// 	err = reply.SetSections(wire.OpMsgSection{
+// 		Documents: []types.Document{types.MustMakeDocument(
+// 			"ns", db+"."+collection,
+// 			"count", stats.Rows,
+// 			"size", stats.SizeTotal,
+// 			"storageSize", stats.SizeTable,
+// 			"totalIndexSize", stats.SizeIndexes,
+// 			"totalSize", stats.SizeTotal,
+// 			"scaleFactor", int32(1),
+// 			"ok", float64(1),
+// 		)},
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return &reply, nil
-}
+// 	return &reply, nil
+// }

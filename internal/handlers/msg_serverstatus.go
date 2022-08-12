@@ -18,26 +18,26 @@
 
 package handlers
 
-import (
-	"context"
+// import (
+// 	"context"
 
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
-)
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+// )
 
-// MsgServerStatus OpMsg used to get a server status.
-func (h *Handler) MsgServerStatus(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	var reply wire.OpMsg
-	err := reply.SetSections(wire.OpMsgSection{
-		Documents: []types.Document{types.MustMakeDocument(
-			"version", versionValue,
-			"ok", float64(1),
-		)},
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// // MsgServerStatus OpMsg used to get a server status.
+// func (h *Handler) MsgServerStatus(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+// 	var reply wire.OpMsg
+// 	err := reply.SetSections(wire.OpMsgSection{
+// 		Documents: []types.Document{types.MustMakeDocument(
+// 			"version", versionValue,
+// 			"ok", float64(1),
+// 		)},
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return &reply, nil
-}
+// 	return &reply, nil
+// }

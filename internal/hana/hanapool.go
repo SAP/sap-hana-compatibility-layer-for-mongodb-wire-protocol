@@ -139,89 +139,90 @@ func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection stri
 }
 
 // Schemas returns a sorted list of SAP HANA JSON Document Store schema names.
-func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
-	sql := "SELECT * FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'"
-	rows, err := hanaPool.QueryContext(ctx, sql)
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-	defer rows.Close()
+// Not used yet
+// func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
+// 	sql := "SELECT * FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'"
+// 	rows, err := hanaPool.QueryContext(ctx, sql)
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
+// 	defer rows.Close()
 
-	res := make([]string, 0, 2)
-	for rows.Next() {
-		var name string
-		if err = rows.Scan(&name); err != nil {
-			return nil, lazyerrors.Error(err)
-		}
+// 	res := make([]string, 0, 2)
+// 	for rows.Next() {
+// 		var name string
+// 		if err = rows.Scan(&name); err != nil {
+// 			return nil, lazyerrors.Error(err)
+// 		}
 
-		if strings.HasPrefix(name, "pg_") || name == "information_schema" {
-			continue
-		}
+// 		if strings.HasPrefix(name, "pg_") || name == "information_schema" {
+// 			continue
+// 		}
 
-		res = append(res, name)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// 		res = append(res, name)
+// 	}
+// 	if err = rows.Err(); err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return res, nil
-}
+// 	return res, nil
+// }
 
 // TableStats returns a set of statistics for a table.
 // Still needs to be written for SAP HANA JSON Document Store
-func (hanaPool *Hpool) TableStats(ctx context.Context, db, table string) (*TableStats, error) {
-	res := new(TableStats)
-	sql := `
-    SELECT table_name, table_type,
-           pg_total_relation_size('"'||t.table_schema||'"."'||t.table_name||'"'),
-           pg_indexes_size('"'||t.table_schema||'"."'||t.table_name||'"'),
-           pg_relation_size('"'||t.table_schema||'"."'||t.table_name||'"'),
-           COALESCE(s.n_live_tup, 0)
-      FROM information_schema.tables AS t
-      LEFT OUTER
-      JOIN pg_stat_user_tables AS s ON s.schemaname = t.table_schema
-                                      and s.relname = t.table_name
-     WHERE t.table_schema = $1
-       AND t.table_name = $2`
+// func (hanaPool *Hpool) TableStats(ctx context.Context, db, table string) (*TableStats, error) {
+// 	res := new(TableStats)
+// 	sql := `
+//     SELECT table_name, table_type,
+//            pg_total_relation_size('"'||t.table_schema||'"."'||t.table_name||'"'),
+//            pg_indexes_size('"'||t.table_schema||'"."'||t.table_name||'"'),
+//            pg_relation_size('"'||t.table_schema||'"."'||t.table_name||'"'),
+//            COALESCE(s.n_live_tup, 0)
+//       FROM information_schema.tables AS t
+//       LEFT OUTER
+//       JOIN pg_stat_user_tables AS s ON s.schemaname = t.table_schema
+//                                       and s.relname = t.table_name
+//      WHERE t.table_schema = $1
+//        AND t.table_name = $2`
 
-	err := hanaPool.QueryRowContext(ctx, sql, db, table).
-		Scan(&res.Table, &res.TableType, &res.SizeTotal, &res.SizeIndexes, &res.SizeTable, &res.Rows)
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// 	err := hanaPool.QueryRowContext(ctx, sql, db, table).
+// 		Scan(&res.Table, &res.TableType, &res.SizeTotal, &res.SizeIndexes, &res.SizeTable, &res.Rows)
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return res, nil
-}
+// 	return res, nil
+// }
 
 // DBStats returns a set of statistics for a database.
 // Still needs to be written for SAP HANA JSON Document Store
-func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error) {
-	res := new(DBStats)
-	sql := `
-    SELECT COUNT(distinct t.table_name)                                                             AS CountTables,
-           COALESCE(SUM(s.n_live_tup), 0)                                                           AS CountRows,
-           COALESCE(SUM(pg_total_relation_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)  AS SizeTotal,
-           COALESCE(SUM(pg_indexes_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)         AS SizeIndexes,
-           COALESCE(SUM(pg_relation_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)        AS SizeSchema,
-           COUNT(distinct i.indexname)                                                              AS CountIndexes
-      FROM information_schema.tables AS t
-      LEFT OUTER
-      JOIN pg_stat_user_tables       AS s ON s.schemaname = t.table_schema
-                                         AND s.relname = t.table_name
-      LEFT OUTER
-      JOIN pg_indexes                AS i ON i.schemaname = t.table_schema
-                                         AND i.tablename = t.table_name
-     WHERE t.table_schema = $1`
+// func (hanaPool *Hpool) DBStats(ctx context.Context, db string) (*DBStats, error) {
+// 	res := new(DBStats)
+// 	sql := `
+//     SELECT COUNT(distinct t.table_name)                                                             AS CountTables,
+//            COALESCE(SUM(s.n_live_tup), 0)                                                           AS CountRows,
+//            COALESCE(SUM(pg_total_relation_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)  AS SizeTotal,
+//            COALESCE(SUM(pg_indexes_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)         AS SizeIndexes,
+//            COALESCE(SUM(pg_relation_size('"'||t.table_schema||'"."'||t.table_name||'"')), 0)        AS SizeSchema,
+//            COUNT(distinct i.indexname)                                                              AS CountIndexes
+//       FROM information_schema.tables AS t
+//       LEFT OUTER
+//       JOIN pg_stat_user_tables       AS s ON s.schemaname = t.table_schema
+//                                          AND s.relname = t.table_name
+//       LEFT OUTER
+//       JOIN pg_indexes                AS i ON i.schemaname = t.table_schema
+//                                          AND i.tablename = t.table_name
+//      WHERE t.table_schema = $1`
 
-	res.Name = db
-	err := hanaPool.QueryRowContext(ctx, sql, db).
-		Scan(&res.CountTables, &res.CountRows, &res.SizeTotal, &res.SizeIndexes, &res.SizeSchema, &res.CountIndexes)
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// 	res.Name = db
+// 	err := hanaPool.QueryRowContext(ctx, sql, db).
+// 		Scan(&res.CountTables, &res.CountRows, &res.SizeTotal, &res.SizeIndexes, &res.SizeSchema, &res.CountIndexes)
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return res, nil
-}
+// 	return res, nil
+//}
 
 // DropTable drops collection
 //
