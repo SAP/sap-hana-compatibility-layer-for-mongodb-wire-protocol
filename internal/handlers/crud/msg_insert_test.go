@@ -19,11 +19,9 @@ import (
 )
 
 func TestMsgInsert(t *testing.T) {
-
 	t.Run("insert a document", func(t *testing.T) {
 		t.Parallel()
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -77,13 +75,11 @@ func TestMsgInsert(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("insert a document. Not unique id", func(t *testing.T) {
 		t.Parallel()
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -127,14 +123,13 @@ func TestMsgInsert(t *testing.T) {
 		// 	"ok", float64(1),
 		// )
 
-		//actual, _ := msg.Document()
+		// actual, _ := msg.Document()
 		assert.Nil(t, msg)
 		assert.EqualError(t, err, `E11000 duplicate key error collection: testDatabase.testCollection index: _id_ dup key: { _id: 123 }`)
-		//assert.Equal(t, expected, msg)
+		// assert.Equal(t, expected, msg)
 
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 }

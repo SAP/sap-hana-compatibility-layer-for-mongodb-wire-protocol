@@ -15,7 +15,6 @@ import (
 )
 
 var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
-
 	expectedBytes := []byte(expectedSQL)
 	actualBytes := []byte(actualSQL)
 
@@ -35,12 +34,10 @@ var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(
 })
 
 func TestHanapool(t *testing.T) {
-
 	t.Run("Get tables", func(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -70,7 +67,6 @@ func TestHanapool(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New()
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -95,7 +91,6 @@ func TestHanapool(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New()
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -120,7 +115,6 @@ func TestHanapool(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -146,7 +140,6 @@ func TestHanapool(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -172,7 +165,6 @@ func TestHanapool(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -195,5 +187,4 @@ func TestHanapool(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 	})
-
 }

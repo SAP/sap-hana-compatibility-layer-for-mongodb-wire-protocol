@@ -106,7 +106,8 @@ var msgTestCases = []testCase{
 				)},
 			}},
 		},
-	}, {
+	},
+	{
 		name:      "import",
 		expectedB: testutil.MustParseDumpFile("testdata", "import.hex"),
 		msgHeader: &MsgHeader{

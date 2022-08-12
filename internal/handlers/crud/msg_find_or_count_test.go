@@ -18,11 +18,8 @@ import (
 )
 
 func TestMsgFindOrCound(t *testing.T) {
-
 	t.Run("find documents", func(t *testing.T) {
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -76,13 +73,10 @@ func TestMsgFindOrCound(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("count", func(t *testing.T) {
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -127,13 +121,10 @@ func TestMsgFindOrCound(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("find documents with where, order by, limit, and projection", func(t *testing.T) {
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -195,7 +186,5 @@ func TestMsgFindOrCound(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
-
 }

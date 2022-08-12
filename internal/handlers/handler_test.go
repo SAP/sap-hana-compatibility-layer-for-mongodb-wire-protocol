@@ -97,7 +97,6 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 }
 
 var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
-
 	expectedBytes := []byte(expectedSQL)
 	actualBytes := []byte(actualSQL)
 
@@ -117,7 +116,6 @@ var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(
 })
 
 func TestFind(t *testing.T) {
-
 	// ctx, handler := setup(t)
 
 	t.Run("find document. None found.", func(t *testing.T) {
@@ -201,7 +199,6 @@ func TestFind(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-
 	t.Run("insert document. Collection and schema not existing", func(t *testing.T) {
 		t.Parallel()
 
@@ -283,11 +280,9 @@ func TestInsert(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 	})
-
 }
 
 func TestDatabaseCommand(t *testing.T) {
-
 	t.Run("buildinfo", func(t *testing.T) {
 		t.Parallel()
 
@@ -311,7 +306,6 @@ func TestDatabaseCommand(t *testing.T) {
 		)
 
 		assert.Equal(t, expected, actual)
-
 	})
 
 	t.Run("create collection", func(t *testing.T) {
@@ -337,7 +331,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("drop collection", func(t *testing.T) {
@@ -364,7 +357,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("drop database", func(t *testing.T) {
@@ -390,7 +382,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	// Sometimes fails to due Time
@@ -471,7 +462,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("ping", func(t *testing.T) {
@@ -490,7 +480,6 @@ func TestDatabaseCommand(t *testing.T) {
 		)
 
 		assert.Equal(t, expected, actual)
-
 	})
 
 	t.Run("whatsMyUri", func(t *testing.T) {
@@ -510,9 +499,7 @@ func TestDatabaseCommand(t *testing.T) {
 		)
 
 		assert.Equal(t, expected, actual)
-
 	})
-
 }
 
 // func TestFind(t *testing.T) {

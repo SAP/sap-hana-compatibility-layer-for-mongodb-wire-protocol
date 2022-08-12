@@ -18,11 +18,9 @@ import (
 )
 
 func TestMsgDelete(t *testing.T) {
-
 	t.Run("deleteMany", func(t *testing.T) {
 		t.Parallel()
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -74,14 +72,12 @@ func TestMsgDelete(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("deleteOne", func(t *testing.T) {
 		t.Parallel()
 
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -136,6 +132,5 @@ func TestMsgDelete(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 }
