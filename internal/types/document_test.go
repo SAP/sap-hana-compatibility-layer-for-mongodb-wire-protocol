@@ -132,6 +132,5 @@ func TestValidate(t *testing.T) {
 
 		err = d.Set("", int32(12))
 		assert.EqualError(t, err, `types.Document.Set: invalid key: ""`)
-
 	})
 }

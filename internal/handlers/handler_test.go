@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2021 FerretDB Inc.
 //
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2021 FerretDB Inc.
@@ -20,37 +22,57 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"strconv"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/bson"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/crud"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/version"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
-// func setup(t *testing.T, poolOpts *testutil.PoolOpts) (context.Context, *Handler, *pg.Pool) {
-// 	t.Helper()
+func setup(t *testing.T, qMatcher sqlmock.QueryMatcher) (context.Context, *Handler, sqlmock.Sqlmock) {
+	t.Helper()
 
-// 	if poolOpts == nil {
-// 		poolOpts = new(testutil.PoolOpts)
-// 	}
+	var db *sql.DB
+	var mock sqlmock.Sqlmock
 
-// 	ctx := testutil.Ctx(t)
-// 	pool := testutil.Pool(ctx, t, poolOpts)
-// 	l := zaptest.NewLogger(t)
-// 	sql := sql.NewStorage(pool, l.Sugar())
-// 	crud := crud.NewStorage(pool, l)
-// 	handler := New(&NewOpts{
-// 		PgPool:        pool,
-// 		Logger:        l,
-// 		PeerAddr:      "127.0.0.1:12345",
-// 		SQLStorage:    sql,
-// 		CrudStorage: crud,
-// 		Metrics:       NewMetrics(),
-// 	})
+	if qMatcher != nil {
+		db, mock, _ = sqlmock.New(sqlmock.QueryMatcherOption(qMatcher))
+	} else {
+		db, mock, _ = sqlmock.New()
+	}
 
-// 	return ctx, handler, pool
-// }
+	hPool := hana.Hpool{
+		db,
+	}
+
+	ctx := testutil.Ctx(t)
+
+	l := zaptest.NewLogger(t)
+
+	crud := crud.NewStorage(&hPool, l)
+	handler := New(&NewOpts{
+		HanaPool:    &hPool,
+		Logger:      l,
+		CrudStorage: crud,
+		Metrics:     NewMetrics(),
+		PeerAddr:    "",
+	})
+
+	return ctx, handler, mock
+}
 
 func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Document) types.Document {
 	t.Helper()
@@ -66,13 +88,418 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 	})
 	require.NoError(t, err)
 
-	_, resBody, closeConn := handler.Handle(ctx, &reqHeader, &reqMsg)
-	require.False(t, closeConn, "%s", wire.DumpMsgBody(resBody))
+	_, resBody, _ := handler.Handle(ctx, &reqHeader, &reqMsg)
 
 	actual, err := resBody.(*wire.OpMsg).Document()
 	require.NoError(t, err)
 
 	return actual
+}
+
+var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
+	expectedBytes := []byte(expectedSQL)
+	actualBytes := []byte(actualSQL)
+
+	for i, a := range actualBytes {
+		if i >= len(expectedBytes) {
+			return nil
+		}
+
+		e := expectedBytes[i]
+
+		if e != a {
+			return fmt.Errorf(`could not match actual sql: "%s" with expected regexp "%s"`, actualSQL, expectedSQL)
+		}
+	}
+
+	return nil
+})
+
+func TestFind(t *testing.T) {
+	// ctx, handler := setup(t)
+
+	t.Run("find document. None found.", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"find", "actor",
+			"$db", "databaseName",
+			"filter", types.MustMakeDocument(
+				"last_name", "Doe",
+				"actor_id", types.MustMakeDocument(
+					"$gt", int32(50),
+					"$lt", int32(100),
+				),
+			),
+		)
+
+		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
+		row2 := sqlmock.NewRows([]string{"object_count"}).AddRow("actor")
+		row3 := sqlmock.NewRows([]string{"document"})
+		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
+		mock.ExpectQuery("SELECT * FROM databaseName.actor WHERE \"last_name\" = 'Doe' AND \"actor_id\" \u003e 50 AND \"actor_id\" \u003c 100").WillReturnRows(row3)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"cursor", types.MustMakeDocument(
+				"firstBatch", types.MustNewArray(),
+				"id", int64(0),
+				"ns", "databaseName"+".actor",
+			),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("find document. Collection not existing.", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"find", "actor",
+			"$db", "databaseName",
+			"filter", types.MustMakeDocument(
+				"last_name", "Doe",
+				"actor_id", types.MustMakeDocument(
+					"$gt", int32(50),
+					"$lt", int32(100),
+				),
+			),
+		)
+
+		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
+		row2 := sqlmock.NewRows([]string{"Table_name"})
+
+		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"ok", float64(0),
+			"errmsg", "\u003chandler.go:170 handlers.(*Handler).handleOpMsg\u003e \u003chandler.go:240 handlers.(*Handler).msgStorage\u003e Collection ACTOR does not exist",
+			"code", int32(1),
+			"codeName", "InternalError",
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+}
+
+func TestInsert(t *testing.T) {
+	t.Run("insert document. Collection and schema not existing", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"insert", "test",
+			"documents", types.MustNewArray(
+				types.MustMakeDocument(
+					"_id", int32(1),
+					"new", "test",
+				),
+			),
+			"ordered", true,
+			"$db", "testDatabase",
+		)
+
+		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
+		row2 := sqlmock.NewRows([]string{"Table_name"})
+		row3 := sqlmock.NewRows([]string{"_id"})
+		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 44, 34, 110, 101, 119, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
+
+		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
+		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION testDatabase.test").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT _id FROM testDatabase.test  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
+		mock.ExpectExec("INSERT INTO testDatabase.test VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"n", int32(1),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("insert document", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"insert", "test",
+			"documents", types.MustNewArray(
+				types.MustMakeDocument(
+					"_id", int32(1),
+					"new", "test",
+				),
+			),
+			"ordered", true,
+			"$db", "testDatabase",
+		)
+
+		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
+		row2 := sqlmock.NewRows([]string{"Table_name"}).AddRow("test")
+		row3 := sqlmock.NewRows([]string{"_id"})
+		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 44, 34, 110, 101, 119, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
+
+		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
+		mock.ExpectQuery("SELECT _id FROM testDatabase.test  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
+		mock.ExpectExec("INSERT INTO testDatabase.test VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"n", int32(1),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+}
+
+func TestDatabaseCommand(t *testing.T) {
+	t.Run("buildinfo", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, _ := setup(t, nil)
+
+		reqDoc := types.MustMakeDocument(
+			"buildinfo", int32(1),
+			"$db", "testDatabase",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"version", versionValue,
+			"gitVersion", version.Get().Commit,
+			"versionArray", types.MustNewArray(int32(5), int32(0), int32(42), int32(0)),
+			"bits", int32(strconv.IntSize),
+			"debug", version.Get().Debug,
+			"maxBsonObjectSize", int32(bson.MaxDocumentLen),
+			"ok", float64(1),
+			"buildEnvironment", version.Get().BuildEnvironment,
+		)
+
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("create collection", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"create", "newTest",
+			"$db", "testDatabase",
+		)
+
+		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION testDatabase.newTest").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("drop collection", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"drop", "newTest",
+			"$db", "testDatabase",
+		)
+
+		mock.ExpectExec("DROP COLLECTION testDatabase.newTest").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"nIndexesWas", int32(1),
+			"ns", "testDatabase.newTest",
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("drop database", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"dropDatabase", int32(1),
+			"$db", "testDatabase",
+		)
+
+		mock.ExpectExec("DROP SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"dropped", "testDatabase",
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	// Sometimes fails to due Time
+	// t.Run("get log", func(t *testing.T) {
+	// 	t.Parallel()
+
+	// 	ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+	// 	reqDoc := types.MustMakeDocument(
+	// 		"getLog", "startupWarnings",
+	// 		"$db", "admin",
+	// 	)
+
+	// 	row := sqlmock.NewRows([]string{"VERSION"}).AddRow(1)
+
+	// 	mock.ExpectQuery("Select VERSION from \"SYS\".\"M_DATABASE\";").WillReturnRows(row)
+	// 	strTime := string(time.Now().UTC().Format("2006-01-02T15:04:05.999Z07:00"))
+	// 	mv := version.Get()
+
+	// 	actual := handle(ctx, t, handler, reqDoc)
+	// 	expected := types.MustMakeDocument(
+	// 		"totalLinesWritten", int32(1),
+	// 		"log", types.MustNewArray(
+	// 			"{\"c\":\"STORAGE\",\"ctx\":\"initandlisten\",\"id\":42000,\"msg\":\"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol "+mv.Version+" and SAP HANA 1.\",\"s\":\"I\",\"t\":{\"$date\":\""+strTime+"\"},\"tags\":[\"startupWarnings\"]}",
+	// 		),
+	// 		"ok", float64(1),
+	// 	)
+
+	// 	assert.Equal(t, expected, actual)
+
+	// 	if err := mock.ExpectationsWereMet(); err != nil {
+	// 		t.Errorf("there were unfulfilled expectations: %s", err)
+	// 	}
+
+	// })
+
+	t.Run("list collections", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"listCollections", int32(1),
+			"filer", types.MustMakeDocument(),
+			"cursor", types.MustMakeDocument(),
+			"nameOnly", true,
+			"authorizedCollctions", false,
+			"$db", "testDatabase",
+			"$readPreference", types.MustMakeDocument(
+				"mude", "primaryPreferred",
+			),
+		)
+
+		row := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable")
+		args := []driver.Value{"TESTDATABASE"}
+
+		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+
+		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(row)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"cursor", types.MustMakeDocument(
+				"id", int64(0),
+				"ns", "testDatabase.$cmd.listCollections",
+				"firstBatch", types.MustNewArray(
+					types.MustMakeDocument(
+						"name", "testTable",
+						"type", "collection",
+					),
+				),
+			),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("ping", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"ping", int32(1),
+			"$db", "testDatabase",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("whatsMyUri", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"whatsmyuri", int32(1),
+			"$db", "testDatabase",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"you", "",
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+	})
 }
 
 // func TestFind(t *testing.T) {
@@ -399,9 +826,7 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 
 // func TestReadOnlyHandlers(t *testing.T) {
 // 	t.Parallel()
-// 	ctx, handler, _ := setup(t, &testutil.PoolOpts{
-// 		ReadOnly: true,
-// 	})
+// 	ctx, handler := setup(t)
 
 // 	type testCase struct {
 // 		req         types.Document
@@ -634,12 +1059,12 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 // 			),
 // 			resp: types.MustMakeDocument(
 // 				"totalLinesWritten", int32(2),
-// 				// will be replaced with the real value during the test
+// 				will be replaced with the real value during the test
 // 				"log", types.MakeArray(2),
 // 				"ok", float64(1),
 // 			),
 // 			compareFunc: func(t testing.TB, _ types.Document, actual, expected types.Document) {
-// 				// Just testing "ok" response, not the body of the response
+// 				Just testing "ok" response, not the body of the response
 // 				actualV := testutil.GetByPath(t, actual, "log")
 // 				testutil.SetByPath(t, expected, actualV, "log")
 // 				assert.Equal(t, expected, actual)
@@ -756,7 +1181,7 @@ func handle(ctx context.Context, t *testing.T, handler *Handler, req types.Docum
 
 // 			for _, schema := range []string{"monila", "pagila"} {
 // 				t.Run(schema, func(t *testing.T) {
-// 					// not parallel because we modify tc
+// 					not parallel because we modify tc
 
 // 					if tc.reqSetDB {
 // 						tc.req.Set("$db", schema)

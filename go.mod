@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/AlekSi/pointer v1.2.0
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/pmezard/go-difflib v1.0.0
@@ -18,6 +19,7 @@ require (
 )
 
 require (
+	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

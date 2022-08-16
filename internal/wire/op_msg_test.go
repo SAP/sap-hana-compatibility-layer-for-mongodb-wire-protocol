@@ -106,7 +106,8 @@ var msgTestCases = []testCase{
 				)},
 			}},
 		},
-	}, {
+	},
+	{
 		name:      "import",
 		expectedB: testutil.MustParseDumpFile("testdata", "import.hex"),
 		msgHeader: &MsgHeader{
@@ -146,16 +147,16 @@ var msgTestCases = []testCase{
 			}},
 		},
 	},
-	//  {
-	// 	name:      "dollar_dot",
-	// 	expectedB: testutil.MustParseDumpFile("testdata", "dollar_dot.hex"),
-	// 	err:       `types.Document.validate: invalid key: "$."`,
-	// },
-	// {
-	// 	name:      "msg_fuzz1",
-	// 	expectedB: testutil.MustParseDumpFile("testdata", "msg_fuzz1.hex"),
-	// 	err:       `wire.OpMsg.readFrom: invalid kind 1 section length -13619152`,
-	// }
+	{
+		name:      "dollar_dot",
+		expectedB: testutil.MustParseDumpFile("testdata", "dollar_dot.hex"),
+		err:       `types.Document.validate: invalid key: "$."`,
+	},
+	{
+		name:      "msg_fuzz1",
+		expectedB: testutil.MustParseDumpFile("testdata", "msg_fuzz1.hex"),
+		err:       `wire.OpMsg.readFrom: invalid kind 1 section length -13619152`,
+	},
 }
 
 func TestMsg(t *testing.T) {

@@ -116,34 +116,34 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 
 	sortMap := sort.Map()
 	if len(sortMap) != 0 {
-		sql += " ORDER BY"
+		whereSQL += " ORDER BY "
 
 		for i, sortKey := range sort.Keys() {
 			if i != 0 {
-				sql += ","
+				whereSQL += ","
 			}
 
 			if strings.Contains(sortKey, ".") {
 				split := strings.Split(sortKey, ".")
 				count := 0
-				sql += " "
+				whereSQL += " "
 				for _, s := range split {
 					if (len(split) - 1) == count {
-						sql += "\"" + s + "\""
+						whereSQL += "\"" + s + "\""
 					} else {
-						sql += "\"" + s + "\"."
+						whereSQL += "\"" + s + "\"."
 					}
 					count += 1
 				}
 			} else {
-				sql += "\"" + sortKey + "\" "
+				whereSQL += "\"" + sortKey + "\" "
 			}
 
 			order := sortMap[sortKey].(int32)
 			if order == 1 {
-				sql += " ASC"
+				whereSQL += " ASC"
 			} else if order == -1 {
-				sql += " DESC"
+				whereSQL += " DESC"
 			} else {
 				return nil, common.NewErrorMessage(common.ErrSortBadValue, "")
 			}
@@ -155,8 +155,7 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	case limit == 0:
 		// undefined or zero - no limit
 	case limit > 0:
-		sql += " LIMIT %d"
-		args = append(args, limit)
+		whereSQL += fmt.Sprintf(" LIMIT %d ", limit)
 	default:
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
 	}

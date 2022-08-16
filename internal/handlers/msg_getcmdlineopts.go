@@ -18,27 +18,27 @@
 
 package handlers
 
-import (
-	"context"
+// import (
+// 	"context"
 
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
-)
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+// )
 
-// MsgGetCmdLineOpts returns a document containing command line options used to start the given SAP HANA compatibility layer for MongoDB Wire Protocol.
-func (h *Handler) MsgGetCmdLineOpts(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	var reply wire.OpMsg
-	err := reply.SetSections(wire.OpMsgSection{
-		Documents: []types.Document{types.MustMakeDocument(
-			"argv", types.MustNewArray("SAP HANA compatibility layer for MongoDB Wire Protocol"),
-			"parsed", types.MustMakeDocument(),
-			"ok", float64(1),
-		)},
-	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
+// // MsgGetCmdLineOpts returns a document containing command line options used to start the given SAP HANA compatibility layer for MongoDB Wire Protocol.
+// func (h *Handler) MsgGetCmdLineOpts(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+// 	var reply wire.OpMsg
+// 	err := reply.SetSections(wire.OpMsgSection{
+// 		Documents: []types.Document{types.MustMakeDocument(
+// 			"argv", types.MustNewArray("SAP HANA compatibility layer for MongoDB Wire Protocol"),
+// 			"parsed", types.MustMakeDocument(),
+// 			"ok", float64(1),
+// 		)},
+// 	})
+// 	if err != nil {
+// 		return nil, lazyerrors.Error(err)
+// 	}
 
-	return &reply, nil
-}
+// 	return &reply, nil
+// }

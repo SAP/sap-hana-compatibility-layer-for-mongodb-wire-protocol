@@ -18,22 +18,107 @@
 
 package testutil
 
-// import (
-// 	"context"
-// 	"strings"
-// 	"testing"
+import (
+	"context"
+	"testing"
+)
 
-// 	"github.com/stretchr/testify/require"
-// 	"go.uber.org/zap/zaptest"
+func Ctx(tb testing.TB) context.Context {
+	tb.Helper()
 
-// )
+	// TODO
+	return context.Background()
+}
 
-// func Ctx(tb testing.TB) context.Context {
-// 	tb.Helper()
+// Try to refactor the tests to all use this for creating handlers
+// func setupHandler(t *testing.T, queryMatcher sqlmock.QueryMatcher) (context.Context, *handlers.Handler, sqlmock.Sqlmock) {
+// 	t.Helper()
 
-// 	// TODO
-// 	return context.Background()
+// 	var db *sql.DB
+// 	var mock sqlmock.Sqlmock
+// 	var err error
+
+// 	if queryMatcher != nil {
+// 		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(queryMatcher))
+// 	} else {
+// 		db, mock, err = sqlmock.New()
+// 	}
+
+// 	if err != nil {
+// 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+// 	}
+
+// 	defer db.Close()
+
+// 	hPool := hana.Hpool{
+// 		db,
+// 	}
+
+// 	ctx := Ctx(t)
+
+// 	l := zaptest.NewLogger(t)
+
+// 	crud := crud.NewStorage(&hPool, l)
+// 	handler := handlers.New(&handlers.NewOpts{
+// 		HanaPool:    &hPool,
+// 		Logger:      l,
+// 		CrudStorage: crud,
+// 		Metrics:     handlers.NewMetrics(),
+// 		PeerAddr:    "",
+// 	})
+
+// 	return ctx, handler, mock
 // }
+
+// Try to refactor the tests to all use this for creating hPool
+// func setupHPool(t *testing.T, queryMatcher sqlmock.QueryMatcher) (hana.Hpool, sqlmock.Sqlmock) {
+// 	var db *sql.DB
+// 	var mock sqlmock.Sqlmock
+// 	var err error
+
+// 	if queryMatcher != nil {
+// 		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(queryMatcher))
+// 	} else {
+// 		db, mock, err = sqlmock.New()
+// 	}
+// 	if err != nil {
+// 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+// 	}
+// 	defer db.Close()
+
+// 	hPool := hana.Hpool{
+// 		db,
+// 	}
+
+// 	// ctx := Ctx(t)
+
+// 	// l := zaptest.NewLogger(t)
+
+// 	// storage := crud.NewStorage(&hPool, l)
+
+// 	return hPool, mock
+// }
+
+// Try to refactor the tests to all use this for creating QueryMatcher
+// var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
+
+// 	expectedBytes := []byte(expectedSQL)
+// 	actualBytes := []byte(actualSQL)
+
+// 	for i, a := range actualBytes {
+// 		if i >= len(expectedBytes) {
+// 			return nil
+// 		}
+
+// 		e := expectedBytes[i]
+
+// 		if e != a {
+// 			return fmt.Errorf(`could not match actual sql: "%s" with expected regexp "%s"`, actualSQL, expectedSQL)
+// 		}
+// 	}
+
+// 	return nil
+// })
 
 // // PoolOpts represents options for creating a connection pool.
 // type PoolOpts struct {

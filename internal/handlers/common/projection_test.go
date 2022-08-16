@@ -26,18 +26,27 @@ type expected struct {
 }
 
 func TestProjection(t *testing.T) {
-
 	projectionTestCases := []testCase{
-		{name: "projection exclusion test", r: types.MustMakeDocument("field", false),
-			e: expected{sql: "*", exclusion: true, err: nil}},
-		{name: "inclusion nested document error test", r: types.MustMakeDocument("field.nest", true),
-			e: expected{sql: "", exclusion: false, err: fmt.Errorf("Projection on nested documents is not implemented, yet.")}},
-		{name: "empty projection document test", r: types.MustMakeDocument(),
-			e: expected{sql: "*", exclusion: false, err: nil}},
-		{name: "projection inclusion test", r: types.MustMakeDocument("field", true),
-			e: expected{sql: "{\"_id\": \"_id\", \"field\": \"field\"}", exclusion: false, err: nil}},
-		{name: "unimplemented operation error test", r: types.MustMakeDocument("$elemMatch", true),
-			e: expected{sql: "", exclusion: false, err: fmt.Errorf("NotImplemented (238): $elemmatch: support for field \"$elemMatch\" is not implemented yet")}},
+		{
+			name: "projection exclusion test", r: types.MustMakeDocument("field", false),
+			e: expected{sql: "*", exclusion: true, err: nil},
+		},
+		{
+			name: "inclusion nested document error test", r: types.MustMakeDocument("field.nest", true),
+			e: expected{sql: "", exclusion: false, err: fmt.Errorf("Projection on nested documents is not implemented, yet.")},
+		},
+		{
+			name: "empty projection document test", r: types.MustMakeDocument(),
+			e: expected{sql: "*", exclusion: false, err: nil},
+		},
+		{
+			name: "projection inclusion test", r: types.MustMakeDocument("field", true),
+			e: expected{sql: "{\"_id\": \"_id\", \"field\": \"field\"}", exclusion: false, err: nil},
+		},
+		{
+			name: "unimplemented operation error test", r: types.MustMakeDocument("$elemMatch", true),
+			e: expected{sql: "", exclusion: false, err: fmt.Errorf("NotImplemented (238): $elemmatch: support for field \"$elemMatch\" is not implemented yet")},
+		},
 	}
 
 	for _, field := range projectionTestCases {
@@ -60,20 +69,31 @@ func TestProjection(t *testing.T) {
 }
 
 func TestIsProjectionInclusion(t *testing.T) {
-
 	isProjectionInclusionTestCases := []testCase{
-		{name: "inclusion bool test", r: types.MustMakeDocument("field", true),
-			e: expected{inclusion: true, err: nil}},
-		{name: "inclusion number test", r: types.MustMakeDocument("field", int64(1)),
-			e: expected{inclusion: true, err: nil}},
-		{name: "exclusion bool test", r: types.MustMakeDocument("field", false),
-			e: expected{inclusion: false, err: nil}},
-		{name: "exclusion number test", r: types.MustMakeDocument("field", float64(0)),
-			e: expected{inclusion: false, err: nil}},
-		{name: "specialcase inclusion excluding _id test", r: types.MustMakeDocument("field", int32(1), "_id", false),
-			e: expected{inclusion: true, err: nil}},
-		{name: "inclusion nested document error test", r: types.MustMakeDocument("field.nest", int32(1)),
-			e: expected{inclusion: false, err: fmt.Errorf("Projection on nested documents is not implemented, yet.")}},
+		{
+			name: "inclusion bool test", r: types.MustMakeDocument("field", true),
+			e: expected{inclusion: true, err: nil},
+		},
+		{
+			name: "inclusion number test", r: types.MustMakeDocument("field", int64(1)),
+			e: expected{inclusion: true, err: nil},
+		},
+		{
+			name: "exclusion bool test", r: types.MustMakeDocument("field", false),
+			e: expected{inclusion: false, err: nil},
+		},
+		{
+			name: "exclusion number test", r: types.MustMakeDocument("field", float64(0)),
+			e: expected{inclusion: false, err: nil},
+		},
+		{
+			name: "specialcase inclusion excluding _id test", r: types.MustMakeDocument("field", int32(1), "_id", false),
+			e: expected{inclusion: true, err: nil},
+		},
+		{
+			name: "inclusion nested document error test", r: types.MustMakeDocument("field.nest", int32(1)),
+			e: expected{inclusion: false, err: fmt.Errorf("Projection on nested documents is not implemented, yet.")},
+		},
 	}
 
 	for _, field := range isProjectionInclusionTestCases {
@@ -91,22 +111,30 @@ func TestIsProjectionInclusion(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func TestInclusionProjection(t *testing.T) {
-
 	inclusionProjectionTestCases := []testCase{
-		{name: "include fields test", r: types.MustMakeDocument("field1", int32(1), "field2", true, "field3", float64(-1.2)),
-			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\", \"field2\": \"field2\", \"field3\": \"field3\"}"}},
-		{name: "include _id only number test", r: types.MustMakeDocument("_id", float64(23.21)),
-			e: expected{sql: "{\"_id\": \"_id\"}"}},
-		{name: "include fields and _id number test", r: types.MustMakeDocument("field1", int32(1), "_id", float64(23.21)),
-			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\"}"}},
-		{name: "include _id only bool test", r: types.MustMakeDocument("_id", true),
-			e: expected{sql: "{\"_id\": \"_id\"}"}},
-		{name: "include fields and _id bool test", r: types.MustMakeDocument("field1", int32(1), "_id", true),
-			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\"}"}},
+		{
+			name: "include fields test", r: types.MustMakeDocument("field1", int32(1), "field2", true, "field3", float64(-1.2)),
+			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\", \"field2\": \"field2\", \"field3\": \"field3\"}"},
+		},
+		{
+			name: "include _id only number test", r: types.MustMakeDocument("_id", float64(23.21)),
+			e: expected{sql: "{\"_id\": \"_id\"}"},
+		},
+		{
+			name: "include fields and _id number test", r: types.MustMakeDocument("field1", int32(1), "_id", float64(23.21)),
+			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\"}"},
+		},
+		{
+			name: "include _id only bool test", r: types.MustMakeDocument("_id", true),
+			e: expected{sql: "{\"_id\": \"_id\"}"},
+		},
+		{
+			name: "include fields and _id bool test", r: types.MustMakeDocument("field1", int32(1), "_id", true),
+			e: expected{sql: "{\"_id\": \"_id\", \"field1\": \"field1\"}"},
+		},
 	}
 
 	for _, field := range inclusionProjectionTestCases {
@@ -140,12 +168,15 @@ type exceptedProjDoc struct {
 }
 
 func TestProjectDocuments(t *testing.T) {
-
 	projectDocumentsTestCases := []testCaseProjectDocuments{
-		{name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string")), r2: types.MustMakeDocument("_id", int64(0), "field", false),
-			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument()}},
-		{name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string"), "string"), r2: types.MustMakeDocument("_id", int64(0), "field", false),
-			e: exceptedProjDoc{err: fmt.Errorf("Array contains a type not being types.Document"), eDoc: types.MustMakeDocument()}},
+		{
+			name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string")), r2: types.MustMakeDocument("_id", int64(0), "field", false),
+			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument()},
+		},
+		{
+			name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string"), "string"), r2: types.MustMakeDocument("_id", int64(0), "field", false),
+			e: exceptedProjDoc{err: fmt.Errorf("Array contains a type not being types.Document"), eDoc: types.MustMakeDocument()},
+		},
 	}
 
 	for _, field := range projectDocumentsTestCases {
@@ -178,12 +209,15 @@ type testCaseProjectDocument struct {
 }
 
 func TestProjectionDocument(t *testing.T) {
-
 	projectDocumentTestCases := []testCaseProjectDocument{
-		{name: "exclude fields test", r1: types.MustMakeDocument("field", int32(123)), r2: types.MustMakeDocument("field", false),
-			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument()}},
-		{name: "exclude from nested array test", r1: types.MustMakeDocument("field1", types.MustMakeDocument("field2", types.MustNewArray(types.MustMakeDocument("field3", types.MustNewArray(int32(1), int32(2), types.MustNewArray("disappears", "stays"), int32(4), int32(5))), int32(3)))), r2: types.MustMakeDocument("field1.field2.0.field3.2.0", false),
-			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument("field1", types.MustMakeDocument("field2", types.MustNewArray(types.MustMakeDocument("field3", types.MustNewArray(int32(1), int32(2), types.MustNewArray("stays"), int32(4), int32(5))), int32(3))))}},
+		{
+			name: "exclude fields test", r1: types.MustMakeDocument("field", int32(123)), r2: types.MustMakeDocument("field", false),
+			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument()},
+		},
+		{
+			name: "exclude from nested array test", r1: types.MustMakeDocument("field1", types.MustMakeDocument("field2", types.MustNewArray(types.MustMakeDocument("field3", types.MustNewArray(int32(1), int32(2), types.MustNewArray("disappears", "stays"), int32(4), int32(5))), int32(3)))), r2: types.MustMakeDocument("field1.field2.0.field3.2.0", false),
+			e: exceptedProjDoc{err: nil, eDoc: types.MustMakeDocument("field1", types.MustMakeDocument("field2", types.MustNewArray(types.MustMakeDocument("field3", types.MustNewArray(int32(1), int32(2), types.MustNewArray("stays"), int32(4), int32(5))), int32(3))))},
+		},
 	}
 
 outer_loop:
