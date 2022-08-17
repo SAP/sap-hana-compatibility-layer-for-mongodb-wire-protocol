@@ -15,19 +15,91 @@ In case you are the maintainer of a new SAP open source project, these are the s
 
 ***
 
-# Our new open source project
+# SAP HANA compatibility layer for MongoDB Wire Protocol
 
 ## About this project
 
-*Insert a short description of your project here...*
+SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of becoming a viable drop-in replacement for MongoDB using SAP HANA JSON Document Store as the storage engine. It allows the use of basic CRUD operations with mongosh or any MongoDB driver. SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](https://www.ferretdb.io/)), an open-source alternative to MongoDB. 
 
-## Requirements and Setup
+## Requirements
 
-*Insert a short description what is required to get your project running...*
+- Go 1.18.*
+- Go-hdb. A native Go (golang) HANA database driver for Go's sql package. It implements the SAP HANA SQL command network protocol.
+- docker (preferably without the need for sudo)
+- docker-compose (preferably without the need for sudo)
+- GNU make
+- Running HANA instance with SAP HANA JSON Document Store enabled 
 
-## Support, Feedback, Contributing
+For the installation of Go-hdb see the following links:
+- [Install the SAP HANA Client](https://developers.sap.com/tutorials/hana-clients-install.html)
+- [Connect Using the SAP HANA Go Interface](https://developers.sap.com/tutorials/hana-clients-golang.html)
 
-This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/<your-project>/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
+## Download and Installation
+
+1. Clone the repository
+
+2. After cloning, create the file connect.yml and add the following while making sure it is being ignored by git. Replace the sample connect string with your own:
+
+```
+# Insert connection string for SAP HANA Cloud instance
+connect:
+  connectString: "hdb://User1:Password1@999deec0-ccb7-4a5e-b317-d419e19be648.hana.prod-us10.hanacloud.ondemand.com:443?encrypt=true&sslValidateCertificate=false"
+```
+
+3. In the folder sap-hana-compatibility-layer-for-mongodb-wire-protocol run the following:
+
+```
+make init
+```
+
+It will install all dependencies needed to run SAP HANA compatibility layer for MongoDB Wire Protocol.
+
+4. Open three terminal windows
+
+In terminal window 1 run:
+ ```
+ docker-compose up
+ ```
+ 
+ If sudo required, use:
+ 
+```
+sudo docker-compose up
+```
+ 
+ In terminal window 2 run: 
+ 
+```
+make run
+```
+
+and now in terminal window 3 run after making sure the previous two started successfully:
+```
+make mongosh
+```
+
+If permission is denied because the rights of sudo are needed, run:
+```
+make mongosh-sudo
+```
+
+5. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
+
+```
+db.createCollection("firstCollection")
+```
+
+```
+db.firstCollection.insertOne({we: "did", it: "!"})
+```
+
+```
+db.firstCollection.find()
+```
+
+## Contributing
+
+This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
 
 ## Code of Conduct
 
@@ -35,4 +107,4 @@ We as members, contributors, and leaders pledge to make participation in our com
 
 ## Licensing
 
-Copyright (20xx-)20xx SAP SE or an SAP affiliate company and <your-project> contributors. Please see our [LICENSE](LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/<your-project>).
+Copyright (2022-)2022 SAP SE or an SAP affiliate company and sap-hana-compatibility-layer-for-mongodb-wire-protocol contributors. Please see our [LICENSE](LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol).
