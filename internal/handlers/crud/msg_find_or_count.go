@@ -22,6 +22,7 @@ package crud
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -32,14 +33,17 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
+type LocatCtx struct {
+	exclusion  bool
+	filter     types.Document
+	collection string
+}
+
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
 // or count the number of documents that matches the query filter.
 func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	document, err := msg.Document()
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-
+	sugarLogger := h.l.Sugar()
+	sugarLogger.Infow("#####  Enter MsgFindOrCount() #####")
 	unimplementedFields := []string{
 		"skip",
 		"returnKey",
@@ -62,169 +66,196 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		"comment",
 	}
 
+	document, err := msg.Document()
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
 	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
 		return nil, err
 	}
 
 	docMap := document.Map()
-
 	// Checks if command printshardingstatus is used.
 	if isPrintShardingStatus(docMap) {
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
 	}
 
-	var filter types.Document
-	var sql, collection string
-
-	var args []any
-
-	m := document.Map()
-	_, isFindOp := m["find"].(string)
-	db := m["$db"].(string)
-
-	var exclusion bool
-
-	if isFindOp { // enters here if find
-		var projectionSQL string
-
-		projectionIn, _ := m["projection"].(types.Document)
-		projectionSQL, exclusion, err = common.Projection(projectionIn)
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-
-		collection = m["find"].(string)
-		filter, _ = m["filter"].(types.Document)
-
-		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, db, collection)
-	} else { // enters here if count
-		collection = m["count"].(string)
-		filter, _ = m["query"].(types.Document)
-		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, db, collection)
+	var localCtx LocatCtx
+	sql, err := createSqlStmt(docMap, &localCtx)
+	if err != nil {
+		return nil, err
 	}
 
-	sort, _ := m["sort"].(types.Document)
-	limit, _ := m["limit"].(int32)
-
-	var whereSQL string
-	if len(filter.Map()) != 0 { // There is given a filter
-		whereSQL, err = common.Where(filter)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	sortMap := sort.Map()
-	if len(sortMap) != 0 {
-		whereSQL += " ORDER BY "
-
-		for i, sortKey := range sort.Keys() {
-			if i != 0 {
-				whereSQL += ","
-			}
-
-			if strings.Contains(sortKey, ".") {
-				split := strings.Split(sortKey, ".")
-				count := 0
-				whereSQL += " "
-				for _, s := range split {
-					if (len(split) - 1) == count {
-						whereSQL += "\"" + s + "\""
-					} else {
-						whereSQL += "\"" + s + "\"."
-					}
-					count += 1
-				}
-			} else {
-				whereSQL += "\"" + sortKey + "\" "
-			}
-
-			order := sortMap[sortKey].(int32)
-			if order == 1 {
-				whereSQL += " ASC"
-			} else if order == -1 {
-				whereSQL += " DESC"
-			} else {
-				return nil, common.NewErrorMessage(common.ErrSortBadValue, "")
-			}
-
-		}
-	}
-
-	switch {
-	case limit == 0:
-		// undefined or zero - no limit
-	case limit > 0:
-		whereSQL += fmt.Sprintf(" LIMIT %d ", limit)
-	default:
-		return nil, common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
-	}
-
-	rows, err := h.hanaPool.QueryContext(ctx, fmt.Sprintf(sql, args...)+whereSQL)
+	// execute HANA sql
+	rows, err := h.hanaPool.QueryContext(ctx, sql)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
 
+	return createResponse(docMap, rows, &localCtx)
+}
+
+func createSqlStmt(docMap map[string]any, ctx *LocatCtx) (sql string, err error) {
+	sql, err = createSqlBaseStmt(docMap, ctx)
+	if err != nil {
+		return
+	}
+
+	whereStmt, err := common.Where(ctx.filter)
+	if err != nil {
+		return
+	}
+	sql += whereStmt
+
+	orderBystmt, err := createOrderByStmt(docMap)
+	if err != nil {
+		return
+	}
+	sql += orderBystmt
+
+	limitStmt, err := createLimitStmt(docMap)
+	if err != nil {
+		return
+	}
+	sql += limitStmt
+
+	return
+}
+
+func createSqlBaseStmt(docMap map[string]any, ctx *LocatCtx) (sql string, err error) {
+	_, isFindOp := docMap["find"].(string)
+	db := docMap["$db"].(string)
+
+	if isFindOp { // enters here if find
+		var projectionSQL string
+
+		projectionIn, _ := docMap["projection"].(types.Document)
+		projectionSQL, ctx.exclusion, err = common.Projection(projectionIn)
+		if err != nil {
+			return
+		}
+
+		ctx.collection = docMap["find"].(string)
+		ctx.filter, _ = docMap["filter"].(types.Document)
+		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, db, ctx.collection)
+	} else { // enters here if count
+		ctx.collection = docMap["count"].(string)
+		ctx.filter, _ = docMap["query"].(types.Document)
+		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, db, ctx.collection)
+	}
+	return
+}
+
+func createOrderByStmt(docMap map[string]any) (sql string, err error) {
+	sort, _ := docMap["sort"].(types.Document)
+	sortMap := sort.Map()
+	if len(sortMap) != 0 {
+		sql += " ORDER BY "
+
+		for i, sortKey := range sort.Keys() {
+			if i != 0 {
+				sql += ","
+			}
+
+			if strings.Contains(sortKey, ".") {
+				split := strings.Split(sortKey, ".")
+				sql += " "
+				for j, s := range split {
+					if (len(split) - 1) == j {
+						sql += "\"" + s + "\""
+					} else {
+						sql += "\"" + s + "\"."
+					}
+				}
+			} else {
+				sql += "\"" + sortKey + "\" "
+			}
+
+			order := sortMap[sortKey].(int32)
+			if order == 1 {
+				sql += " ASC"
+			} else if order == -1 {
+				sql += " DESC"
+			} else {
+				err = common.NewErrorMessage(common.ErrSortBadValue, "")
+			}
+		}
+	}
+	return
+}
+
+func createLimitStmt(docMap map[string]any) (sql string, err error) {
+	limit, _ := docMap["limit"].(int32)
+	switch {
+	case limit == 0:
+		// undefined or zero - no limit
+	case limit > 0:
+		sql += fmt.Sprintf(" LIMIT %d ", limit)
+	default:
+		err = common.NewErrorMessage(common.ErrNotImplemented, "MsgFind: negative limit values are not supported")
+	}
+	return
+}
+
+func createResponse(docMap map[string]any, rows *sql.Rows, localCtx *LocatCtx) (resp *wire.OpMsg, err error) {
+	resp = &wire.OpMsg{}
+	_, isFindOp := docMap["find"].(string)
 	defer rows.Close()
-	var reply wire.OpMsg
 	if isFindOp { //nolint:nestif // FIXME: I have no idead to fix this lint
 		var docs types.Array
+		var aDoc *types.Document
 
 		for {
-			doc, err := nextRow(rows)
+			aDoc, err = nextRow(rows)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
-			}
-			if doc == nil {
+			} else if aDoc == nil {
 				break
 			}
 
-			if err = docs.Append(*doc); err != nil {
+			if err = docs.Append(*aDoc); err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 		}
 
-		if exclusion {
-			err = common.ProjectDocuments(&docs, m["projection"].(types.Document))
+		if localCtx.exclusion {
+			err = common.ProjectDocuments(&docs, docMap["projection"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 		}
 
-		err = reply.SetSections(wire.OpMsgSection{
+		db := docMap["$db"].(string)
+		err = resp.SetSections(wire.OpMsgSection{
 			Documents: []types.Document{types.MustMakeDocument(
 				"cursor", types.MustMakeDocument(
 					"firstBatch", &docs,
 					"id", int64(0), // TODO
-					"ns", db+"."+collection,
+					"ns", db+"."+localCtx.collection,
 				),
 				"ok", float64(1),
 			)},
 		})
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 	} else {
 		var count int32
 		for rows.Next() {
-			err := rows.Scan(&count)
+			err = rows.Scan(&count)
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
 		}
 
-		if err != nil {
-			return nil, lazyerrors.Error(err)
-		}
-		err = reply.SetSections(wire.OpMsgSection{
+		err = resp.SetSections(wire.OpMsgSection{
 			Documents: []types.Document{types.MustMakeDocument(
 				"n", count,
 				"ok", float64(1),
 			)},
 		})
 	}
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-
-	return &reply, nil
+	return
 }
 
 // Checks if command PrintShardingStatus is being used.
@@ -236,6 +267,5 @@ func isPrintShardingStatus(docMap map[string]any) bool {
 	} else if docMap["find"] == "version" && docMap["$db"] == "config" {
 		return true
 	}
-
 	return false
 }
