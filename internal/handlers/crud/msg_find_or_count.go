@@ -42,8 +42,6 @@ type LocatCtx struct {
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
 // or count the number of documents that matches the query filter.
 func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	sugarLogger := h.l.Sugar()
-	sugarLogger.Infow("#####  Enter MsgFindOrCount() #####")
 	unimplementedFields := []string{
 		"skip",
 		"returnKey",
