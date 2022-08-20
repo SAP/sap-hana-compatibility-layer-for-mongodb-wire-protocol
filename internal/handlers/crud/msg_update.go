@@ -64,6 +64,10 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	db := m["$db"].(string)
 	docs, _ := m["updates"].(*types.Array)
 
+	logger := h.l.Sugar()
+	logger.Infof("######################")
+	logger.Infof("%s", docs)
+
 	var selected, updated, matched int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
@@ -200,7 +204,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	var setDoc types.Document
 	var ok bool
 	if setDoc, ok = updateMap["$set"].(types.Document); ok {
-		updateSQL, isUnsetSQL, err = setFields(setDoc)
+		updateSQL, isUnsetSQL, err = createSetandUnsetSqlStmnt(setDoc, true)
 		if err != nil {
 			return
 		}
@@ -208,7 +212,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 
 	var unSetSQL, isSetSQL string
 	if unSetDoc, ok := updateMap["$unset"].(types.Document); ok {
-		if unSetSQL, isSetSQL, err = unsetFields(unSetDoc); err != nil {
+		if unSetSQL, isSetSQL, err = createSetandUnsetSqlStmnt(unSetDoc, false); err != nil {
 			return
 		}
 	}
@@ -246,15 +250,19 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	return
 }
 
-// Create SQL for setting fields
-func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err error) {
-	updateSQL = " SET "
+func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, isUnsetOrUnsetSQL string, err error) {
+	if set {
+		updateSQL = " SET "
+	} else {
+		updateSQL = " UNSET "
+	}
 
 	var updateValue string
-
-	for i, key := range setDoc.Keys() {
-
-		value, _ := setDoc.Get(key)
+	for i, key := range doc.Keys() {
+		var value any
+		if set {
+			value, _ = doc.Get(key)
+		}
 
 		if strings.EqualFold(key, "_id") {
 			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
@@ -263,7 +271,7 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 
 		if i != 0 {
 			updateSQL += ", "
-			isUnsetSQL += " OR "
+			isUnsetOrUnsetSQL += " OR "
 		}
 
 		var updateKey string
@@ -272,47 +280,18 @@ func setFields(setDoc types.Document) (updateSQL string, isUnsetSQL string, err 
 			return
 		}
 
-		updateValue, err = getUpdateValue(value)
-		if err != nil {
-			return
+		if set {
+			updateValue, err = getUpdateValue(value)
+			if err != nil {
+				return
+			}
+			updateSQL += updateKey + " = " + updateValue
+			isUnsetOrUnsetSQL += updateKey + " IS UNSET"
+		} else {
+			updateSQL += updateKey
+			isUnsetOrUnsetSQL += updateKey + " IS SET"
 		}
-
-		updateSQL += updateKey + " = " + updateValue
-		isUnsetSQL += updateKey + " IS UNSET"
-		i++
 	}
-
-	return
-}
-
-// Create SQL for unsetting fields
-func unsetFields(unSetDoc types.Document) (unsetSQL string, isSetSQL string, err error) {
-	unsetSQL = " UNSET "
-
-	for i, key := range unSetDoc.Keys() {
-
-		if strings.EqualFold(key, "_id") {
-			err = errors.New("performing an update on the path '_id' would modify the immutable field '_id'")
-			return
-		}
-
-		if i != 0 {
-			unsetSQL += ", "
-			isSetSQL += " OR "
-		}
-
-		var updateKey string
-		updateKey, err = getUpdateKey(key)
-		if err != nil {
-			return
-		}
-
-		unsetSQL += updateKey
-
-		isSetSQL += updateKey + " IS SET"
-
-	}
-
 	return
 }
 
