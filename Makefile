@@ -84,15 +84,15 @@ lint: bin/go-sumtype bin/golangci-lint ## Run linters
 
 
 mongosh:                               ## Run mongosh
-	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/BOJER?heartbeatFrequencyMS=300000 \
+	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
 mongosh-sudo:                               ## Run mongosh with sudo
-	sudo docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/BOJER?heartbeatFrequencyMS=300000 \
+	sudo docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
 mongo:                                 ## Run (legacy) mongo shell
-	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/BOJER?heartbeatFrequencyMS=300000 \
+	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
 		--verbose
 
 # docker-init:

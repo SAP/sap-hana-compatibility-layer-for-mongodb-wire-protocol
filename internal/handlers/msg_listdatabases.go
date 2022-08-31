@@ -45,7 +45,7 @@ package handlers
 // 		var sizeOnDisk int64
 // 		for _, name := range tables {
 // 			var tableSize int64
-// 			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'BOJER' AND TABLE_NAME = $1 AND TABLE_TYPE = 'COLLECTION';", name).Scan(&tableSize)
+// 			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'DB_NAME' AND TABLE_NAME = $1 AND TABLE_TYPE = 'COLLECTION';", name).Scan(&tableSize)
 // 			if err != nil {
 // 				err = lazyerrors.Errorf("sql: Scan error on column index 0, name \"TABLE_SIZE\": converting NULL to int64 is unsupported. Error due to not having all collections in memory. Must be fixed.")
 // 				return nil, lazyerrors.Error(err)
