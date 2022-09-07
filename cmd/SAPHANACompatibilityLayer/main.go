@@ -46,10 +46,12 @@ var (
 	listenAddrF      = flag.String("listen-addr", "127.0.0.1:27017", "listen address")
 	modeF            = flag.String("mode", string(clientconn.AllModes[0]), fmt.Sprintf("operation mode: %v", clientconn.AllModes))
 	proxyAddrF       = flag.String("proxy-addr", "127.0.0.1:37017", "")
-	tlsF             = flag.Bool("tls", false, "enable insecure TLS")
+	tlsF             = flag.Bool("tls", false, "enable TLS")
+	tlsCertFilePathF = flag.String("certFile", "", "path to file containing certificate for TLS")
+	tlsKeyFilePathF  = flag.String("keyFile", "", "path to file containing key for TLS")
 	versionF         = flag.Bool("version", false, "print version to stdout (full version, commit, branch, dirty flag) and exit")
 	testConnTimeoutF = flag.Duration("test-conn-timeout", 0, "test: set connection timeout")
-	saphanaURL       = flag.String("saphana-url", "please-insert-sap-hana-url-here", "SAP HANA URL")
+	saphanaURL       = flag.String("HANAConnectString", "", "SAP HANA Cloud instance connect string")
 )
 
 func main() {
@@ -86,10 +88,6 @@ func main() {
 		logger.Sugar().Fatalf("Unknown mode %q.", *modeF)
 	}
 
-	if *tlsF {
-		logger.Sugar().Warn("The current TLS implementation is not secure.")
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), unix.SIGTERM, unix.SIGINT)
 	go func() {
 		<-ctx.Done()
@@ -113,6 +111,8 @@ func main() {
 	l := clientconn.NewListener(&clientconn.NewListenerOpts{
 		ListenAddr:      *listenAddrF,
 		TLS:             *tlsF,
+		TLSCertFilePath: *tlsCertFilePathF,
+		TLSKeyFilePath:  *tlsKeyFilePathF,
 		ProxyAddr:       *proxyAddrF,
 		Mode:            clientconn.Mode(*modeF),
 		HanaPool:        hanaPool,

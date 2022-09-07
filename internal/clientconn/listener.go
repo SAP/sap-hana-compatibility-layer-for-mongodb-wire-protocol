@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2021 FerretDB Inc.
 //
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2021 FerretDB Inc.
@@ -43,6 +45,8 @@ type Listener struct {
 type NewListenerOpts struct {
 	ListenAddr      string
 	TLS             bool
+	TLSCertFilePath string
+	TLSKeyFilePath  string
 	ProxyAddr       string
 	Mode            Mode
 	HanaPool        *hana.Hpool
@@ -69,17 +73,11 @@ func (l *Listener) Run(ctx context.Context) error {
 	l.opts.Logger.Sugar().Infof("Listening on %s ...", l.opts.ListenAddr)
 
 	if l.opts.TLS {
-		l.opts.Logger.Sugar().Info("Using insecure TLS.")
-		cert, err := generateInsecureCert()
+		tlsConfig, err := generateX509Cert(l.opts.TLSCertFilePath, l.opts.TLSKeyFilePath)
 		if err != nil {
 			return err
 		}
-		l.opts.Logger.Sugar().Info("Insecure self-signed certificate generated.")
 
-		tlsConfig := &tls.Config{
-			Certificates:       []tls.Certificate{*cert},
-			InsecureSkipVerify: true,
-		}
 		lis = tls.NewListener(lis, tlsConfig)
 	}
 
