@@ -1,52 +1,27 @@
-// SPDX-FileCopyrightText: 2021 FerretDB Inc.
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
 //
 // SPDX-License-Identifier: Apache-2.0
-
-// Copyright 2021 FerretDB Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 package clientconn
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
-	"crypto/x509"
-	"math/big"
+
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-// generateInsecureCert is hack that will be replaced with proper TLS handling.
-//
-// It is not secure. Do not use.
-func generateInsecureCert() (*tls.Certificate, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, err
+func generateX509Cert(certFilePath string, keyFilePath string) (*tls.Config, error) {
+	if certFilePath == "" {
+		return nil, lazyerrors.Errorf("No path was given for the certificate file for TLS")
+	} else if keyFilePath == "" {
+		return nil, lazyerrors.Errorf("No path was given for the key file for TLS")
 	}
 
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-	}
-
-	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	cert, err := tls.LoadX509KeyPair(certFilePath, keyFilePath)
 	if err != nil {
-		return nil, err
+		return nil, lazyerrors.Errorf("Following error occured when loading the x509 key and cert files: %w", err)
 	}
-	cert := &tls.Certificate{
-		Certificate: [][]byte{der},
-		PrivateKey:  privateKey,
-	}
-	return cert, nil
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
+
+	return config, err
 }

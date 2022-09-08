@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2021 FerretDB Inc.
 //
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2021 FerretDB Inc.
@@ -150,6 +152,13 @@ var commands = map[string]command{
 		name:    "whatsmyuri",
 		help:    "An internal command.",
 		handler: (*Handler).MsgWhatsMyURI,
+	},
+	"authenticate": {
+		// So far only used for the authenticate required by MongoDB drivers when using tls
+		// At the moment it just sends ok back to MongoDB
+		name:    "authenticate",
+		help:    "a method for authentication",
+		handler: (*Handler).MsgAuthenticate,
 	},
 	// "serverstatus": {
 	// 	// db.serverStatus()

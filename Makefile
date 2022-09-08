@@ -73,8 +73,11 @@ bench-short:                           ## Benchmark for 5 seconds
 build-testcover: gen-version           ## Build bin/SAPHANAcompatibilitylayer-testcover
 	go test -c -o=bin/SAPHANAcompatibilitylayer-testcover -trimpath -tags=testcover -race -coverpkg=./... ./cmd/SAPHANACompatibilityLayer
 
+# Default value for TLS if not given
+TLS := false
+
 run: build-testcover                   ## Run SAP HANA compatibility layer for MongoDB Wire Protocol
-	bin/SAPHANAcompatibilitylayer-testcover -test.coverprofile=cover.txt -mode=diff-normal -listen-addr=:27017
+	bin/SAPHANAcompatibilitylayer-testcover -test.coverprofile=cover.txt -mode=normal -listen-addr=:27017 -HANAConnectString=$(HANAConnectString) -tls=$(TLS) -certFile=$(certFile) -keyFile=$(keyFile)
 
 lint: bin/go-sumtype bin/golangci-lint ## Run linters
 	bin/go-sumtype ./...
@@ -82,32 +85,39 @@ lint: bin/go-sumtype bin/golangci-lint ## Run linters
 	bin/golangci-lint run --config=.golangci.yml
 	bin/go-consistent -pedantic ./...
 
+# Default value for the database name used in MongoDB connect string
+DB := DB_NAME
 
-mongosh:                               ## Run mongosh
-	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
+mongosh:                                ## Run mongosh
+	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
-mongosh-sudo:                               ## Run mongosh with sudo
-	sudo docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
+mongosh-sudo:                          ## Run mongosh with sudo
+	sudo docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
-mongo:                                 ## Run (legacy) mongo shell
-	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/DB_NAME?heartbeatFrequencyMS=300000 \
+mongo:                                  ## Run (legacy) mongo shell
+	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose
 
+mongosh-tls:							## Run mongosh with tls
+	docker-compose exec mongodb mongosh \
+	"mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000&tls=true&authMechanism=MONGODB-X509&tlsCertificateKeyFile=$(certFile)&tlsCAFile=$(CAFile)" \
+	--verbose --eval 'disableTelemetry()' --shell
+		
 # docker-init:
-# 	docker buildx create --driver=docker-container --name=ferretdb
+# 	docker buildx create --driver=docker-container --name=SAPHANACompatibilityLayer
 
 # docker-build: build-testcover
-# 	env GOOS=linux GOARCH=arm64            go test -c -o=bin/ferretdb-arm64 -trimpath -tags=testcover -coverpkg=./... ./cmd/ferretdb
-# 	env GOOS=linux GOARCH=amd64 GOAMD64=v2 go test -c -o=bin/ferretdb-amd64 -trimpath -tags=testcover -coverpkg=./... ./cmd/ferretdb
+# 	env GOOS=linux GOARCH=arm64            go test -c -o=bin/SAPHANACompatibilityLayer-arm64 -trimpath -tags=testcover -coverpkg=./... ./cmd/SAPHANACompatibilityLayer
+# 	env GOOS=linux GOARCH=amd64 GOAMD64=v2 go test -c -o=bin/SAPHANACompatibilityLayer-amd64 -trimpath -tags=testcover -coverpkg=./... ./cmd/SAPHANACompatibilityLayer
 
 # docker-local: docker-build
-# 	docker buildx build --builder=ferretdb --tag=ghcr.io/ferretdb/ferretdb:local --load .
+# 	docker buildx build --builder=SAPHANACompatibilityLayer --tag=ghcr.io/SAPHANACompatibilityLayer/SAPHANACompatibilityLayer:local --load .
 
 # docker-push: docker-build
 # 	test $(DOCKER_TAG)
-# 	docker buildx build --builder=ferretdb --platform=linux/arm64,linux/amd64 --tag=ghcr.io/ferretdb/ferretdb:$(DOCKER_TAG) --push .
+# 	docker buildx build --builder=SAPHANACompatibilityLayer --platform=linux/arm64,linux/amd64 --tag=ghcr.io/SAPHANACompatibilityLayer/SAPHANACompatibilityLayer:$(DOCKER_TAG) --push .
 
 bin/golangci-lint:
 	$(MAKE) init
