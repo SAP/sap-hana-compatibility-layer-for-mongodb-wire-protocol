@@ -76,7 +76,7 @@ build-testcover: gen-version           ## Build bin/SAPHANAcompatibilitylayer-te
 # Default value for TLS if not given
 TLS := false
 
-run: build-testcover                   ## Run SAP HANA compatibility layer for MongoDB Wire Protocol
+run: build-testcover                   ## Run SAP HANA compatibility layer for MongoDB Wire Protocol with following flags: HANAConnectString, TLS, certFile, keyFile
 	bin/SAPHANAcompatibilitylayer-testcover -test.coverprofile=cover.txt -mode=normal -listen-addr=:27017 -HANAConnectString=$(HANAConnectString) -tls=$(TLS) -certFile=$(certFile) -keyFile=$(keyFile)
 
 lint: bin/go-sumtype bin/golangci-lint ## Run linters
@@ -88,19 +88,19 @@ lint: bin/go-sumtype bin/golangci-lint ## Run linters
 # Default value for the database name used in MongoDB connect string
 DB := DB_NAME
 
-mongosh:                                ## Run mongosh
+mongosh:                                ## Run mongosh. Flags: DB
 	docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
-mongosh-sudo:                          ## Run mongosh with sudo
+mongosh-sudo:                          ## Run mongosh with sudo. Flags: DB
 	sudo docker-compose exec mongodb mongosh mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose --eval 'disableTelemetry()' --shell
 
-mongo:                                  ## Run (legacy) mongo shell
+mongo:                                  ## Run (legacy) mongo shell. Flags: DB
 	docker-compose exec mongodb mongo mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000 \
 		--verbose
 
-mongosh-tls:							## Run mongosh with tls
+mongosh-tls:							## Run mongosh with tls. Flags: DB, certFile, CAFile
 	docker-compose exec mongodb mongosh \
 	"mongodb://host.docker.internal:27017/$(DB)?heartbeatFrequencyMS=300000&tls=true&authMechanism=MONGODB-X509&tlsCertificateKeyFile=$(certFile)&tlsCAFile=$(CAFile)" \
 	--verbose --eval 'disableTelemetry()' --shell
