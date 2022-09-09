@@ -21,6 +21,11 @@ In case you are the maintainer of a new SAP open source project, these are the s
 
 SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of becoming a viable drop-in replacement for MongoDB using SAP HANA JSON Document Store as the storage engine. It allows the use of basic CRUD operations with mongosh or any MongoDB driver. SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](https://www.ferretdb.io/)), an open-source alternative to MongoDB. 
 
+## Known differences
+
+- If a field of a document within an array is NULL, it will count as unset when $not is used on the field. This results in the condition of the filter being true instead of false like it would be within MongoDB. 
+- When listing the databases with for instance the command "show dbs", the sizes are not the sizes on disk as it would be in MongoDB. Instead it is the size used in memory when the collections of the database are loaded. Any unloaded collection will therefore result in 0 bytes.
+
 ## Requirements
 
 - Go 1.18.*
