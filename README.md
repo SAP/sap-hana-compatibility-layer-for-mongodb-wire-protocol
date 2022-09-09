@@ -28,7 +28,7 @@ SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of beco
 - docker (preferably without the need for sudo)
 - docker-compose (preferably without the need for sudo)
 - GNU make
-- A running HANA instance with SAP HANA JSON Document Store enabled 
+- A running SAP HANA Cloud instance with SAP HANA JSON Document Store enabled 
 
 For the installation of Go-hdb see the following links:
 - [Install the SAP HANA Client](https://developers.sap.com/tutorials/hana-clients-install.html)
@@ -38,17 +38,7 @@ For the installation of Go-hdb see the following links:
 
 1. Clone the repository and enter the project folder sap-hana-compatibility-layer-for-mongodb-wire-protocol
 
-2. After cloning, create the file connect.yml and add the following. Replace the sample connect string with your own. Please make sure connect.yml is being ignored by git:
-
-```
-# Insert connection string for SAP HANA Cloud instance
-connect:
-  connectString: "hdb://User1:Password1@999deec0-ccb7-4a5e-b317-d419e19be648.hana.prod-us10.hanacloud.ondemand.com:443?encrypt=true&sslValidateCertificate=false"
-```
-
-3. In the Makefile change the MongoDB connect string on lines 87, 91 and 95 by exchanging DB_NAME with the schema name used in SAP HANA JSON Document Store. 
-
-4. In the project folder sap-hana-compatibility-layer-for-mongodb-wire-protocol run the following:
+2. In the project folder sap-hana-compatibility-layer-for-mongodb-wire-protocol run the following:
 
 ```
 make init
@@ -56,14 +46,14 @@ make init
 
 It will install all dependencies needed to run SAP HANA compatibility layer for MongoDB Wire Protocol.
 
-5. Open three terminal windows
+3. Open three terminal windows
 
 In terminal window 1 run:
  ```
  docker-compose up
  ```
  
- If sudo required, use:
+ If sudo is required, use:
  
 ```
 sudo docker-compose up
@@ -72,20 +62,21 @@ sudo docker-compose up
  In terminal window 2 run: 
  
 ```
-make run
+make run HANAConnectString=<please-insert-connect-string-here>
 ```
 
-and now in terminal window 3 run after making sure the previous two started successfully:
+and now in terminal window 3, run the following after making sure the previous two steps started successfully:
 ```
-make mongosh
+make mongosh DB=<please-insert-database-name-here>
 ```
+DB is the database name in MongoDB and the schema name in SAP HANA JSON Document Store. If the given database name is not found as a schema in SAP HANA JSON Document Store, a new schema will be created when a collection is created. If no value for DB is given, then it will be set to DB_NAME.
 
 If permission is denied because the rights of sudo are needed, run:
 ```
-make mongosh-sudo
+make mongosh-sudo DB=<please-insert-databse-name-here>
 ```
 
-6. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
+4. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
 
 ```
 db.createCollection("firstCollection")
