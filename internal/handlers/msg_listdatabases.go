@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2021 FerretDB Inc.
 //
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2021 FerretDB Inc.
@@ -18,66 +20,69 @@
 
 package handlers
 
-// import (
-// 	"context"
+import (
+	"context"
 
-// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
-// 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
-// )
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
+)
 
-// // MsgListDatabases command provides a list of all existing databases along with basic statistics about them.
-// func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-// 	databaseNames, err := h.hanaPool.Schemas(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	databases := types.MakeArray(len(databaseNames))
-// 	for _, databaseName := range databaseNames {
-// 		tables, err := h.hanaPool.Tables(ctx, databaseName)
-// 		if err != nil {
-// 			return nil, lazyerrors.Error(err)
-// 		}
+// MsgListDatabases command provides a list of all existing databases along with basic statistics about them.
+func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
+	databaseNames, err := h.hanaPool.Schemas(ctx)
+	if err != nil {
+		return nil, err
+	}
+	databases := types.MakeArray(len(databaseNames))
+	for _, databaseName := range databaseNames {
+		tables, err := h.hanaPool.Tables(ctx, databaseName)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 
-// 		// iterate over result to collect sizes
-// 		// IMPLEMENT: Catch errors when size is NULL because tables not in memory
-// 		// but on disk.
-// 		var sizeOnDisk int64
-// 		for _, name := range tables {
-// 			var tableSize int64
-// 			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'DB_NAME' AND TABLE_NAME = $1 AND TABLE_TYPE = 'COLLECTION';", name).Scan(&tableSize)
-// 			if err != nil {
-// 				err = lazyerrors.Errorf("sql: Scan error on column index 0, name \"TABLE_SIZE\": converting NULL to int64 is unsupported. Error due to not having all collections in memory. Must be fixed.")
-// 				return nil, lazyerrors.Error(err)
-// 			}
+		var sizeOnDisk int64
+		for _, name := range tables {
+			var tableSize any
+			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION';", databaseName, name).Scan(&tableSize)
+			if err != nil {
+				err = lazyerrors.Errorf("sql: Scan error on column index 0, name \"TABLE_SIZE\": converting NULL to int64 is unsupported. Error due to not having all collections in memory. Must be fixed.")
+				return nil, lazyerrors.Error(err)
+			}
+			switch tableSize := tableSize.(type) {
+			case int64: // collection is in memory and a size can be calculated
+				sizeOnDisk += tableSize
+			case nil: // collection is not in memory and no size can be calculated
+				continue
+			default:
+				return nil, lazyerrors.Errorf("Got wrong type for tableSize. Got: %T", tableSize)
+			}
 
-// 			sizeOnDisk += tableSize
-// 		}
+		}
 
-// 		d := types.MustMakeDocument(
-// 			"name", databaseName,
-// 			"sizeOnDisk", sizeOnDisk,
-// 			"empty", sizeOnDisk == 0,
-// 		)
-// 		if err = databases.Append(d); err != nil {
-// 			return nil, lazyerrors.Error(err)
-// 		}
-// 	}
+		d := types.MustMakeDocument(
+			"name", databaseName,
+			"sizeOnDisk", sizeOnDisk,
+			"empty", sizeOnDisk == 0,
+		)
+		if err = databases.Append(d); err != nil {
+			return nil, lazyerrors.Error(err)
+		}
+	}
 
-// 	var totalSize int64
-// 	totalSize = 30
-// 	var reply wire.OpMsg
-// 	err = reply.SetSections(wire.OpMsgSection{
-// 		Documents: []types.Document{types.MustMakeDocument(
-// 			"databases", databases,
-// 			"totalSize", totalSize,
-// 			"totalSizeMb", totalSize/1024/1024,
-// 			"ok", float64(1),
-// 		)},
-// 	})
-// 	if err != nil {
-// 		return nil, lazyerrors.Error(err)
-// 	}
+	totalSize := 30
+	var reply wire.OpMsg
+	err = reply.SetSections(wire.OpMsgSection{
+		Documents: []types.Document{types.MustMakeDocument(
+			"databases", databases,
+			"totalSize", totalSize,
+			"totalSizeMb", totalSize/1024/1024,
+			"ok", float64(1),
+		)},
+	})
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
 
-// 	return &reply, nil
-// }
+	return &reply, nil
+}

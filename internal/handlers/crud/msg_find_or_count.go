@@ -56,7 +56,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		"let",
 		"hint",
 		"batchSize",
-		"singleBatch",
 		"maxTimeMS",
 		"readConcern",
 		"max",
@@ -71,6 +70,8 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
 		return nil, err
 	}
+
+	common.Ignored(&document, h.l, "singleBatch")
 
 	docMap := document.Map()
 	// Checks if command printshardingstatus is used.

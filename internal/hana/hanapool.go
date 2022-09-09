@@ -120,34 +120,29 @@ func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection stri
 }
 
 // Schemas returns a sorted list of SAP HANA JSON Document Store schema names.
-// Not used yet
-// func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
-// 	sql := "SELECT * FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'"
-// 	rows, err := hanaPool.QueryContext(ctx, sql)
-// 	if err != nil {
-// 		return nil, lazyerrors.Error(err)
-// 	}
-// 	defer rows.Close()
+func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
+	sql := "SELECT SCHEMA_NAME FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'"
+	rows, err := hanaPool.QueryContext(ctx, sql)
+	if err != nil {
+		return nil, lazyerrors.Error(err)
+	}
+	defer rows.Close()
 
-// 	res := make([]string, 0, 2)
-// 	for rows.Next() {
-// 		var name string
-// 		if err = rows.Scan(&name); err != nil {
-// 			return nil, lazyerrors.Error(err)
-// 		}
+	res := make([]string, 0, 2)
+	for rows.Next() {
+		var name string
+		if err = rows.Scan(&name); err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 
-// 		if strings.HasPrefix(name, "pg_") || name == "information_schema" {
-// 			continue
-// 		}
+		res = append(res, name)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, lazyerrors.Error(err)
+	}
 
-// 		res = append(res, name)
-// 	}
-// 	if err = rows.Err(); err != nil {
-// 		return nil, lazyerrors.Error(err)
-// 	}
-
-// 	return res, nil
-// }
+	return res, nil
+}
 
 // TableStats returns a set of statistics for a table.
 // Still needs to be written for SAP HANA JSON Document Store
