@@ -76,7 +76,6 @@ func TestHanapool(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("Get schemas", func(t *testing.T) {
@@ -104,7 +103,6 @@ func TestHanapool(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 
 	t.Run("create schema", func(t *testing.T) {
@@ -159,7 +157,6 @@ func TestHanapool(t *testing.T) {
 		err = h.CreateCollection(ctx, "database", "collection")
 
 		assert.EqualError(t, err, ErrAlreadyExist.Error())
-
 	})
 
 	t.Run("Drop table", func(t *testing.T) {
@@ -191,7 +188,6 @@ func TestHanapool(t *testing.T) {
 		err = h.DropTable(ctx, "testDatabase", "testCollection")
 
 		assert.EqualError(t, ErrNotExist, err.Error())
-
 	})
 
 	t.Run("Drop schema", func(t *testing.T) {

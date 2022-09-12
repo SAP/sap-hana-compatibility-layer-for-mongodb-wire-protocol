@@ -502,7 +502,6 @@ func TestDatabaseCommand(t *testing.T) {
 	})
 
 	t.Run("listDatabases", func(t *testing.T) {
-
 		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
 
 		reqDoc := types.MustMakeDocument(
@@ -557,7 +556,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 	t.Run("authenticate", func(t *testing.T) {
 		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
