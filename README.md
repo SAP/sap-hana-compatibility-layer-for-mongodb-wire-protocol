@@ -25,6 +25,7 @@ SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of beco
 
 - If a field of a document within an array is NULL, it will count as unset when $not is used on the field. This results in the condition of the filter being true instead of false like it would be within MongoDB. 
 - When listing the databases with for instance the command "show dbs", the sizes are not the sizes on disk as it would be in MongoDB. Instead it is the size used in memory when the collections of the database are loaded. Any unloaded collection will therefore result in 0 bytes.
+- Not all thrown errors are equal the ones thrown by MongoDB.
 
 ## Requirements
 
