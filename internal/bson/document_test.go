@@ -20,6 +20,7 @@ package bson
 
 import (
 	"testing"
+	"time"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
@@ -139,24 +140,20 @@ var (
 		b: testutil.MustParseDumpFile("testdata", "handshake4.hex"),
 	}
 
-	// all = testCase{
-	// 	name: "all",
-	// 	v: MustConvertDocument(types.MustMakeDocument(
-	// 		// "binary", types.MustNewArray(
-	// 		// 	types.Binary{Subtype: types.BinaryUser, B: []byte{0x42}},
-	// 		// 	types.Binary{Subtype: types.BinaryGeneric, B: []byte{}},
-	// 		// ),
-	// 		"bool", types.MustNewArray(true, false),
-	// 		"datetime", types.MustNewArray(time.Date(2021, 7, 27, 9, 35, 42, 123000000, time.UTC).Local(), time.Time{}.Local()),
-	// 		"double", types.MustNewArray(42.13, 0.0),
-	// 		"int32", types.MustNewArray(int32(42), int32(0)),
-	// 		"int64", types.MustNewArray(int64(42), int64(0)),
-	// 		"objectID", types.MustNewArray(types.ObjectID{0x42}, types.ObjectID{}),
-	// 		"string", types.MustNewArray("foo", ""),
-	// 		// "timestamp", types.MustNewArray(types.Timestamp(42), types.Timestamp(0)),
-	// 	)),
-	// 	b: testutil.MustParseDumpFile("testdata", "all.hex"),
-	// }
+	all = testCase{
+		name: "all",
+		v: MustConvertDocument(types.MustMakeDocument(
+			"bool", types.MustNewArray(true, false),
+			"datetime", types.MustNewArray(time.Date(2021, 7, 27, 9, 35, 42, 123000000, time.UTC).Local(), time.Time{}.Local()),
+			"double", types.MustNewArray(42.13, 0.0),
+			"int32", types.MustNewArray(int32(42), int32(0)),
+			"int64", types.MustNewArray(int64(42), int64(0)),
+			"objectID", types.MustNewArray(types.ObjectID{0x42}, types.ObjectID{}),
+			"string", types.MustNewArray("foo", ""),
+			"regex", types.MustNewArray(types.Regex{Pattern: "pattern", Options: "options"}, types.Regex{}),
+		)),
+		b: testutil.MustParseDumpFile("testdata", "all.hex"),
+	}
 
 	eof = testCase{
 		name: "EOF",
@@ -164,7 +161,7 @@ var (
 		bErr: `unexpected EOF`,
 	}
 
-	documentTestCases = []testCase{handshake1, handshake2, handshake4, eof}
+	documentTestCases = []testCase{handshake1, handshake2, handshake4, all, eof}
 )
 
 func TestDocument(t *testing.T) {

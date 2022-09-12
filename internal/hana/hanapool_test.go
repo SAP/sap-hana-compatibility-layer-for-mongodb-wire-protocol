@@ -61,6 +61,50 @@ func TestHanapool(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
+
+		nilRow := sqlmock.NewRows([]string{"table_name"}).AddRow(nil)
+		args = []driver.Value{"TESTDATABASE"}
+
+		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnError(fmt.Errorf("error"))
+		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(nilRow)
+
+		tables, err = h.Tables(ctx, "testDatabase")
+
+		assert.Nil(t, tables)
+		assert.ErrorContainsf(t, err, "sql: Scan error on column index 0, name \"table_name\": converting NULL to string is unsupported", "")
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+
+	})
+
+	t.Run("Get schemas", func(t *testing.T) {
+		t.Parallel()
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
+		if err != nil {
+			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		}
+		defer db.Close()
+
+		h := Hpool{
+			db,
+		}
+		ctx := testutil.Ctx(t)
+
+		schemas := sqlmock.NewRows([]string{"schema_name"}).AddRow("TESTSCHEMA1").AddRow("TESTSCHEMA2")
+		mock.ExpectQuery("SELECT SCHEMA_NAME FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'").WillReturnRows(schemas)
+
+		actualSchemas, err := h.Schemas(ctx)
+		expectedSchemas := []string{"TESTSCHEMA1", "TESTSCHEMA2"}
+
+		assert.Nil(t, err)
+		assert.Equal(t, expectedSchemas, actualSchemas)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+
 	})
 
 	t.Run("create schema", func(t *testing.T) {
@@ -109,6 +153,13 @@ func TestHanapool(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
+
+		mock.ExpectExec("CREATE COLLECTION database.collection").WillReturnResult(sqlmock.NewResult(1, 1)).WillReturnError(ErrAlreadyExist)
+
+		err = h.CreateCollection(ctx, "database", "collection")
+
+		assert.EqualError(t, err, ErrAlreadyExist.Error())
+
 	})
 
 	t.Run("Drop table", func(t *testing.T) {
@@ -134,6 +185,13 @@ func TestHanapool(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
+
+		mock.ExpectExec("DROP COLLECTION testDatabase.testCollection").WillReturnResult(sqlmock.NewResult(0, 0)).WillReturnError(ErrNotExist)
+
+		err = h.DropTable(ctx, "testDatabase", "testCollection")
+
+		assert.EqualError(t, ErrNotExist, err.Error())
+
 	})
 
 	t.Run("Drop schema", func(t *testing.T) {

@@ -46,7 +46,6 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 			var tableSize any
 			err = h.hanaPool.QueryRowContext(ctx, "SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION';", databaseName, name).Scan(&tableSize)
 			if err != nil {
-				err = lazyerrors.Errorf("sql: Scan error on column index 0, name \"TABLE_SIZE\": converting NULL to int64 is unsupported. Error due to not having all collections in memory. Must be fixed.")
 				return nil, lazyerrors.Error(err)
 			}
 			switch tableSize := tableSize.(type) {
@@ -70,7 +69,7 @@ func (h *Handler) MsgListDatabases(ctx context.Context, msg *wire.OpMsg) (*wire.
 		}
 	}
 
-	totalSize := 30
+	totalSize := int64(30)
 	var reply wire.OpMsg
 	err = reply.SetSections(wire.OpMsgSection{
 		Documents: []types.Document{types.MustMakeDocument(
