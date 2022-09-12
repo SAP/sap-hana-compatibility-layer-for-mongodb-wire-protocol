@@ -187,7 +187,7 @@ var commands = map[string]command{
 	"insert": {
 		// db.collection.insertOne() or db.collection.deleteMany()
 		name:           "insert",
-		help:           "Inserts documents into the database. ",
+		help:           "Inserts documents into the database.",
 		storageHandler: (common.Storage).MsgInsert,
 	},
 	"update": {

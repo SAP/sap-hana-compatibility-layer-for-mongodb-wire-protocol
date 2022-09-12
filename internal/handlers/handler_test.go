@@ -500,6 +500,81 @@ func TestDatabaseCommand(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 	})
+
+	t.Run("listDatabases", func(t *testing.T) {
+
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"listDatabases", int32(1),
+			"$db", "admin",
+			"$readPreference", types.MustMakeDocument(
+				"mode", "primaryPreferred",
+			),
+		)
+
+		schemas := sqlmock.NewRows([]string{"schema_name"}).AddRow("TESTSCHEMA1").AddRow("TESTSCHEMA2")
+		schemaArgs := []driver.Value{"TESTSCHEMA1", "TESTSCHEMA2"}
+		tables1 := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable1").AddRow("testTable2")
+		tables2 := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable3").AddRow("testTable4")
+		tablesArgs := []driver.Value{"testTable1", "testTable2", "testTable3", "testTable4"}
+		tableSizes1 := sqlmock.NewRows([]string{"table_size"}).AddRow(1000)
+		tableSizes2 := sqlmock.NewRows([]string{"table_size"}).AddRow(2000)
+		tableSizes3 := sqlmock.NewRows([]string{"table_size"}).AddRow(nil)
+		tableSizes4 := sqlmock.NewRows([]string{"table_size"}).AddRow(nil)
+
+		mock.ExpectQuery("SELECT SCHEMA_NAME FROM SCHEMAS WHERE SCHEMA_NAME NOT LIKE '%SYS%' AND SCHEMA_OWNER NOT LIKE '%SYS%'").WillReturnRows(schemas)
+
+		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[0]).WillReturnRows(tables1)
+		mock.ExpectQuery("SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[0], tablesArgs[0]).WillReturnRows(tableSizes1)
+		mock.ExpectQuery("SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[0], tablesArgs[1]).WillReturnRows(tableSizes2)
+
+		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[1]).WillReturnRows(tables2)
+		mock.ExpectQuery("SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[1], tablesArgs[2]).WillReturnRows(tableSizes3)
+		mock.ExpectQuery("SELECT TABLE_SIZE FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_NAME = $2 AND TABLE_TYPE = 'COLLECTION'").WithArgs(schemaArgs[1], tablesArgs[3]).WillReturnRows(tableSizes4)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"databases", types.MustNewArray(
+				types.MustMakeDocument(
+					"name", "TESTSCHEMA1",
+					"sizeOnDisk", int64(3000),
+					"empty", false,
+				),
+				types.MustMakeDocument(
+					"name", "TESTSCHEMA2",
+					"sizeOnDisk", int64(0),
+					"empty", true,
+				),
+			),
+			"totalSize", int64(30),
+			"totalSizeMb", int64(0),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+
+	})
+	t.Run("authenticate", func(t *testing.T) {
+		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"authenticate", int32(1),
+			"mechanism", "MONGODB-X509",
+			"$db", "$external",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		expected := types.MustMakeDocument(
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+	})
 }
 
 // func TestFind(t *testing.T) {

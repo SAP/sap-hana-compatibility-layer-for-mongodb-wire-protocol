@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func convertDocument(d types.Document) *Document {
@@ -181,6 +182,7 @@ var (
 	all = testCase{
 		name: "all",
 		v: convertDocument(types.MustMakeDocument(
+			"_id", types.ObjectID{98, 226, 189, 84, 81, 6, 131, 249, 192, 187, 13, 107},
 			"bool", types.MustNewArray(true, false),
 			"datetime", types.MustNewArray(time.Date(2021, 7, 27, 9, 35, 42, 123000000, time.UTC).Local(), time.Time{}.Local()),
 			"double", types.MustNewArray(42.13),
@@ -189,7 +191,8 @@ var (
 			"objectID", types.MustNewArray(types.ObjectID{0x42}, types.ObjectID{}),
 			"string", types.MustNewArray("foo", ""),
 		)),
-		j: `{"bool":[true,false],` +
+		j: `{"_id":{"oid":"62e2bd54510683f9c0bb0d6b"},` +
+			`"bool":[true,false],` +
 			`"datetime":[{"$da":1627378542123},{"$da":-62135596800000}],"double":[42.13],` +
 			`"int32":[42,0],"int64":[223372036854775807],` +
 			`"objectID":[{"oid":"420000000000000000000000"},{"oid":"000000000000000000000000"}],` +
@@ -204,6 +207,32 @@ var (
 
 	documentTestCases = []testCase{handshake1, handshake2, handshake4, all, eof}
 )
+
+func TestMarshalJSONHANA(t *testing.T) {
+	t.Parallel()
+
+	document := convertDocument(types.MustMakeDocument(
+		"_id", types.ObjectID{98, 226, 189, 84, 81, 6, 131, 249, 192, 187, 13, 107},
+		"bool", types.MustNewArray(true, false),
+		"int32", types.MustNewArray(int32(42), int32(0)),
+		"int64", types.MustNewArray(int64(223372036854775807)),
+		"string", types.MustNewArray("foo", ""),
+	))
+
+	actual, err := document.MarshalJSONHANA()
+	expected := []byte{0x7b, 0x22, 0x5f, 0x69, 0x64, 0x22, 0x3a, 0x7b, 0x22, 0x6f, 0x69, 0x64,
+		0x22, 0x3a, 0x22, 0x36, 0x32, 0x65, 0x32, 0x62, 0x64, 0x35, 0x34, 0x35, 0x31, 0x30, 0x36,
+		0x38, 0x33, 0x66, 0x39, 0x63, 0x30, 0x62, 0x62, 0x30, 0x64, 0x36, 0x62, 0x22, 0x7d, 0x2c,
+		0x22, 0x62, 0x6f, 0x6f, 0x6c, 0x22, 0x3a, 0x5b, 0x74, 0x72, 0x75, 0x65, 0x2c, 0x66, 0x61,
+		0x6c, 0x73, 0x65, 0x5d, 0x2c, 0x22, 0x69, 0x6e, 0x74, 0x33, 0x32, 0x22, 0x3a, 0x5b, 0x34,
+		0x32, 0x2c, 0x30, 0x5d, 0x2c, 0x22, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x22, 0x3a, 0x5b, 0x32,
+		0x32, 0x33, 0x33, 0x37, 0x32, 0x30, 0x33, 0x36, 0x38, 0x35, 0x34, 0x37, 0x37, 0x35, 0x38,
+		0x30, 0x37, 0x5d, 0x2c, 0x22, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x22, 0x3a, 0x5b, 0x22,
+		0x66, 0x6f, 0x6f, 0x22, 0x2c, 0x22, 0x22, 0x5d, 0x7d}
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actual)
+
+}
 
 func TestDocument(t *testing.T) {
 	t.Parallel()
