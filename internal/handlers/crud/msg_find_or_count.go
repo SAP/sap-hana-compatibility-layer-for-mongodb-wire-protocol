@@ -85,7 +85,6 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, err
 	}
 
-	// execute HANA sql
 	rows, err := h.hanaPool.QueryContext(ctx, sql)
 	if err != nil {
 		return nil, lazyerrors.Error(err)

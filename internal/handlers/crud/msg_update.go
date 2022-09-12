@@ -165,7 +165,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	return &reply, nil
 }
 
-// Creates needed SQL parts for SQL update statement
+// update creates needed SQL parts for SQL update statement
 func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err error) {
 	uninmplementedFields := []string{
 		"$currentDate",
@@ -295,7 +295,7 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 	return
 }
 
-// Prepares the key (field) for SQL statement
+// getUpdateKey prepares the key (field) for SQL statement
 func getUpdateKey(key string) (updateKey string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -330,7 +330,7 @@ func getUpdateKey(key string) (updateKey string, err error) {
 	return
 }
 
-// Prepares the value for SQL statement
+// getUpdateValue prepares the value for SQL statement
 func getUpdateValue(value any) (updateValue string, err error) {
 	var updateArgs []any
 	switch value := value.(type) {
@@ -383,7 +383,7 @@ func getUpdateValue(value any) (updateValue string, err error) {
 	return
 }
 
-// Prepares a document for being used as value for updating a field
+// updateDocument prepares a document for being used as value for updating a field
 func updateDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any

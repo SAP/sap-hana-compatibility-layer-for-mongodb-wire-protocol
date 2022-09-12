@@ -81,7 +81,7 @@ func (doc *Document) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Return a slice containing the fields of the JSON document. This enables order preservance.
+// getJSONKeys returns a slice containing the fields of the JSON document. This enables order preservance.
 func getJSONKeys(docs []byte) (keys []string, error error) {
 	r := bytes.NewReader(docs)
 	dec := json.NewDecoder(r)
@@ -215,7 +215,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// MarshalJSON implements fjsontype interface. This is used by MongoDB operations.
+// MarshalJSONHANA implements fjsontype interface. This is used by MongoDB operations.
 func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 	var buf bytes.Buffer
 	var b []byte

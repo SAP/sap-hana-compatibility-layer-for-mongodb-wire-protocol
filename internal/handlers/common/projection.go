@@ -28,6 +28,9 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
+// Projection checks if projection is an inclusion or exclusion.
+// If inclusion then the sql needed to perform inclusion is created.
+// If exclusion then the removal of fields will first happen after retrieval of documents.
 func Projection(projection types.Document) (sql string, exclusion bool, err error) {
 	unimplementedFields := []string{
 		"$",
@@ -63,10 +66,11 @@ func Projection(projection types.Document) (sql string, exclusion bool, err erro
 	}
 }
 
+// isProjectionInclusion determines whether projection is inclusion or exclusion.
 func isProjectionInclusion(projection types.Document) (inclusion bool, err error) {
 	var exclusion bool
 	for _, k := range projection.Keys() {
-		if k == "_id" { // _id is a special case and can be both
+		if k == "_id" { // _id is a special case where mixing exclusion and inclusion is allowed
 			var v any
 			v, err = projection.Get(k)
 			switch v := v.(type) {
@@ -136,7 +140,7 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 	return
 }
 
-// Prepares the SQL statement for what to include. This is using the json projection
+// inclusionProjection prepares the SQL statement for inclusion. This is using the json projection
 func inclusionProjection(projection types.Document) (sql string) {
 	sql = "{"
 	if id, err := projection.Get("_id"); err == nil {
@@ -183,7 +187,8 @@ func inclusionProjection(projection types.Document) (sql string) {
 	return
 }
 
-// If it is an exclusion then this performs the exclusion on each document together with the function projectDocument
+// ProjectDocuments will be used if it is an exclusion to performs the exclusion
+// on each document together with the function projectDocument
 func ProjectDocuments(docs *types.Array, projection types.Document) (err error) {
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
@@ -204,6 +209,7 @@ func ProjectDocuments(docs *types.Array, projection types.Document) (err error) 
 	return nil
 }
 
+// projectDocument removes the fields of a document specified in the exclusion
 func projectDocument(doc *types.Document, projection types.Document) (err error) {
 	projectionMap := projection.Map()
 	for field := range projectionMap {

@@ -87,8 +87,6 @@ func TestMsgUpdate(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		fmt.Println(reqMsg)
-
 		msg, err := storage.MsgUpdate(ctx, &reqMsg)
 		expected := types.MustMakeDocument(
 			"n", int32(1),
@@ -156,8 +154,6 @@ func TestMsgUpdate(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		fmt.Println(reqMsg)
-
 		msg, err := storage.MsgUpdate(ctx, &reqMsg)
 		expected := types.MustMakeDocument(
 			"n", int32(1),
@@ -188,7 +184,7 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET \"array\" = [1, '2']", updateSQL)
 		assert.Equal(t, " WHERE ", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:236 crud.update> Cannot update field with array`)
+		assert.ErrorContains(t, err, "Cannot update field with array")
 
 		updateSQL, notWhereSQL, err = update(types.MustMakeDocument("$set", types.MustMakeDocument("_id", types.ObjectID{98, 226, 189, 84, 81, 6, 131, 249, 192, 187, 13, 107})))
 
@@ -200,13 +196,13 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET ", updateSQL)
 		assert.Equal(t, "", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:308 crud.getUpdateKey> Not allowed to index on an array inside of an array.`)
+		assert.ErrorContains(t, err, "Not allowed to index on an array inside of an array.")
 
 		updateSQL, notWhereSQL, err = update(types.MustMakeDocument("$set", types.MustMakeDocument("unsupported value", types.Binary{Subtype: types.BinarySubtype(byte(12)), B: []byte("hello")})))
 
 		assert.Equal(t, " SET ", updateSQL)
 		assert.Equal(t, "", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:379 crud.getUpdateValue> Value: types.Binary is not supported for update`)
+		assert.ErrorContains(t, err, "Value: types.Binary is not supported for update")
 	})
 
 	t.Run("unset fields with supported and unsupported values", func(t *testing.T) {
@@ -244,6 +240,6 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET \"array\" = [1, '2']", updateSQL)
 		assert.Equal(t, " WHERE ", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:224 crud.update> Cannot update field with array`)
+		assert.ErrorContains(t, err, "Cannot update field with array")
 	})
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
+// nextRow iterates each retrieved document and returns them unmarshaled
 func nextRow(rows *sql.Rows) (*types.Document, error) {
 	if !rows.Next() {
 		err := rows.Err()

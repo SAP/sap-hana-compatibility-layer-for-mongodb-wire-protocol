@@ -32,20 +32,19 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-// Creates the WHERE-clause of the SQL statement.
-// kvSQL stands for key-value SQL.
+// Where creates the WHERE-clause of the SQL statement.
 func Where(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
 
 		if i == 0 {
 			sql += " WHERE "
+		} else {
+			sql += " AND "
 		}
 
 		value := filter.Map()[key]
 
-		if i != 0 {
-			sql += " AND "
-		}
+		// Stands for key-value SQL
 		var kvSQL string
 		kvSQL, err = wherePair(key, value)
 
@@ -60,8 +59,6 @@ func Where(filter types.Document) (sql string, err error) {
 }
 
 // wherePair takes a {field: value} and converts it to SQL
-// vSQL: ValueSQL
-// kSQL: KeySQL
 func wherePair(key string, value any) (kvSQL string, err error) {
 	if strings.HasPrefix(key, "$") { // {$: value}
 
@@ -78,6 +75,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		}
 	}
 
+	// vSQL: ValueSQL
 	var vSQL string
 	var sign string
 	vSQL, sign, err = whereValue(value)
@@ -86,6 +84,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
+	// kSQL: KeySQL
 	var kSQL string
 	kSQL, err = whereKey(key)
 	if err != nil {
@@ -101,7 +100,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// Prepares the key (field) for SQL
+// whereKey prepares the key (field) for SQL
 func whereKey(key string) (kSQL string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -141,7 +140,7 @@ func whereKey(key string) (kSQL string, err error) {
 	return
 }
 
-// Prepares the value for SQL
+// whereValue prepares the value for SQL
 func whereValue(value any) (vSQL string, sign string, err error) {
 	var args []any
 	switch value := value.(type) {
@@ -195,7 +194,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 	return
 }
 
-// Prepares a document for fx value = {document}.
+// whereDocument prepares a document for fx. value = {document}.
 func whereDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any
@@ -270,7 +269,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	return
 }
 
-// Needed for when an array is inside of a document used in filter
+// PrepareArrayForSQL prepares an array which is inside of a document for SQL
 func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	var value any
 	var args []any
@@ -329,7 +328,7 @@ var (
 	norCounter int
 )
 
-// Used for for example $AND and $OR
+// logicExpression converts expressions like $AND and $OR to the equivalent expressions in SQL.
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
 		"$and": " AND ",
@@ -429,7 +428,8 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// Used for {field: {$: value}}
+// fieldExpression converts expressions like $gt or $elemMatch to the equivalent expression in SQL.
+// Used for {field: {$: value}}.
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
 		"$gt":        " > ",
@@ -550,7 +550,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// Implement $all and $elemMatch using the FOR ANY
+// filterArray implements $all and $elemMatch using the FOR ANY
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 	switch filters := filters.(type) {
 	case types.Document:
@@ -645,6 +645,7 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 	return
 }
 
+// regex converts $regex to the SQL equivalent regular expressions
 func regex(value any) (vSQL string, err error) {
 	if regex, ok := value.(types.Regex); ok {
 		value = regex.Pattern

@@ -31,7 +31,7 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
-// MsgDelete deletes document.
+// MsgDelete deletes document(s).
 func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	document, err := msg.Document()
 	if err != nil {
