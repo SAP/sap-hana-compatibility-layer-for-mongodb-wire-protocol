@@ -5,59 +5,20 @@
 package crud
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
-var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
-	expectedBytes := []byte(expectedSQL)
-	actualBytes := []byte(actualSQL)
-
-	for i, a := range actualBytes {
-		if i >= len(expectedBytes) {
-			return nil
-		}
-
-		e := expectedBytes[i]
-
-		if e != a {
-			return fmt.Errorf(`could not match actual sql: "%s" with expected regexp "%s"`, actualSQL, expectedSQL)
-		}
-	}
-
-	return nil
-})
-
 func TestMsgUpdate(t *testing.T) {
+	ctx, storage, mock, err := setupTestUtil(t)
+	require.NoError(t, err)
 	t.Run("updateMany", func(t *testing.T) {
-		t.Parallel()
-
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := storage{&hPool, l}
-
-		row := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row := mock.NewRows([]string{"count"}).AddRow(1)
 
 		mock.ExpectQuery("SELECT count(*) FROM testDatabase.testCollection WHERE \"item\" = 'test'").WillReturnRows(row)
 		mock.ExpectExec("UPDATE testDatabase.testCollection  SET \"item\" = 'new test'  WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -105,24 +66,6 @@ func TestMsgUpdate(t *testing.T) {
 	})
 
 	t.Run("updateOne", func(t *testing.T) {
-		t.Parallel()
-
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := storage{&hPool, l}
-
 		countRow := sqlmock.NewRows([]string{"count"}).AddRow(1)
 		idRow := sqlmock.NewRows([]string{"_id"}).AddRow("{\"_id\": 123}")
 

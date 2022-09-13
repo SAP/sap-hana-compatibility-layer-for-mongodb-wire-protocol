@@ -7,35 +7,17 @@ package crud
 import (
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestMsgFindOrCound(t *testing.T) {
+	ctx, storage, mock, err := setupTestUtil(t)
+	require.NoError(t, err)
 	t.Run("find documents", func(t *testing.T) {
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := NewStorage(&hPool, l)
-
-		docRow := sqlmock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 44, 32, 34, 105, 116, 101, 109, 34, 58, 32, 34, 116, 101, 115, 116, 34, 125})
+		docRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 44, 32, 34, 105, 116, 101, 109, 34, 58, 32, 34, 116, 101, 115, 116, 34, 125})
 		mock.ExpectQuery("SELECT * FROM testDatabase.testCollection").WillReturnRows(docRow)
 
 		deleteReq := types.MustMakeDocument(
@@ -76,23 +58,7 @@ func TestMsgFindOrCound(t *testing.T) {
 	})
 
 	t.Run("count", func(t *testing.T) {
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := NewStorage(&hPool, l)
-
-		countRow := sqlmock.NewRows([]string{"count"}).AddRow(3)
+		countRow := mock.NewRows([]string{"count"}).AddRow(3)
 		mock.ExpectQuery("SELECT COUNT(*) FROM testDatabase.testCollection").WillReturnRows(countRow)
 
 		deleteReq := types.MustMakeDocument(
@@ -124,23 +90,7 @@ func TestMsgFindOrCound(t *testing.T) {
 	})
 
 	t.Run("find documents with where, order by, limit, and projection", func(t *testing.T) {
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := NewStorage(&hPool, l)
-
-		idRow := sqlmock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 125})
+		idRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 125})
 		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM testDatabase.testCollection WHERE \"item\" = 'test' ORDER BY  \"phone\".\"number\" ASC LIMIT 1").WillReturnRows(idRow)
 
 		deleteReq := types.MustMakeDocument(

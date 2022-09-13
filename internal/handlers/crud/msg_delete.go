@@ -73,7 +73,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if limit != 0 { // if deleteOne()
 			qSQL := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
 
-			whereSQL, err := common.Where(d["q"].(types.Document))
+			whereSQL, err := common.CreateWhereClause(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
@@ -103,7 +103,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			delSQL = " WHERE \"_id\" = %s"
 
 		} else { // if deleteMany()
-			delSQL, err = common.Where(d["q"].(types.Document))
+			delSQL, err = common.CreateWhereClause(d["q"].(types.Document))
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
