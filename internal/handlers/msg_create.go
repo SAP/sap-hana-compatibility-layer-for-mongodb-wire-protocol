@@ -28,7 +28,7 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
-// MsgCreate adds a collection or view into the database.
+// MsgCreate adds a collection and if the database is not created yet, it also creates a schema
 func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	document, err := msg.Document()
 	if err != nil {

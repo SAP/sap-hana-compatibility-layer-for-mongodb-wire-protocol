@@ -13,7 +13,7 @@ import (
 )
 
 // MsgAuthenticate is so far only used for the authentication needed by MongoDB drivers when using tls.
-// Since username and password is so far not implemented, MsgAuthenticate sends ok: 1
+// Since username and password is so far not implemented, MsgAuthenticate sends ok: 1 no matter what.
 func (h *Handler) MsgAuthenticate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	var reply wire.OpMsg
 	err := reply.SetSections(wire.OpMsgSection{
