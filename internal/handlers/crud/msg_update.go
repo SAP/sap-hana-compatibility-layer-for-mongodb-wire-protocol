@@ -77,7 +77,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		docM := doc.(types.Document).Map()
 
-		whereSQL, err := common.Where(docM["q"].(types.Document))
+		whereSQL, err := common.CreateWhereClause(docM["q"].(types.Document))
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
@@ -218,7 +218,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	}
 
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
-		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL, err = common.CreateWhereClause(setDoc)
 		if err != nil {
 			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
 				err = lazyerrors.Errorf("Cannot update field with array")
@@ -230,7 +230,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
 		updateSQL += ", " + unSetSQL
 	} else if isUnsetSQL != "" { // If only setting fields
-		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL, err = common.CreateWhereClause(setDoc)
 		if err != nil {
 			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
 				err = lazyerrors.Errorf("Cannot update field with array")
@@ -250,7 +250,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	return
 }
 
-func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, isUnsetOrUnsetSQL string, err error) {
+func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, isSetOrUnsetSQL string, err error) {
 	if set {
 		updateSQL = " SET "
 	} else {
@@ -271,7 +271,7 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 
 		if i != 0 {
 			updateSQL += ", "
-			isUnsetOrUnsetSQL += " OR "
+			isSetOrUnsetSQL += " OR "
 		}
 
 		var updateKey string
@@ -286,10 +286,10 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 				return
 			}
 			updateSQL += updateKey + " = " + updateValue
-			isUnsetOrUnsetSQL += updateKey + " IS UNSET"
+			isSetOrUnsetSQL += updateKey + " IS UNSET"
 		} else {
 			updateSQL += updateKey
-			isUnsetOrUnsetSQL += updateKey + " IS SET"
+			isSetOrUnsetSQL += updateKey + " IS SET"
 		}
 	}
 	return

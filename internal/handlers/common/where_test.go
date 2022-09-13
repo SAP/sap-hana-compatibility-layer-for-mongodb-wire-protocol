@@ -49,7 +49,7 @@ func TestWhere(t *testing.T) {
 
 	for _, field := range whereTestCases {
 
-		sql, err := Where(field.r)
+		sql, err := CreateWhereClause(field.r)
 
 		if field.e.err != nil {
 			if !strings.EqualFold(sql, field.e.sql) || !strings.Contains(err.Error(), field.e.err.Error()) {

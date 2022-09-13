@@ -32,8 +32,8 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-// Where creates the WHERE-clause of the SQL statement.
-func Where(filter types.Document) (sql string, err error) {
+// CreateWhereClause creates the WHERE-clause of the SQL statement.
+func CreateWhereClause(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
 
 		if i == 0 {
