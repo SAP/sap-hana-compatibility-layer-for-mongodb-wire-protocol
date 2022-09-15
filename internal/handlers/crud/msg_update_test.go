@@ -5,59 +5,20 @@
 package crud
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/testutil"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
-var QueryMatcherEqualBytes sqlmock.QueryMatcher = sqlmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
-	expectedBytes := []byte(expectedSQL)
-	actualBytes := []byte(actualSQL)
-
-	for i, a := range actualBytes {
-		if i >= len(expectedBytes) {
-			return nil
-		}
-
-		e := expectedBytes[i]
-
-		if e != a {
-			return fmt.Errorf(`could not match actual sql: "%s" with expected regexp "%s"`, actualSQL, expectedSQL)
-		}
-	}
-
-	return nil
-})
-
 func TestMsgUpdate(t *testing.T) {
+	ctx, storage, mock, err := setupTestUtil(t)
+	require.NoError(t, err)
 	t.Run("updateMany", func(t *testing.T) {
-		t.Parallel()
-
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := storage{&hPool, l}
-
-		row := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row := mock.NewRows([]string{"count"}).AddRow(1)
 
 		mock.ExpectQuery("SELECT count(*) FROM testDatabase.testCollection WHERE \"item\" = 'test'").WillReturnRows(row)
 		mock.ExpectExec("UPDATE testDatabase.testCollection  SET \"item\" = 'new test'  WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -87,8 +48,6 @@ func TestMsgUpdate(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		fmt.Println(reqMsg)
-
 		msg, err := storage.MsgUpdate(ctx, &reqMsg)
 		expected := types.MustMakeDocument(
 			"n", int32(1),
@@ -107,24 +66,6 @@ func TestMsgUpdate(t *testing.T) {
 	})
 
 	t.Run("updateOne", func(t *testing.T) {
-		t.Parallel()
-
-		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(QueryMatcherEqualBytes))
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-
-		hPool := hana.Hpool{
-			db,
-		}
-
-		ctx := testutil.Ctx(t)
-
-		l := zaptest.NewLogger(t)
-
-		storage := storage{&hPool, l}
-
 		countRow := sqlmock.NewRows([]string{"count"}).AddRow(1)
 		idRow := sqlmock.NewRows([]string{"_id"}).AddRow("{\"_id\": 123}")
 
@@ -156,8 +97,6 @@ func TestMsgUpdate(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		fmt.Println(reqMsg)
-
 		msg, err := storage.MsgUpdate(ctx, &reqMsg)
 		expected := types.MustMakeDocument(
 			"n", int32(1),
@@ -188,7 +127,7 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET \"array\" = [1, '2']", updateSQL)
 		assert.Equal(t, " WHERE ", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:236 crud.update> Cannot update field with array`)
+		assert.EqualError(t, err, "NotImplemented (238): cannot update a field with array")
 
 		updateSQL, notWhereSQL, err = update(types.MustMakeDocument("$set", types.MustMakeDocument("_id", types.ObjectID{98, 226, 189, 84, 81, 6, 131, 249, 192, 187, 13, 107})))
 
@@ -200,13 +139,13 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET ", updateSQL)
 		assert.Equal(t, "", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:308 crud.getUpdateKey> Not allowed to index on an array inside of an array.`)
+		assert.ErrorContains(t, err, "NotImplemented (238): not yet supporting indexing on an array inside of an array")
 
 		updateSQL, notWhereSQL, err = update(types.MustMakeDocument("$set", types.MustMakeDocument("unsupported value", types.Binary{Subtype: types.BinarySubtype(byte(12)), B: []byte("hello")})))
 
 		assert.Equal(t, " SET ", updateSQL)
 		assert.Equal(t, "", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:379 crud.getUpdateValue> Value: types.Binary is not supported for update`)
+		assert.ErrorContains(t, err, "Value: types.Binary is not supported for update")
 	})
 
 	t.Run("unset fields with supported and unsupported values", func(t *testing.T) {
@@ -244,6 +183,6 @@ func TestMsgUpdate(t *testing.T) {
 
 		assert.Equal(t, " SET \"array\" = [1, '2']", updateSQL)
 		assert.Equal(t, " WHERE ", notWhereSQL)
-		assert.EqualError(t, err, `<msg_update.go:224 crud.update> Cannot update field with array`)
+		assert.EqualError(t, err, "NotImplemented (238): cannot update a field with array")
 	})
 }

@@ -18,142 +18,142 @@
 
 package main
 
-import (
-	"context"
-	"fmt"
-	"io"
-	"net"
-	"os"
-	"os/exec"
-	"strings"
-	"sync"
-	"time"
+// import (
+// 	"context"
+// 	"fmt"
+// 	"io"
+// 	"net"
+// 	"os"
+// 	"os/exec"
+// 	"strings"
+// 	"sync"
+// 	"time"
 
-	"go.uber.org/zap"
-)
+// 	"go.uber.org/zap"
+// )
 
-var (
-	composeBin string
+// var (
+// 	composeBin string
 
-	collections = []string{
-		"actor",
-		"address",
-		"category",
-		"city",
-		"country",
-		"customer",
-		"film_actor",
-		"film_category",
-		"film",
-		"inventory",
-		"language",
-		"rental",
-		"staff",
-		"store",
-	}
-)
+// 	collections = []string{
+// 		"actor",
+// 		"address",
+// 		"category",
+// 		"city",
+// 		"country",
+// 		"customer",
+// 		"film_actor",
+// 		"film_category",
+// 		"film",
+// 		"inventory",
+// 		"language",
+// 		"rental",
+// 		"staff",
+// 		"store",
+// 	}
+// )
 
-func runCompose(args []string, stdin io.Reader, logger *zap.SugaredLogger) {
-	if err := tryCompose(args, stdin, logger); err != nil {
-		logger.Fatal(err)
-	}
-}
+// func runCompose(args []string, stdin io.Reader, logger *zap.SugaredLogger) {
+// 	if err := tryCompose(args, stdin, logger); err != nil {
+// 		logger.Fatal(err)
+// 	}
+// }
 
-func tryCompose(args []string, stdin io.Reader, logger *zap.SugaredLogger) error {
-	cmd := exec.Command(composeBin, args...)
-	logger.Debugf("Running %s", strings.Join(cmd.Args, " "))
+// func tryCompose(args []string, stdin io.Reader, logger *zap.SugaredLogger) error {
+// 	cmd := exec.Command(composeBin, args...)
+// 	logger.Debugf("Running %s", strings.Join(cmd.Args, " "))
 
-	cmd.Stdin = stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+// 	cmd.Stdin = stdin
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%s failed: %s", strings.Join(args, " "), err)
-	}
+// 	if err := cmd.Run(); err != nil {
+// 		return fmt.Errorf("%s failed: %s", strings.Join(args, " "), err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func waitForPort(ctx context.Context, port uint16) error {
-	for ctx.Err() == nil {
-		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-		if err == nil {
-			conn.Close()
+// func waitForPort(ctx context.Context, port uint16) error {
+// 	for ctx.Err() == nil {
+// 		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+// 		if err == nil {
+// 			conn.Close()
 
-			return nil
-		}
+// 			return nil
+// 		}
 
-		sleepCtx, sleepCancel := context.WithTimeout(ctx, time.Second)
-		<-sleepCtx.Done()
-		sleepCancel()
-	}
+// 		sleepCtx, sleepCancel := context.WithTimeout(ctx, time.Second)
+// 		<-sleepCtx.Done()
+// 		sleepCancel()
+// 	}
 
-	return ctx.Err()
-}
+// 	return ctx.Err()
+// }
 
-func waitForPostgresPort(ctx context.Context, port uint16) error {
-	logger := zap.S().Named("postgres.wait")
+// func waitForPostgresPort(ctx context.Context, port uint16) error {
+// 	logger := zap.S().Named("postgres.wait")
 
-	for ctx.Err() == nil {
-		args := fmt.Sprintf(`exec -T postgres psql -U postgres -d ferretdb -h 127.0.0.1 --port %d --quiet --command select`, port)
-		if err := tryCompose(strings.Split(args, " "), nil, logger); err == nil {
-			return nil
-		}
+// 	for ctx.Err() == nil {
+// 		args := fmt.Sprintf(`exec -T postgres psql -U postgres -d ferretdb -h 127.0.0.1 --port %d --quiet --command select`, port)
+// 		if err := tryCompose(strings.Split(args, " "), nil, logger); err == nil {
+// 			return nil
+// 		}
 
-		sleepCtx, sleepCancel := context.WithTimeout(ctx, time.Second)
-		<-sleepCtx.Done()
-		sleepCancel()
-	}
+// 		sleepCtx, sleepCancel := context.WithTimeout(ctx, time.Second)
+// 		<-sleepCtx.Done()
+// 		sleepCancel()
+// 	}
 
-	return ctx.Err()
-}
+// 	return ctx.Err()
+// }
 
-func setupMongoDB(ctx context.Context) {
-	start := time.Now()
-	logger := zap.S().Named("mongodb")
+// func setupMongoDB(ctx context.Context) {
+// 	start := time.Now()
+// 	logger := zap.S().Named("mongodb")
 
-	logger.Infof("Waiting for port 37017 to be up...")
-	if err := waitForPort(ctx, 37017); err != nil {
-		logger.Fatal(err)
-	}
+// 	logger.Infof("Waiting for port 37017 to be up...")
+// 	if err := waitForPort(ctx, 37017); err != nil {
+// 		logger.Fatal(err)
+// 	}
 
-	logger.Infof("Importing database...")
+// 	logger.Infof("Importing database...")
 
-	var wg sync.WaitGroup
+// 	var wg sync.WaitGroup
 
-	for _, c := range collections {
-		args := fmt.Sprintf(
-			`exec -T mongodb mongoimport --uri mongodb://127.0.0.1:27017/monila `+
-				`--drop --maintainInsertionOrder --collection %[1]s /test_db/%[1]s.json`,
-			c,
-		)
+// 	for _, c := range collections {
+// 		args := fmt.Sprintf(
+// 			`exec -T mongodb mongoimport --uri mongodb://127.0.0.1:27017/monila `+
+// 				`--drop --maintainInsertionOrder --collection %[1]s /test_db/%[1]s.json`,
+// 			c,
+// 		)
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			runCompose(strings.Split(args, " "), nil, logger)
-		}()
-	}
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
+// 			runCompose(strings.Split(args, " "), nil, logger)
+// 		}()
+// 	}
 
-	wg.Wait()
+// 	wg.Wait()
 
-	logger.Infof("Done in %s.", time.Since(start))
-}
+// 	logger.Infof("Done in %s.", time.Since(start))
+// }
 
-func setupPagila(ctx context.Context) {
-	start := time.Now()
-	logger := zap.S().Named("postgres.pagila")
+// func setupPagila(ctx context.Context) {
+// 	start := time.Now()
+// 	logger := zap.S().Named("postgres.pagila")
 
-	logger.Infof("Importing database...")
+// 	logger.Infof("Importing database...")
 
-	args := strings.Split(`exec -T postgres psql -U postgres -d ferretdb --quiet -f /test_db/01-pagila-schema.sql`, " ")
-	runCompose(args, nil, logger)
+// 	args := strings.Split(`exec -T postgres psql -U postgres -d ferretdb --quiet -f /test_db/01-pagila-schema.sql`, " ")
+// 	runCompose(args, nil, logger)
 
-	args = strings.Split(`exec -T postgres psql -U postgres -d ferretdb --quiet -f /test_db/02-pagila-data.sql`, " ")
-	runCompose(args, nil, logger)
+// 	args = strings.Split(`exec -T postgres psql -U postgres -d ferretdb --quiet -f /test_db/02-pagila-data.sql`, " ")
+// 	runCompose(args, nil, logger)
 
-	logger.Infof("Done in %s.", time.Since(start))
-}
+// 	logger.Infof("Done in %s.", time.Since(start))
+// }
 
 // func setupMonila(ctx context.Context, pgPool *pg.Pool) {
 // 	start := time.Now()

@@ -47,6 +47,7 @@ type DBStats struct {
 	CountIndexes int32
 }
 
+// CreatePool sets up the connection to SAP HANA JSON Document Store
 func CreatePool(connectString string, logger *zap.Logger, lazy bool) (*Hpool, error) {
 	if connectString == "" {
 		return nil, lazyerrors.Errorf("No connect string for SAP HANA Cloud instance given")
@@ -223,6 +224,7 @@ func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
 	return err
 }
 
+// JSONDocumentStoreAvailable checks if Document Store is enabled in the SAP HANA Cloud instance
 func (hanaPool *Hpool) JSONDocumentStoreAvailable(ctx context.Context) (available bool, err error) {
 	sql := "SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'"
 

@@ -32,20 +32,19 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-// Creates the WHERE-clause of the SQL statement.
-// kvSQL stands for key-value SQL.
-func Where(filter types.Document) (sql string, err error) {
+// CreateWhereClause creates the WHERE-clause of the SQL statement.
+func CreateWhereClause(filter types.Document) (sql string, err error) {
 	for i, key := range filter.Keys() {
 
 		if i == 0 {
 			sql += " WHERE "
+		} else {
+			sql += " AND "
 		}
 
 		value := filter.Map()[key]
 
-		if i != 0 {
-			sql += " AND "
-		}
+		// Stands for key-value SQL
 		var kvSQL string
 		kvSQL, err = wherePair(key, value)
 
@@ -60,8 +59,6 @@ func Where(filter types.Document) (sql string, err error) {
 }
 
 // wherePair takes a {field: value} and converts it to SQL
-// vSQL: ValueSQL
-// kSQL: KeySQL
 func wherePair(key string, value any) (kvSQL string, err error) {
 	if strings.HasPrefix(key, "$") { // {$: value}
 
@@ -78,6 +75,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		}
 	}
 
+	// vSQL: ValueSQL
 	var vSQL string
 	var sign string
 	vSQL, sign, err = whereValue(value)
@@ -86,6 +84,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 		return
 	}
 
+	// kSQL: KeySQL
 	var kSQL string
 	kSQL, err = whereKey(key)
 	if err != nil {
@@ -101,7 +100,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// Prepares the key (field) for SQL
+// whereKey prepares the key (field) for SQL
 func whereKey(key string) (kSQL string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -111,12 +110,12 @@ func whereKey(key string) (kSQL string, err error) {
 			if kInt, convErr := strconv.Atoi(k); convErr == nil {
 				if isInt {
 					kSQL = ""
-					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					err = NewErrorMessage(ErrNotImplemented, "not yet supporting indexing on an array inside of an array")
 					return
 				}
 				if kInt < 0 {
 					kSQL = ""
-					err = lazyerrors.Errorf("Negative array index is not allowed")
+					err = fmt.Errorf("negative array index is not allowed")
 					return
 				}
 				kIntSQL := "[" + "%d" + "]"
@@ -141,7 +140,7 @@ func whereKey(key string) (kSQL string, err error) {
 	return
 }
 
-// Prepares the value for SQL
+// whereValue prepares the value for SQL
 func whereValue(value any) (vSQL string, sign string, err error) {
 	var args []any
 	switch value := value.(type) {
@@ -185,7 +184,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 		docValue, err = whereDocument(value)
 		args = append(args, docValue)
 	default:
-		err = lazyerrors.Errorf("Value %T not supported in filter", value)
+		err = NewErrorMessage(ErrBadValue, "value %T not supported in filter", value)
 		return
 
 	}
@@ -195,7 +194,7 @@ func whereValue(value any) (vSQL string, sign string, err error) {
 	return
 }
 
-// Prepares a document for fx value = {document}.
+// whereDocument prepares a document for fx. value = {document}.
 func whereDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any
@@ -259,8 +258,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, docValue)
 
 		default:
-
-			err = lazyerrors.Errorf("The document used in filter contains a datatype not yet supported: %T", value)
+			err = NewErrorMessage(ErrBadValue, "the document used in filter contains a datatype not yet supported: %T", value)
 			return
 		}
 	}
@@ -270,7 +268,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	return
 }
 
-// Needed for when an array is inside of a document used in filter
+// PrepareArrayForSQL prepares an array which is inside of a document for SQL
 func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	var value any
 	var args []any
@@ -312,8 +310,7 @@ func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 			args = append(args, docValue)
 
 		default:
-
-			err = lazyerrors.Errorf("The array used in filter contains a datatype not yet supported: %T", value)
+			err = NewErrorMessage(ErrBadValue, "The array used in filter contains a datatype not yet supported: %T", value)
 			return
 		}
 	}
@@ -329,7 +326,7 @@ var (
 	norCounter int
 )
 
-// Used for for example $AND and $OR
+// logicExpression converts expressions like $AND and $OR to the equivalent expressions in SQL.
 func logicExpression(key string, value any) (kvSQL string, err error) {
 	logicExprMap := map[string]string{
 		"$and": " AND ",
@@ -342,11 +339,11 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	var logicExpr string
 	var ok bool
 	if logicExpr, ok = logicExprMap[lowerKey]; !ok {
-		err = fmt.Errorf("support for %s is not implemented yet", key)
+		err = NewErrorMessage(ErrNotImplemented, "support for %s is not implemented yet", key)
 		if strings.EqualFold(key, "$not") {
 			err = fmt.Errorf("unknown top level: %s. If you are trying to negate an entire expression, use $nor", key)
 		}
-		return kvSQL, NewError(ErrNotImplemented, err)
+		return
 	}
 
 	var localIsNor bool
@@ -361,7 +358,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	switch value := value.(type) {
 	case *types.Array:
 		if value.Len() < 2 && !isNor {
-			err = lazyerrors.Errorf("Need minimum two expressions")
+			err = fmt.Errorf("need minimum two expressions")
 			return
 		}
 		var expr any
@@ -413,7 +410,7 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 		}
 
 	default:
-		err = lazyerrors.Errorf("Expected an array got %T", value)
+		err = NewErrorMessage(ErrBadValue, "%s must be an array", lowerKey)
 		return
 
 	}
@@ -429,7 +426,8 @@ func logicExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// Used for {field: {$: value}}
+// fieldExpression converts expressions like $gt or $elemMatch to the equivalent expression in SQL.
+// Used for {field: {$: value}}.
 func fieldExpression(key string, value any) (kvSQL string, err error) {
 	fieldExprMap := map[string]string{
 		"$gt":        " > ",
@@ -468,8 +466,8 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 
 			fieldExpr, ok := fieldExprMap[lowerK]
 			if !ok {
-				err = fmt.Errorf("support for %s is not implemented yet", k)
-				return kvSQL, NewError(ErrNotImplemented, err)
+				err = NewErrorMessage(ErrNotImplemented, "support for %s is not implemented yet", k)
+				return
 			}
 
 			exprValue, err = value.Get(k)
@@ -486,7 +484,9 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 						vSQL = "UNSET"
 					}
 				default:
-					return "", lazyerrors.Errorf("$exists only works with true or false")
+					// TODO: allow $exists to be other datatypes than boolean
+					err = fmt.Errorf("$exists only works with boolean")
+					return
 				}
 			} else if lowerK == "$size" {
 				kvSQL = fieldExpr + "(" + kvSQL + ")"
@@ -506,7 +506,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 				fieldSQL, err = fieldExpression(key, expr)
 				fieldSQL = "(" + fieldExpr + fieldSQL + " OR " + kSQL + " IS UNSET) "
 				if err != nil {
-					err = lazyerrors.Errorf("Wrong use of $not")
+					err = NewErrorMessage(ErrBadValue, "wrong use of $not")
 					return
 				}
 
@@ -544,18 +544,18 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 		}
 
 	default:
-		err = lazyerrors.Errorf("In use of field expression a document was expected. Got instead: %T", value)
+		err = NewErrorMessage(ErrBadValue, "In use of field expression a document was expected. Got instead: %T", value)
 	}
 
 	return
 }
 
-// Implement $all and $elemMatch using the FOR ANY
+// filterArray implements $all and $elemMatch using the FOR ANY
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 	switch filters := filters.(type) {
 	case types.Document:
 		if strings.EqualFold(arrayOperator, "all") {
-			err = lazyerrors.Errorf("$all requires an array of expression not a document")
+			err = NewErrorMessage(ErrBadValue, "$all needs an array")
 			return
 		}
 		i := 0
@@ -617,7 +617,7 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 
 	case *types.Array:
 		if strings.EqualFold(arrayOperator, "elemmatch") {
-			err = lazyerrors.Errorf("$elemMatch requires a document of expression not an array")
+			err = NewErrorMessage(ErrBadValue, "$elemMatch needs an object")
 			return
 		}
 		var value string
@@ -638,18 +638,19 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 			kvSQL += "FOR ANY \"element\" IN " + field + " SATISFIES \"element\" = " + value + " END "
 		}
 	default:
-		err = lazyerrors.Errorf("If $all: Expected array. If $elemMatch: Expected document. Got instead: %T", filters)
+		err = NewErrorMessage(ErrBadValue, "If $all: Expected array. If $elemMatch: Expected document. Got instead: %T", filters)
 		return
 	}
 
 	return
 }
 
+// regex converts $regex to the SQL equivalent regular expressions
 func regex(value any) (vSQL string, err error) {
 	if regex, ok := value.(types.Regex); ok {
 		value = regex.Pattern
 		if regex.Options != "" {
-			err = lazyerrors.Errorf("The use of $options with regular expressions is not supported")
+			err = NewErrorMessage(ErrNotImplemented, "The use of $options with regular expressions is not supported")
 			return
 		}
 	}
@@ -658,7 +659,7 @@ func regex(value any) (vSQL string, err error) {
 	switch value := value.(type) {
 	case string:
 		if strings.Contains(value, "(?i)") || strings.Contains(value, "(?-i)") {
-			err = lazyerrors.Errorf("The use of (?i) and (?-i) with regular expressions is not supported")
+			err = NewErrorMessage(ErrNotImplemented, "The use of (?i) and (?-i) with regular expressions is not supported")
 			return
 		}
 
@@ -746,7 +747,7 @@ func regex(value any) (vSQL string, err error) {
 
 		}
 	default:
-		err = lazyerrors.Errorf("Expected either a JavaScript regular expression objects (i.e. /pattern/) or string containing a pattern. Got instead type %T", value)
+		err = NewErrorMessage(ErrBadValue, "Expected either a JavaScript regular expression objects (i.e. /pattern/) or string containing a pattern. Got instead type %T", value)
 		return
 	}
 

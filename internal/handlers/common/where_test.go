@@ -39,17 +39,17 @@ func TestWhere(t *testing.T) {
 		},
 		{
 			name: "double array index error", r: types.MustMakeDocument("array.1.2", int32(1)),
-			e: expectedWhereKey{sql: " WHERE ", err: fmt.Errorf("Not allowed to index on an array inside of an array")},
+			e: expectedWhereKey{sql: " WHERE ", err: fmt.Errorf("NotImplemented (238): not yet supporting indexing on an array inside of an array")},
 		},
 		{
 			name: "double array index error", r: types.MustMakeDocument("array.1", types.MustNewArray(int32(32))),
-			e: expectedWhereKey{sql: " WHERE ", err: fmt.Errorf("Value *types.Array not supported in filter")},
+			e: expectedWhereKey{sql: " WHERE ", err: fmt.Errorf("BadValue (2): value *types.Array not supported in filter")},
 		},
 	}
 
 	for _, field := range whereTestCases {
 
-		sql, err := Where(field.r)
+		sql, err := CreateWhereClause(field.r)
 
 		if field.e.err != nil {
 			if !strings.EqualFold(sql, field.e.sql) || !strings.Contains(err.Error(), field.e.err.Error()) {
@@ -84,8 +84,8 @@ func TestWhereKey(t *testing.T) {
 		{name: "multiple fields test", r: "oneField.twoField.threeField", e: expectedWhereKey{sql: "\"oneField\".\"twoField\".\"threeField\"", err: nil}},
 		{name: "field with array index test", r: "array.0", e: expectedWhereKey{sql: "\"array\"[1]", err: nil}},
 		{name: "mix multiple fields and index test", r: "oneField.array.0.twoField", e: expectedWhereKey{sql: "\"oneField\".\"array\"[1].\"twoField\"", err: nil}},
-		{name: "field with negative array index error test", r: "array.-1", e: expectedWhereKey{sql: "", err: fmt.Errorf("Negative array index")}},
-		{name: "double array index error test", r: "array.0.1", e: expectedWhereKey{sql: "", err: fmt.Errorf("Not allowed to index on an array")}},
+		{name: "field with negative array index error test", r: "array.-1", e: expectedWhereKey{sql: "", err: fmt.Errorf("negative array index is not allowed")}},
+		{name: "double array index error test", r: "array.0.1", e: expectedWhereKey{sql: "", err: fmt.Errorf("NotImplemented (238): not yet supporting indexing on an array inside of an array")}},
 	}
 
 	for _, field := range whereKeyTestCases {
@@ -144,7 +144,7 @@ func TestWhereValue(t *testing.T) {
 				"null", nil),
 			e: expectedWhereKey{sql: "{\"bool\": to_json_boolean(true), \"int32\": 0, \"int64\": 223372036854775807, \"objectID\": {\"oid\":'62e2bd54510683f9c0bb0d6b'}, \"string\": 'foo', \"null\":  NULL }", sign: " = ", err: nil},
 		},
-		{name: "type error test", r: int(34), e: expectedWhereKey{sql: "", sign: "", err: fmt.Errorf("Value int not supported in filter")}},
+		{name: "type error test", r: int(34), e: expectedWhereKey{sql: "", sign: "", err: fmt.Errorf("BadValue (2): value int not supported in filter")}},
 	}
 
 	for _, field := range whereValueTestCases {
@@ -176,7 +176,7 @@ func TestWhereDocument(t *testing.T) {
 		},
 		{
 			name: "not supported datatype test", r: types.MustMakeDocument("binary", types.Binary{Subtype: types.BinarySubtype(byte(12)), B: []byte("hello")}),
-			e: expectedWhereKey{sql: "{\"binary\": ", err: fmt.Errorf("The document used in filter contains a datatype not yet supported: types.Binary")},
+			e: expectedWhereKey{sql: "{\"binary\": ", err: fmt.Errorf("BadValue (2): the document used in filter contains a datatype not yet supported: types.Binary")},
 		},
 	}
 
@@ -268,7 +268,7 @@ func TestLogicExpression(t *testing.T) {
 		},
 		{
 			name: "only one expression in $and error test", r1: "$and", r2: types.MustNewArray(types.MustMakeDocument("field1", int32(123))),
-			e: expectedWhereKey{sql: "(", err: fmt.Errorf("Need minimum two expressions")},
+			e: expectedWhereKey{sql: "(", err: fmt.Errorf("need minimum two expressions")},
 		},
 		{
 			name: "wrong type in array of expression error", r1: "$or", r2: types.MustNewArray("should have been document", "this one too"),
@@ -276,13 +276,12 @@ func TestLogicExpression(t *testing.T) {
 		},
 		{
 			name: "logicExpression not used with array error", r1: "$or", r2: "should have been array",
-			e: expectedWhereKey{sql: "(", err: fmt.Errorf("Expected an array got string")},
+			e: expectedWhereKey{sql: "(", err: NewErrorMessage(ErrBadValue, "$or must be an array")},
 		},
 	}
 
 	for _, field := range logicExpressionTestCases {
 		sql, err := logicExpression(field.r1, field.r2)
-
 		if field.e.err != nil {
 			if !strings.EqualFold(sql, field.e.sql) || !strings.Contains(err.Error(), field.e.err.Error()) {
 				t.Errorf("%s: logicExpression(%s, %v) FAILED. Expected sql = %s and err = %v got sql = %s and err = %v", field.name,
@@ -357,7 +356,7 @@ func TestFieldExpression(t *testing.T) {
 		},
 		{
 			name: "$exists not used with boolean error test", r1: "field", r2: types.MustMakeDocument("$exists", int32(1)),
-			e: expectedWhereKey{sql: "", err: fmt.Errorf("$exists only works with true or false")},
+			e: expectedWhereKey{sql: "\"field\"", err: fmt.Errorf("$exists only works with boolean")},
 		},
 		{
 			name: "not supported expression error test", r1: "field", r2: types.MustMakeDocument("$geoWithin", "not supported"),
@@ -410,11 +409,11 @@ func TestFilterArray(t *testing.T) {
 		},
 		{
 			name: "$all used with document error test", r1: "\"nested\".\"field\"", r2: "all", r3: types.MustMakeDocument("field", float64(14.241234)),
-			e: expectedWhereKey{sql: "", err: fmt.Errorf("$all requires an array of expression not a document")},
+			e: expectedWhereKey{sql: "", err: fmt.Errorf("BadValue (2): $all needs an array")},
 		},
 		{
 			name: "$elemMatch used with array error test", r1: "\"nested\".\"field\"", r2: "elemMatch", r3: types.MustNewArray("$gte", int32(9), "$lte", int64(11)),
-			e: expectedWhereKey{sql: "", err: fmt.Errorf("$elemMatch requires a document of expression not an array")},
+			e: expectedWhereKey{sql: "", err: fmt.Errorf("BadValue (2): $elemMatch needs an object")},
 		},
 	}
 

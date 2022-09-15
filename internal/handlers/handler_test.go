@@ -384,40 +384,6 @@ func TestDatabaseCommand(t *testing.T) {
 		}
 	})
 
-	// Sometimes fails to due Time
-	// t.Run("get log", func(t *testing.T) {
-	// 	t.Parallel()
-
-	// 	ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
-
-	// 	reqDoc := types.MustMakeDocument(
-	// 		"getLog", "startupWarnings",
-	// 		"$db", "admin",
-	// 	)
-
-	// 	row := sqlmock.NewRows([]string{"VERSION"}).AddRow(1)
-
-	// 	mock.ExpectQuery("Select VERSION from \"SYS\".\"M_DATABASE\";").WillReturnRows(row)
-	// 	strTime := string(time.Now().UTC().Format("2006-01-02T15:04:05.999Z07:00"))
-	// 	mv := version.Get()
-
-	// 	actual := handle(ctx, t, handler, reqDoc)
-	// 	expected := types.MustMakeDocument(
-	// 		"totalLinesWritten", int32(1),
-	// 		"log", types.MustNewArray(
-	// 			"{\"c\":\"STORAGE\",\"ctx\":\"initandlisten\",\"id\":42000,\"msg\":\"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol "+mv.Version+" and SAP HANA 1.\",\"s\":\"I\",\"t\":{\"$date\":\""+strTime+"\"},\"tags\":[\"startupWarnings\"]}",
-	// 		),
-	// 		"ok", float64(1),
-	// 	)
-
-	// 	assert.Equal(t, expected, actual)
-
-	// 	if err := mock.ExpectationsWereMet(); err != nil {
-	// 		t.Errorf("there were unfulfilled expectations: %s", err)
-	// 	}
-
-	// })
-
 	t.Run("list collections", func(t *testing.T) {
 		t.Parallel()
 
@@ -502,7 +468,7 @@ func TestDatabaseCommand(t *testing.T) {
 	})
 
 	t.Run("listDatabases", func(t *testing.T) {
-
+		t.Parallel()
 		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
 
 		reqDoc := types.MustMakeDocument(
@@ -557,7 +523,6 @@ func TestDatabaseCommand(t *testing.T) {
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
-
 	})
 	t.Run("authenticate", func(t *testing.T) {
 		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)

@@ -33,7 +33,7 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
-type LocatCtx struct {
+type locatCtx struct {
 	exclusion  bool
 	filter     types.Document
 	collection string
@@ -79,13 +79,12 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
 	}
 
-	var localCtx LocatCtx
+	var localCtx locatCtx
 	sql, err := createSqlStmt(docMap, &localCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	// execute HANA sql
 	rows, err := h.hanaPool.QueryContext(ctx, sql)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
@@ -94,13 +93,13 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	return createResponse(docMap, rows, &localCtx)
 }
 
-func createSqlStmt(docMap map[string]any, ctx *LocatCtx) (sql string, err error) {
+func createSqlStmt(docMap map[string]any, ctx *locatCtx) (sql string, err error) {
 	sql, err = createSqlBaseStmt(docMap, ctx)
 	if err != nil {
 		return
 	}
 
-	whereStmt, err := common.Where(ctx.filter)
+	whereStmt, err := common.CreateWhereClause(ctx.filter)
 	if err != nil {
 		return
 	}
@@ -121,7 +120,7 @@ func createSqlStmt(docMap map[string]any, ctx *LocatCtx) (sql string, err error)
 	return
 }
 
-func createSqlBaseStmt(docMap map[string]any, ctx *LocatCtx) (sql string, err error) {
+func createSqlBaseStmt(docMap map[string]any, ctx *locatCtx) (sql string, err error) {
 	_, isFindOp := docMap["find"].(string)
 	db := docMap["$db"].(string)
 
@@ -196,7 +195,7 @@ func createLimitStmt(docMap map[string]any) (sql string, err error) {
 	return
 }
 
-func createResponse(docMap map[string]any, rows *sql.Rows, localCtx *LocatCtx) (resp *wire.OpMsg, err error) {
+func createResponse(docMap map[string]any, rows *sql.Rows, localCtx *locatCtx) (resp *wire.OpMsg, err error) {
 	resp = &wire.OpMsg{}
 	_, isFindOp := docMap["find"].(string)
 	defer rows.Close()

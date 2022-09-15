@@ -64,10 +64,6 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	db := m["$db"].(string)
 	docs, _ := m["updates"].(*types.Array)
 
-	logger := h.l.Sugar()
-	logger.Infof("######################")
-	logger.Infof("%s", docs)
-
 	var selected, updated, matched int32
 	for i := 0; i < docs.Len(); i++ {
 		doc, err := docs.Get(i)
@@ -77,14 +73,14 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		docM := doc.(types.Document).Map()
 
-		whereSQL, err := common.Where(docM["q"].(types.Document))
+		whereSQL, err := common.CreateWhereClause(docM["q"].(types.Document))
 		if err != nil {
-			return nil, lazyerrors.Error(err)
+			return nil, err
 		}
 		// notWhereSQL makes sure we do not update documents which do not need an update
 		updateSQL, notWhereSQL, err := update(docM["u"].(types.Document))
 		if err != nil {
-			return nil, lazyerrors.Error(err)
+			return nil, err
 		}
 
 		// Get amount of documents that fits the filter. MatchCount
@@ -165,7 +161,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	return &reply, nil
 }
 
-// Creates needed SQL parts for SQL update statement
+// update creates needed SQL parts for SQL update statement
 func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err error) {
 	uninmplementedFields := []string{
 		"$currentDate",
@@ -218,10 +214,10 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	}
 
 	if isUnsetSQL != "" && isSetSQL != "" { // If both setting and unsetting fields
-		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL, err = common.CreateWhereClause(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
-				err = lazyerrors.Errorf("Cannot update field with array")
+			if strings.Contains(err.Error(), "value *types.Array not supported in filter") {
+				err = common.NewErrorMessage(common.ErrNotImplemented, "cannot update a field with array")
 				return
 			}
 			return
@@ -230,10 +226,10 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 		notWhereSQL = " AND ( NOT ( " + strings.Replace(notWhereSQL, "WHERE", "", 1) + ") OR (" + isUnsetSQL + " ) OR ( " + isSetSQL + " ))"
 		updateSQL += ", " + unSetSQL
 	} else if isUnsetSQL != "" { // If only setting fields
-		notWhereSQL, err = common.Where(setDoc)
+		notWhereSQL, err = common.CreateWhereClause(setDoc)
 		if err != nil {
-			if strings.Contains(err.Error(), "Value *types.Array not supported in filter") {
-				err = lazyerrors.Errorf("Cannot update field with array")
+			if strings.Contains(err.Error(), "value *types.Array not supported in filter") {
+				err = common.NewErrorMessage(common.ErrNotImplemented, "cannot update a field with array")
 				return
 			}
 			return
@@ -250,7 +246,7 @@ func update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err
 	return
 }
 
-func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, isUnsetOrUnsetSQL string, err error) {
+func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, isSetOrUnsetSQL string, err error) {
 	if set {
 		updateSQL = " SET "
 	} else {
@@ -271,7 +267,7 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 
 		if i != 0 {
 			updateSQL += ", "
-			isUnsetOrUnsetSQL += " OR "
+			isSetOrUnsetSQL += " OR "
 		}
 
 		var updateKey string
@@ -286,16 +282,16 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 				return
 			}
 			updateSQL += updateKey + " = " + updateValue
-			isUnsetOrUnsetSQL += updateKey + " IS UNSET"
+			isSetOrUnsetSQL += updateKey + " IS UNSET"
 		} else {
 			updateSQL += updateKey
-			isUnsetOrUnsetSQL += updateKey + " IS SET"
+			isSetOrUnsetSQL += updateKey + " IS SET"
 		}
 	}
 	return
 }
 
-// Prepares the key (field) for SQL statement
+// getUpdateKey prepares the key (field) for SQL statement
 func getUpdateKey(key string) (updateKey string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -305,7 +301,7 @@ func getUpdateKey(key string) (updateKey string, err error) {
 
 			if kInt, convErr := strconv.Atoi(k); convErr == nil {
 				if isInt {
-					err = lazyerrors.Errorf("Not allowed to index on an array inside of an array.")
+					err = common.NewErrorMessage(common.ErrNotImplemented, "not yet supporting indexing on an array inside of an array")
 					return
 				}
 				kIntSQL := "[" + "%d" + "]"
@@ -330,7 +326,7 @@ func getUpdateKey(key string) (updateKey string, err error) {
 	return
 }
 
-// Prepares the value for SQL statement
+// getUpdateValue prepares the value for SQL statement
 func getUpdateValue(value any) (updateValue string, err error) {
 	var updateArgs []any
 	switch value := value.(type) {
@@ -383,7 +379,7 @@ func getUpdateValue(value any) (updateValue string, err error) {
 	return
 }
 
-// Prepares a document for being used as value for updating a field
+// updateDocument prepares a document for being used as value for updating a field
 func updateDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any
@@ -446,8 +442,7 @@ func updateDocument(doc types.Document) (docSQL string, err error) {
 			args = append(args, docValue)
 
 		default:
-
-			err = lazyerrors.Errorf("whereDocument does not support datatype %T, yet.", value)
+			err = common.NewErrorMessage(common.ErrBadValue, "%T is not supported within an object for filtering", value)
 			return
 		}
 	}
