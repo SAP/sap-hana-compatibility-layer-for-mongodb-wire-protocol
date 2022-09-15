@@ -53,6 +53,7 @@ package fjson
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -178,7 +179,7 @@ func toFJSONHANA(v any) (fjsontype, error) {
 	case int32:
 		return pointer.To(Int64(v)), nil
 	default:
-		return nil, lazyerrors.Errorf("Datatype %T not supported", v)
+		return nil, fmt.Errorf("datatype %T not supported", v)
 	}
 }
 

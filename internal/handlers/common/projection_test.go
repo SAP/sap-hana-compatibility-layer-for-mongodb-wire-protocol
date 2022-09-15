@@ -26,6 +26,7 @@ type expected struct {
 }
 
 func TestProjection(t *testing.T) {
+	t.Parallel()
 	projectionTestCases := []testCase{
 		{
 			name: "projection exclusion test", r: types.MustMakeDocument("field", false),
@@ -69,6 +70,7 @@ func TestProjection(t *testing.T) {
 }
 
 func TestIsProjectionInclusion(t *testing.T) {
+	t.Parallel()
 	isProjectionInclusionTestCases := []testCase{
 		{
 			name: "inclusion bool test", r: types.MustMakeDocument("field", true),
@@ -114,6 +116,7 @@ func TestIsProjectionInclusion(t *testing.T) {
 }
 
 func TestInclusionProjection(t *testing.T) {
+	t.Parallel()
 	inclusionProjectionTestCases := []testCase{
 		{
 			name: "include fields test", r: types.MustMakeDocument("field1", int32(1), "field2", true, "field3", float64(-1.2)),
@@ -168,6 +171,7 @@ type exceptedProjDoc struct {
 }
 
 func TestProjectDocuments(t *testing.T) {
+	t.Parallel()
 	projectDocumentsTestCases := []testCaseProjectDocuments{
 		{
 			name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string")), r2: types.MustMakeDocument("_id", int64(0), "field", false),
@@ -175,7 +179,7 @@ func TestProjectDocuments(t *testing.T) {
 		},
 		{
 			name: "exclusion on document test", r1: types.MustNewArray(types.MustMakeDocument("_id", int32(1), "field", "string"), "string"), r2: types.MustMakeDocument("_id", int64(0), "field", false),
-			e: exceptedProjDoc{err: fmt.Errorf("Array contains a type not being types.Document"), eDoc: types.MustMakeDocument()},
+			e: exceptedProjDoc{err: fmt.Errorf("Array of retrieved documents contains a type not being types.Document"), eDoc: types.MustMakeDocument()},
 		},
 	}
 
@@ -209,6 +213,7 @@ type testCaseProjectDocument struct {
 }
 
 func TestProjectionDocument(t *testing.T) {
+	t.Parallel()
 	projectDocumentTestCases := []testCaseProjectDocument{
 		{
 			name: "exclude fields test", r1: types.MustMakeDocument("field", int32(123)), r2: types.MustMakeDocument("field", false),

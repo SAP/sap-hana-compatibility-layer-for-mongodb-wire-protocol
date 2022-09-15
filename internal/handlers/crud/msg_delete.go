@@ -75,7 +75,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 			whereSQL, err := common.CreateWhereClause(d["q"].(types.Document))
 			if err != nil {
-				return nil, lazyerrors.Error(err)
+				return nil, err
 			}
 
 			qSQL += whereSQL + " LIMIT 1"
