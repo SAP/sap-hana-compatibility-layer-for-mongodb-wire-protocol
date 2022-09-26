@@ -179,7 +179,7 @@ func toFJSONHANA(v any) (fjsontype, error) {
 	case int32:
 		return pointer.To(Int64(v)), nil
 	default:
-		return nil, fmt.Errorf("datatype %T not supported", v)
+		return nil, fmt.Errorf("datatype %T is not supported", v)
 	}
 }
 
@@ -298,7 +298,7 @@ func MarshalHANA(v any) ([]byte, error) {
 
 	f, err := toFJSONHANA(v)
 	if err != nil {
-		return nil, lazyerrors.Error(err)
+		return nil, err
 	}
 	var b []byte
 	switch f := f.(type) {

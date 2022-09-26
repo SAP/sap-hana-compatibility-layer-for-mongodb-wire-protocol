@@ -272,7 +272,7 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 		b, err = MarshalHANA(value)
 
 		if err != nil {
-			return nil, lazyerrors.Error(err)
+			return nil, err
 		}
 
 		buf.Write(b)

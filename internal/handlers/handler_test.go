@@ -185,7 +185,7 @@ func TestFind(t *testing.T) {
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
 			"ok", float64(0),
-			"errmsg", "\u003chandler.go:170 handlers.(*Handler).handleOpMsg\u003e \u003chandler.go:240 handlers.(*Handler).msgStorage\u003e Collection ACTOR does not exist",
+			"errmsg", "Collection ACTOR does not exist",
 			"code", int32(1),
 			"codeName", "InternalError",
 		)
@@ -524,6 +524,54 @@ func TestDatabaseCommand(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 	})
+	t.Run("MsgHello", func(t *testing.T) {
+		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
+
+		reqDoc := types.MustMakeDocument(
+			"hello", int32(1),
+			"$db", "TESTDB",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		actual.Remove("localTime")
+		expected := types.MustMakeDocument(
+			"helloOk", true,
+			"ismaster", true,
+			"maxBsonObjectSize", int32(16777216),
+			"maxMessageSizeBytes", int32(48000000),
+			"maxWriteBatchSize", int32(100000),
+			"minWireVersion", int32(13),
+			"maxWireVersion", int32(13),
+			"readOnly", false,
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("MsgLog", func(t *testing.T) {
+		ctx, handler, mock := setup(t, QueryMatcherEqualBytes)
+
+		versionRow := mock.NewRows([]string{"VERSION"}).AddRow("4.00.000.00.1662466522")
+		mock.ExpectQuery("Select VERSION from \"SYS\".\"M_DATABASE\"").WillReturnRows(versionRow)
+
+		reqDoc := types.MustMakeDocument(
+			"getLog", "startupWarnings",
+			"$db", "admin",
+		)
+
+		actual := handle(ctx, t, handler, reqDoc)
+		log, _ := actual.GetByPath([]string{"log", "0"}...)
+		actual.Remove("log")
+		expected := types.MustMakeDocument(
+			"totalLinesWritten", int32(1),
+			"ok", float64(1),
+		)
+
+		assert.Equal(t, expected, actual)
+		assert.Contains(t, log.(string), "{\"c\":\"STORAGE\",\"ctx\":\"initandlisten\",\"id\":42000,\"msg\":\"Powered by SAP HANA compatibility layer for MongoDB Wire Protocol")
+		assert.Contains(t, log.(string), "and SAP HANA 4.00.000.00.1662466522.\",\"s\":\"I\",\"t\":{\"$date\":\"")
+		assert.Contains(t, log.(string), "\"tags\":[\"startupWarnings\"")
+	})
 	t.Run("authenticate", func(t *testing.T) {
 		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
 
@@ -540,6 +588,46 @@ func TestDatabaseCommand(t *testing.T) {
 
 		assert.Equal(t, expected, actual)
 	})
+}
+
+func TestQueryCmd(t *testing.T) {
+	t.Parallel()
+	ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
+
+	reqDoc := types.MustMakeDocument(
+		"ismaster", int32(1),
+	)
+
+	reqHeader := wire.MsgHeader{
+		RequestID: 1,
+		OpCode:    wire.OP_QUERY,
+	}
+
+	reqQuery := wire.OpQuery{
+		Flags:              wire.OpQueryFlags(5),
+		FullCollectionName: "admin.$cmd",
+		Query:              reqDoc,
+	}
+
+	_, resBody, _ := handler.Handle(ctx, &reqHeader, &reqQuery)
+
+	actual := resBody.(*wire.OpReply).Documents
+	actualDoc := actual[0]
+	actualDoc.Remove("localTime")
+
+	expectedDoc := types.MustMakeDocument(
+		"helloOk", true,
+		"ismaster", true,
+		"maxBsonObjectSize", int32(16777216),
+		"maxMessageSizeBytes", int32(48000000),
+		"maxWriteBatchSize", int32(100000),
+		"minWireVersion", int32(13),
+		"maxWireVersion", int32(13),
+		"readOnly", false,
+		"ok", float64(1),
+	)
+
+	assert.Equal(t, expectedDoc, actualDoc)
 }
 
 // func TestFind(t *testing.T) {
