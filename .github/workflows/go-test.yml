@@ -23,7 +23,7 @@ jobs:
              mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb ;
              mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver ;
              touch /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go ;
-             echo 'package driver' >> /opt/hostedtoolcache/go/1.18.5/x64/src/SAP/go-hdb/driver/trick.go
+             echo 'package driver' >> /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go
 
       - name: Run tests
         run: make test
