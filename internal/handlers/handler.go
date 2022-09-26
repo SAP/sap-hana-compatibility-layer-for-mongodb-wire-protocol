@@ -167,7 +167,7 @@ func (h *Handler) handleOpMsg(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg
 
 		storage, err := h.msgStorage(ctx, msg)
 		if err != nil {
-			return nil, lazyerrors.Error(err)
+			return nil, err
 		}
 		return cmd.storageHandler(storage, ctx, msg)
 	}
@@ -237,7 +237,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return h.crud, nil
 		}
 
-		return nil, lazyerrors.Errorf("Collection %s does not exist", strings.ToUpper(collection))
+		return nil, fmt.Errorf("Collection %s does not exist", strings.ToUpper(collection))
 
 	case "insert", "update":
 		if jsonbTableExist {
