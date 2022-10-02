@@ -4,13 +4,14 @@
 
 ## About this project
 
-SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of becoming a viable drop-in replacement for MongoDB using SAP HANA JSON Document Store as the storage engine. It allows the use of basic CRUD operations with mongosh or any MongoDB driver. SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](https://www.ferretdb.io/)), an open-source alternative to MongoDB. 
+SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of becoming a viable drop-in replacement for MongoDB using SAP HANA JSON Document Store as the storage engine. It allows the use of basic CRUD operations with mongosh or any MongoDB driver. SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](https://www.ferretdb.io/)), an open-source alternative to MongoDB. Please see the following for an overview of [supported MongoDB commands](SUPPORTED_MONGODB_COMMANDS.md#supported-mongodb-commands) and [supported datatypes](SUPPORTED_MONGODB_COMMANDS.md#supported-datatypes).
 
 ## Known differences
 
-- If a field of a document within an array is NULL, it will count as unset when $not is used on the field. This results in the condition of the filter being true instead of false like it would be within MongoDB. 
-- When listing the databases with for instance the command "show dbs", the sizes are not the sizes on disk as it would be in MongoDB. Instead it is the size used in memory when the collections of the database are loaded. Any unloaded collection will therefore result in 0 bytes.
+- If a field of a document within an array is `NULL`, it will count as unset when `$not` is used on the field. This results in the condition of the filter being `true` instead of `false` like it would be within MongoDB. This is the case when for instance using `$elemMatch`. 
+- When listing the databases with for instance the command `show dbs`, the sizes are not the sizes on disk as it would be in MongoDB. Instead it is the size used in memory when the collections of the database are loaded. Any unloaded collection will therefore result in 0 bytes.
 - Not all thrown errors are equal to the ones thrown by MongoDB.
+- Collections and databases are case insensitive and are all uppercase letters. Furthermore, `TEST` cannot be used as a name for a database.
 
 If further differences are found, please report this to [a project maintainer](.reuse/dep5).
 
@@ -19,8 +20,8 @@ If further differences are found, please report this to [a project maintainer](.
 - Linux
 - Go 1.18.*
 - Go-hdb. A native Go (golang) HANA database driver for Go's sql package. It implements the SAP HANA SQL command network protocol.
-- docker (preferably without the need for sudo)
-- docker-compose (preferably without the need for sudo)
+- docker (preferably without the need for `sudo`)
+- docker-compose (preferably without the need for `sudo`)
 - GNU make
 - A running SAP HANA Cloud instance with SAP HANA JSON Document Store enabled 
 
@@ -28,11 +29,11 @@ For the installation of Go-hdb see the following links:
 - [Install the SAP HANA Client](https://developers.sap.com/tutorials/hana-clients-install.html)
 - [Connect Using the SAP HANA Go Interface](https://developers.sap.com/tutorials/hana-clients-golang.html)
 
-## Download and Installation
+## Quick Setup
 
-1. Clone the repository and enter the project folder sap-hana-compatibility-layer-for-mongodb-wire-protocol
+1. Clone the repository and enter the project folder `sap-hana-compatibility-layer-for-mongodb-wire-protocol`
 
-2. In the project folder sap-hana-compatibility-layer-for-mongodb-wire-protocol run the following:
+2. In the project folder `sap-hana-compatibility-layer-for-mongodb-wire-protocol` run the following:
 
 ```
 make init
@@ -47,7 +48,7 @@ In terminal window 1 run:
  docker-compose up
  ```
  
- If sudo is required, use:
+ If `sudo` is required, use:
  
 ```
 sudo docker-compose up
@@ -63,14 +64,14 @@ and now in terminal window 3, run the following after making sure the previous t
 ```
 make mongosh DB=<please-insert-database-name-here>
 ```
-DB is the database name in MongoDB and the schema name in SAP HANA JSON Document Store. If the given database name is not found as a schema in SAP HANA JSON Document Store, a new schema will be created when a collection is created. If no value for DB is given, then it will be set to DB_NAME.
+`DB` is the database name in MongoDB and the schema name in SAP HANA JSON Document Store. If the given database name is not found as a schema in SAP HANA JSON Document Store, a new schema will be created when a collection is created. If no value for DB is given, then it will be set to `DB_NAME`.
 
-If permission is denied because the rights of sudo are needed, run:
+If permission is denied because the rights of `sudo` are needed, run:
 ```
 make mongosh-sudo DB=<please-insert-databse-name-here>
 ```
 
-4. Hopefully, all worked out, and you can now run your first MongoDB operations in the shell:
+4. Hopefully, all worked out, and you can now run your first MongoDB operations in `mongosh`:
 
 ```
 db.createCollection("firstCollection")
