@@ -87,15 +87,15 @@ db.firstCollection.find()
 
 ## TLS
 
-To use TLS see: [Setup TLS](SETUP_TLS.md)
+To use TLS see: [Setup TLS](SETUP_TLS.md#setup-tls)
 
 ## Contributing
 
-This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
+This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md#contributing).
 
 ## Code of Conduct
 
-We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone. By participating in this project, you agree to abide by its [Code of Conduct](CODE_OF_CONDUCT.md) at all times.
+We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone. By participating in this project, you agree to abide by its [Code of Conduct](CODE_OF_CONDUCT.md#Contributor-Covenant-Code-of-Conduct) at all times.
 
 ## Licensing
 
