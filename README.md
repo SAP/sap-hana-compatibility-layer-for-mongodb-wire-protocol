@@ -1,12 +1,14 @@
 [![Test](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/actions/workflows/go-test.yml/badge.svg?branch=main)](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/actions/workflows/go-test.yml)
 
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol)](https://api.reuse.software/info/github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol)
+
 # SAP HANA compatibility layer for MongoDB Wire Protocol
 
 ## About this project
 
 SAP HANA compatibility layer for MongoDB Wire Protocol is in the process of becoming a viable drop-in replacement for MongoDB using SAP HANA JSON Document Store as the storage engine. It allows the use of basic CRUD operations with mongosh or any MongoDB driver. SAP HANA compatibility layer for MongoDB Wire Protocol is a fork from FerretDB ([ferretdb.io](https://www.ferretdb.io/)), an open-source alternative to MongoDB. Please see the following for an overview of [supported MongoDB commands](SUPPORTED_MONGODB_COMMANDS.md#supported-mongodb-commands) and [supported datatypes](SUPPORTED_MONGODB_COMMANDS.md#supported-datatypes).
 
-This project is still in its early stages and is therefor not ready to be used productively. 
+This project is a working prototype that comes without warranty. It is not recommended nor intended to be used productively.
 
 ## Features
 - Can be used with the MongoDB shell `mongosh` or any MongoDB driver
