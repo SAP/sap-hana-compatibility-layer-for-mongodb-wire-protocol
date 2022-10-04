@@ -1,5 +1,4 @@
 [![Test](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/actions/workflows/go-test.yml/badge.svg?branch=main)](https://github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/actions/workflows/go-test.yml)
-
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol)](https://api.reuse.software/info/github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol)
 
 # SAP HANA compatibility layer for MongoDB Wire Protocol
