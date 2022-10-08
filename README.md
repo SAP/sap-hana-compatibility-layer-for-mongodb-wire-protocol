@@ -69,6 +69,7 @@ sudo docker-compose up
 ```
 make run HANAConnectString=<please-insert-connect-string-here>
 ```
+Depending on the shell used, it might be necessary to put the connect string between quotation marks "".
 
 and now in terminal window 3, run the following after making sure the previous two steps started successfully:
 ```
