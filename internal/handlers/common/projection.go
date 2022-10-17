@@ -21,6 +21,7 @@
 package common
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -165,23 +166,29 @@ func inclusionProjection(projection types.Document) (sql string) {
 	} else {
 		sql += "\"_id\": \"_id\", "
 	}
-
+	var id bool
 	for i, k := range projection.Keys() {
 
 		if k == "_id" {
+			if i == 0 {
+				id = true
+			}
+
 			continue
 		}
 
-		if i != 0 {
+		if i != 0 && !id {
 			sql += ", "
+
 		}
 
+		id = false
 		sql += "\"" + k + "\": \"" + k + "\""
 
 	}
 
 	sql += "}"
-
+	fmt.Println(sql)
 	return
 }
 
