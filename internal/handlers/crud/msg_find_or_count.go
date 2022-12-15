@@ -221,7 +221,7 @@ func createOrderByStmt(docMap map[string]any) (sql string, err error) {
 			} else if order == -1 {
 				sql += " DESC"
 			} else {
-				err = common.NewErrorMessage(common.ErrSortBadValue, "cannot use value %s for sort", order)
+				err = common.NewErrorMessage(common.ErrSortBadValue, "cannot use value %s for sort", sortMap[sortKey])
 			}
 		}
 	}
