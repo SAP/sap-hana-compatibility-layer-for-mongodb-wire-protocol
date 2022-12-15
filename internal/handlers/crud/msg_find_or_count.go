@@ -36,6 +36,7 @@ import (
 type locatCtx struct {
 	exclusion  bool
 	filter     types.Document
+	db         string
 	collection string
 }
 
@@ -52,10 +53,8 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		"awaitData",
 		"allowPartialResults",
 		"collation",
-		"allowDiskUse",
 		"let",
 		"hint",
-		"batchSize",
 		"maxTimeMS",
 		"readConcern",
 		"max",
@@ -71,18 +70,59 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 		return nil, err
 	}
 
-	common.Ignored(&document, h.l, "singleBatch")
+	common.Ignored(&document, h.l, "singleBatch", "allowDiskUse", "batchSize")
 
 	docMap := document.Map()
-	// Checks if command printshardingstatus is used.
 	if isPrintShardingStatus(docMap) {
 		return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: printShardingStatus")
 	}
 
 	var localCtx locatCtx
+	localCtx.db = docMap["$db"].(string)
 	sql, err := createSqlStmt(docMap, &localCtx)
 	if err != nil {
 		return nil, err
+	}
+
+	// A workaround which allows connecting and using the basics of some GUI's
+	// TODO: Implement this for real.
+	if collection, ok := docMap["find"].(string); ok {
+		if collection == "system.js" {
+			resp := &wire.OpMsg{}
+			err = resp.SetSections(wire.OpMsgSection{
+				Documents: []types.Document{types.MustMakeDocument(
+					"cursor", types.MustMakeDocument(
+						"firstBatch", types.MustMakeDocument(),
+						"id", int64(0), // TODO
+						"ns", localCtx.db+"."+collection,
+					),
+					"ok", float64(1),
+				)},
+			})
+			if err != nil {
+				return nil, err
+			}
+			return resp, nil
+		} else if localCtx.collection == "system.version" {
+			resp := &wire.OpMsg{}
+			err = resp.SetSections(wire.OpMsgSection{
+				Documents: []types.Document{types.MustMakeDocument(
+					"cursor", types.MustMakeDocument(
+						"firstBatch", types.MustMakeDocument(
+							"_id", "featureCompatibilityVersion",
+							"version", "5.0",
+						),
+						"id", int64(0), // TODO
+						"ns", localCtx.db+"."+collection,
+					),
+					"ok", float64(1),
+				)},
+			})
+			if err != nil {
+				return nil, err
+			}
+			return resp, nil
+		}
 	}
 
 	rows, err := h.hanaPool.QueryContext(ctx, sql)
@@ -122,7 +162,6 @@ func createSqlStmt(docMap map[string]any, ctx *locatCtx) (sql string, err error)
 
 func createSqlBaseStmt(docMap map[string]any, ctx *locatCtx) (sql string, err error) {
 	_, isFindOp := docMap["find"].(string)
-	db := docMap["$db"].(string)
 
 	if isFindOp { // enters here if find
 		var projectionSQL string
@@ -135,11 +174,11 @@ func createSqlBaseStmt(docMap map[string]any, ctx *locatCtx) (sql string, err er
 
 		ctx.collection = docMap["find"].(string)
 		ctx.filter, _ = docMap["filter"].(types.Document)
-		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, db, ctx.collection)
+		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, ctx.db, ctx.collection)
 	} else { // enters here if count
 		ctx.collection = docMap["count"].(string)
 		ctx.filter, _ = docMap["query"].(types.Document)
-		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, db, ctx.collection)
+		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, ctx.db, ctx.collection)
 	}
 	return
 }
@@ -169,13 +208,20 @@ func createOrderByStmt(docMap map[string]any) (sql string, err error) {
 				sql += "\"" + sortKey + "\" "
 			}
 
-			order := sortMap[sortKey].(int32)
+			order, ok := sortMap[sortKey].(int32)
+			if !ok {
+				if !anyIsInt(sortMap[sortKey]) {
+					err = common.NewErrorMessage(common.ErrSortBadValue, "cannot use type %T for sort", sortMap[sortKey])
+					return
+				}
+				order = int32(sortMap[sortKey].(float64))
+			}
 			if order == 1 {
 				sql += " ASC"
 			} else if order == -1 {
 				sql += " DESC"
 			} else {
-				err = common.NewErrorMessage(common.ErrSortBadValue, "")
+				err = common.NewErrorMessage(common.ErrSortBadValue, "cannot use value %s for sort", sortMap[sortKey])
 			}
 		}
 	}
@@ -223,13 +269,12 @@ func createResponse(docMap map[string]any, rows *sql.Rows, localCtx *locatCtx) (
 			}
 		}
 
-		db := docMap["$db"].(string)
 		err = resp.SetSections(wire.OpMsgSection{
 			Documents: []types.Document{types.MustMakeDocument(
 				"cursor", types.MustMakeDocument(
 					"firstBatch", &docs,
 					"id", int64(0), // TODO
-					"ns", db+"."+localCtx.collection,
+					"ns", localCtx.db+"."+localCtx.collection,
 				),
 				"ok", float64(1),
 			)},
@@ -266,4 +311,15 @@ func isPrintShardingStatus(docMap map[string]any) bool {
 		return true
 	}
 	return false
+}
+
+// Checks if any is int even if real type is float64. 1.0 would be considered int 1.
+func anyIsInt(n any) (ok bool) {
+	if nFloat, ok := n.(float64); ok {
+		if nFloat == float64(int32(nFloat)) {
+			return ok
+		}
+		ok = false
+	}
+	return ok
 }

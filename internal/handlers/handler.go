@@ -68,10 +68,10 @@ func New(opts *NewOpts) *Handler {
 // Handle handles the message.
 //
 // Message handlers should:
-//  * return normal response body;
-//  * return protocol error (*common.Error) - it will be returned to the client;
-//  * return any other error - it will be returned to the client as InternalError before terminating connection;
-//  * panic - that will terminate the connection without a response.
+//   - return normal response body;
+//   - return protocol error (*common.Error) - it will be returned to the client;
+//   - return any other error - it will be returned to the client as InternalError before terminating connection;
+//   - panic - that will terminate the connection without a response.
 //
 //nolint:lll // arguments are long
 func (h *Handler) Handle(ctx context.Context, reqHeader *wire.MsgHeader, reqBody wire.MsgBody) (resHeader *wire.MsgHeader, resBody wire.MsgBody, closeConn bool) {
@@ -234,6 +234,8 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	switch command {
 	case "delete", "find", "count":
 		if jsonbTableExist {
+			return h.crud, nil
+		} else if collection == "system.js" || collection == "system.version" {
 			return h.crud, nil
 		}
 
