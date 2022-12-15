@@ -24,51 +24,23 @@ import (
 	"context"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
-	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
 )
 
+// MsgConnectionStatus is a common implementation of the connectionStatus command.
 // Is a workaround to make it possible to connect and use GUI's like Studio 3T.
-func (h *Handler) MsgDBStats(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
-	document, err := msg.Document()
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
-
-	m := document.Map()
-	db := m["$db"].(string)
-	scale, ok := m["scale"].(float64)
-	if !ok {
-		scale = 1
-	}
-
-	// TODO: Make a function DBStats for hanaPool getting
-	// Needed information.
-	// stats, err := h.hanaPool.DBStats(ctx, db)
-	// if err != nil {
-	// 	return nil, lazyerrors.Error(err)
-	// }
-
-	// Random values as hanaPool.DBStats not implemented.
+func (h *Handler) MsgConnectionStatus(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	var reply wire.OpMsg
-	err = reply.SetSections(wire.OpMsgSection{
+	err := reply.SetSections(wire.OpMsgSection{
 		Documents: []types.Document{types.MustMakeDocument(
-			"db", db,
-			"collections", int32(1),
-			"views", int32(0),
-			"objects", int32(2),
-			"avgObjSize", float64(12)/float64(2),
-			"dataSize", float64(12)/scale,
-			"indexes", int32(0),
-			"indexSize", float64(0)/scale,
-			"totalSize", float64(0)/scale,
-			"scaleFactor", scale,
+			"authInfo", types.MustMakeDocument(
+				"authenticatedUsers", types.MustNewArray("USERNAME"),
+				"authenticatedUserRoles", types.MustNewArray(),
+				"authenticatedUserPrivileges", types.MustNewArray(),
+			),
 			"ok", float64(1),
 		)},
 	})
-	if err != nil {
-		return nil, lazyerrors.Error(err)
-	}
 
-	return &reply, nil
+	return &reply, err
 }

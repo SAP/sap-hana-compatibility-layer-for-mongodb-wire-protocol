@@ -45,6 +45,26 @@ var commands = map[string]command{
 		help:    "Returns a summary of the build information.",
 		handler: (*Handler).MsgBuildInfo,
 	},
+	"usersinfo": {
+		name:    "usersinfo",
+		help:    "Returns user USERNAME. Is used as a workaround to allow use of some GUIs",
+		handler: (*Handler).MsgUsersInfo,
+	},
+	"rolesinfo": {
+		name:    "rolesinfo",
+		help:    "Return role readWrite. Is used as a workaround to allow use of some GUIs",
+		handler: (*Handler).MsgRolesInfo,
+	},
+	"getlasterror": {
+		name:    "getlasterror",
+		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
+		handler: (*Handler).MsgGetLastError,
+	},
+	"connectionstatus": {
+		name:    "connectionstatus",
+		help:    "checks connection",
+		handler: (*Handler).MsgConnectionStatus,
+	},
 	// "collstats": {
 	// 	// This command implements the following database methods:
 	// 	// 	- db.collection.stats()
@@ -70,12 +90,12 @@ var commands = map[string]command{
 	// 	help:    "Returns the size of the collection in bytes.",
 	// 	handler: (*Handler).MsgDataSize,
 	// },
-	// "dbstats": {
-	// 	// db.runCommand({dbStats: 1})
-	// 	name:    "dbStats",
-	// 	help:    "Returns the statistics of the database.",
-	// 	handler: (*Handler).MsgDBStats,
-	// },
+	"dbstats": {
+		// db.runCommand({dbStats: 1})
+		name:    "dbStats",
+		help:    "Returns the statistics of the database.",
+		handler: (*Handler).MsgDBStats,
+	},
 	"drop": {
 		// db.collection.drop()
 		name:    "drop",

@@ -36,7 +36,6 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	}
 
 	unimplementedFields := []string{
-		"capped",
 		"timeseries",
 		"expireAfterSeconds",
 		"size",
@@ -56,6 +55,8 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	if err := common.Unimplemented(&document, unimplementedFields...); err != nil {
 		return nil, err
 	}
+
+	common.Ignored(&document, h.l, "capped")
 
 	m := document.Map()
 	if _, ok := m["viewOn"]; ok {
