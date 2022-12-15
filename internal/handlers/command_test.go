@@ -120,6 +120,21 @@ func TestSupportedCommands(t *testing.T) {
 			"listDatabases", types.MustMakeDocument(
 				"help", "Returns a summary of all the databases.",
 			),
+			"getlasterror", types.MustMakeDocument(
+				"help", "Does not return last error. Is used as a workaround to allow use of some GUIs.",
+			),
+			"usersinfo", types.MustMakeDocument(
+				"help", "Returns user USERNAME. Is used as a workaround to allow use of some GUIs",
+			),
+			"rolesinfo", types.MustMakeDocument(
+				"help", "Return role readWrite. Is used as a workaround to allow use of some GUIs",
+			),
+			"connectionstatus", types.MustMakeDocument(
+				"help", "checks connection",
+			),
+			"dbStats", types.MustMakeDocument(
+				"help", "Returns the statistics of the database.",
+			),
 		),
 	)
 	actualCommands, err := supportedCommands.Document()
