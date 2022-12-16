@@ -69,7 +69,7 @@ sudo docker-compose up
 ```
 make run HANAConnectString=<please-insert-connect-string-here>
 ```
-Depending on the shell used, it might be necessary to put the connect string between quotation marks "".
+Depending on the shell used, it might be necessary to put the connect string between quotation marks "". An exmaple of a connection string is: `hdb://User1:Password1@999deec0-ccb7-4a5e-b317-d419e19be648.hana.prod-us10.hanacloud.ondemand.com:443`.
 
 and now in terminal window 3, run the following after making sure the previous two steps started successfully:
 ```
