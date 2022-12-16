@@ -39,6 +39,8 @@ For the installation of Go-hdb see the following links:
 - [Install the SAP HANA Client](https://developers.sap.com/tutorials/hana-clients-install.html)
 - [Connect Using the SAP HANA Go Interface](https://developers.sap.com/tutorials/hana-clients-golang.html)
 
+Please note it will not work with the go-hdb found here: https://github.com/SAP/go-hdb. It must be the official Go driver used in the above mentioned links.
+
 ## Quick Setup
 
 1. Clone the repository and enter the project folder `sap-hana-compatibility-layer-for-mongodb-wire-protocol`
