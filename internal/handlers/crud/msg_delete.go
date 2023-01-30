@@ -64,14 +64,14 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 		d := doc.(types.Document).Map()
 
-		sql := fmt.Sprintf(`DELETE FROM %s.%s`, db, collection)
+		sql := fmt.Sprintf("DELETE FROM \"%s\".\"%s\"", db, collection)
 
 		limit, _ := d["limit"].(int32)
 
 		var delSQL string
 		var args []any
 		if limit != 0 { // if deleteOne()
-			qSQL := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
+			qSQL := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM \"%s\".\"%s\"", db, collection)
 
 			whereSQL, err := common.CreateWhereClause(d["q"].(types.Document))
 			if err != nil {

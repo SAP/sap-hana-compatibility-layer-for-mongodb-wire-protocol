@@ -11,7 +11,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"go.uber.org/zap"
@@ -74,7 +73,7 @@ func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) 
 	}
 
 	sql := "SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';"
-	rows, err := hanaPool.QueryContext(ctx, sql, strings.ToUpper(db))
+	rows, err := hanaPool.QueryContext(ctx, sql, db)
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
@@ -98,7 +97,7 @@ func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) 
 
 // CreateSchema creates a schema in SAP HANA JSON Document Store.
 func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
-	sql := `CREATE SCHEMA ` + db
+	sql := fmt.Sprintf("CREATE SCHEMA \"%s\"", db)
 	_, err := hanaPool.ExecContext(ctx, sql)
 	if err != nil {
 		return ErrAlreadyExist
@@ -111,7 +110,7 @@ func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
 //
 // It returns ErrAlreadyExist if collection already exist.
 func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection string) error {
-	sql := `CREATE COLLECTION ` + db + "." + collection
+	sql := fmt.Sprintf("CREATE COLLECTION \"%s\".\"%s\"", db, collection)
 	_, err := hanaPool.ExecContext(ctx, sql)
 	if err != nil {
 		return ErrAlreadyExist
@@ -205,7 +204,7 @@ func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
 //
 // It returns ErrNotExist is collection does not exist.
 func (hanaPool *Hpool) DropTable(ctx context.Context, db, collection string) error {
-	sql := `DROP COLLECTION ` + db + "." + collection
+	sql := fmt.Sprintf("DROP COLLECTION \"%s\".\"%s\"", db, collection)
 	_, err := hanaPool.ExecContext(ctx, sql)
 	if err != nil {
 		return ErrNotExist
@@ -218,7 +217,7 @@ func (hanaPool *Hpool) DropTable(ctx context.Context, db, collection string) err
 //
 // It returns ErrNotExist if schema does not exist.
 func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
-	sql := `DROP SCHEMA ` + db + " cascade"
+	sql := fmt.Sprintf("DROP SCHEMA \"%s\" CASCADE", db)
 	_, err := hanaPool.ExecContext(ctx, sql)
 
 	return err

@@ -60,7 +60,7 @@ func TestUnique(t *testing.T) {
 
 		emptyRow := mock.NewRows([]string{"_id"})
 
-		mock.ExpectQuery("SELECT _id FROM TESTDATABASE.TESTCOLLECTION  WHERE \"_id\" = 123 LIMIT 1").WillReturnRows(emptyRow)
+		mock.ExpectQuery("SELECT _id FROM \"TESTDATABASE\".\"TESTCOLLECTION\"  WHERE \"_id\" = 123 LIMIT 1").WillReturnRows(emptyRow)
 
 		unique, errMsg, err := IsIdUnique(int64(123), "TESTDATABASE", "TESTCOLLECTION", ctx, &hPool)
 
@@ -78,12 +78,12 @@ func TestUnique(t *testing.T) {
 
 		emptyRow := mock.NewRows([]string{"_id"}).AddRow("62e2bd54510683f9c0bb0d6b")
 
-		mock.ExpectQuery("SELECT _id FROM TESTDATABASE.TESTCOLLECTION  WHERE \"_id\" = {\"oid\":'62e2bd54510683f9c0bb0d6b'} LIMIT 1").WillReturnRows(emptyRow)
+		mock.ExpectQuery("SELECT _id FROM \"TESTDATABASE\".\"TESTCOLLECTION\"  WHERE \"_id\" = {\"oid\":'62e2bd54510683f9c0bb0d6b'} LIMIT 1").WillReturnRows(emptyRow)
 
 		unique, errMsg, err := IsIdUnique(types.ObjectID{98, 226, 189, 84, 81, 6, 131, 249, 192, 187, 13, 107}, "TESTDATABASE", "TESTCOLLECTION", ctx, &hPool)
 
 		assert.Nil(t, err)
-		assert.Equal(t, "E11000 duplicate key error collection: TESTDATABASE.TESTCOLLECTION index: _id_ dup key: { _id: \"62e2bd54510683f9c0bb0d6b\" }", errMsg.Error())
+		assert.Equal(t, "E11000 duplicate key error collection: \"TESTDATABASE\".\"TESTCOLLECTION\" index: _id_ dup key: { _id: \"62e2bd54510683f9c0bb0d6b\" }", errMsg.Error())
 		assert.False(t, unique)
 	})
 }

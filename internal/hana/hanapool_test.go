@@ -44,8 +44,8 @@ func TestHanapool(t *testing.T) {
 		defer db.Close()
 
 		row := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable")
-		args := []driver.Value{"TESTDATABASE"}
-		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnError(fmt.Errorf("error"))
+		args := []driver.Value{"testDatabase"}
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnError(fmt.Errorf("error"))
 		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(row)
 
 		h := Hpool{
@@ -63,9 +63,9 @@ func TestHanapool(t *testing.T) {
 		}
 
 		nilRow := sqlmock.NewRows([]string{"table_name"}).AddRow(nil)
-		args = []driver.Value{"TESTDATABASE"}
+		args = []driver.Value{"testDatabase"}
 
-		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnError(fmt.Errorf("error"))
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnError(fmt.Errorf("error"))
 		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(nilRow)
 
 		tables, err = h.Tables(ctx, "testDatabase")
@@ -114,7 +114,7 @@ func TestHanapool(t *testing.T) {
 		}
 		defer db.Close()
 
-		mock.ExpectExec("CREATE SCHEMA database").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE SCHEMA \"database\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		h := Hpool{
 			db,
@@ -138,7 +138,7 @@ func TestHanapool(t *testing.T) {
 		}
 		defer db.Close()
 
-		mock.ExpectExec("CREATE COLLECTION database.collection").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION \"database\".\"collection\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		h := Hpool{
 			db,
@@ -152,7 +152,7 @@ func TestHanapool(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 
-		mock.ExpectExec("CREATE COLLECTION database.collection").WillReturnResult(sqlmock.NewResult(1, 1)).WillReturnError(ErrAlreadyExist)
+		mock.ExpectExec("CREATE COLLECTION \"database\".\"collection\"").WillReturnResult(sqlmock.NewResult(1, 1)).WillReturnError(ErrAlreadyExist)
 
 		err = h.CreateCollection(ctx, "database", "collection")
 
@@ -168,7 +168,7 @@ func TestHanapool(t *testing.T) {
 		}
 		defer db.Close()
 
-		mock.ExpectExec("DROP COLLECTION testDatabase.testCollection").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("DROP COLLECTION \"testDatabase\".\"testCollection\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		h := Hpool{
 			db,
@@ -183,7 +183,7 @@ func TestHanapool(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 
-		mock.ExpectExec("DROP COLLECTION testDatabase.testCollection").WillReturnResult(sqlmock.NewResult(0, 0)).WillReturnError(ErrNotExist)
+		mock.ExpectExec("DROP COLLECTION \"testDatabase\".\"testCollection\"").WillReturnResult(sqlmock.NewResult(0, 0)).WillReturnError(ErrNotExist)
 
 		err = h.DropTable(ctx, "testDatabase", "testCollection")
 
@@ -199,7 +199,7 @@ func TestHanapool(t *testing.T) {
 		}
 		defer db.Close()
 
-		mock.ExpectExec("DROP SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("DROP SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		h := Hpool{
 			db,

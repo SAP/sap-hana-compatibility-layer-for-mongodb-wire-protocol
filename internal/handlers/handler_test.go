@@ -140,7 +140,7 @@ func TestFind(t *testing.T) {
 		row3 := sqlmock.NewRows([]string{"document"})
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
 		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
-		mock.ExpectQuery("SELECT * FROM databaseName.actor WHERE \"last_name\" = 'Doe' AND \"actor_id\" \u003e 50 AND \"actor_id\" \u003c 100").WillReturnRows(row3)
+		mock.ExpectQuery("SELECT * FROM \"databaseName\".\"actor\" WHERE \"last_name\" = 'Doe' AND \"actor_id\" \u003e 50 AND \"actor_id\" \u003c 100").WillReturnRows(row3)
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -185,7 +185,7 @@ func TestFind(t *testing.T) {
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
 			"ok", float64(0),
-			"errmsg", "Collection ACTOR does not exist",
+			"errmsg", "Collection actor does not exist",
 			"code", int32(1),
 			"codeName", "InternalError",
 		)
@@ -223,10 +223,10 @@ func TestInsert(t *testing.T) {
 
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
 		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
-		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectExec("CREATE COLLECTION testDatabase.test").WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectQuery("SELECT _id FROM testDatabase.test  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
-		mock.ExpectExec("INSERT INTO testDatabase.test VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"test\"").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"test\"  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
+		mock.ExpectExec("INSERT INTO \"testDatabase\".\"test\" VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -265,8 +265,8 @@ func TestInsert(t *testing.T) {
 
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
 		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
-		mock.ExpectQuery("SELECT _id FROM testDatabase.test  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
-		mock.ExpectExec("INSERT INTO testDatabase.test VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"test\"  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
+		mock.ExpectExec("INSERT INTO \"testDatabase\".\"test\" VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -318,8 +318,8 @@ func TestDatabaseCommand(t *testing.T) {
 			"$db", "testDatabase",
 		)
 
-		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectExec("CREATE COLLECTION testDatabase.newTest").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"newTest\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -343,7 +343,7 @@ func TestDatabaseCommand(t *testing.T) {
 			"$db", "testDatabase",
 		)
 
-		mock.ExpectExec("DROP COLLECTION testDatabase.newTest").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("DROP COLLECTION \"testDatabase\".\"newTest\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -369,7 +369,7 @@ func TestDatabaseCommand(t *testing.T) {
 			"$db", "testDatabase",
 		)
 
-		mock.ExpectExec("DROP SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("DROP SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -402,9 +402,9 @@ func TestDatabaseCommand(t *testing.T) {
 		)
 
 		row := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable")
-		args := []driver.Value{"TESTDATABASE"}
+		args := []driver.Value{"testDatabase"}
 
-		mock.ExpectExec("CREATE SCHEMA testDatabase").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(row)
 
