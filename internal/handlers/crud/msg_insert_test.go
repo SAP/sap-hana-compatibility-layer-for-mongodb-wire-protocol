@@ -22,8 +22,8 @@ func TestMsgInsert(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"})
 		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 50, 51, 44, 34, 105, 116, 101, 109, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
 
-		mock.ExpectQuery("SELECT _id FROM testDatabase.testCollection  WHERE \"_id\" = 123").WillReturnRows(idRow)
-		mock.ExpectExec("INSERT INTO testDatabase.testCollection VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"testCollection\"  WHERE \"_id\" = 123").WillReturnRows(idRow)
+		mock.ExpectExec("INSERT INTO \"testDatabase\".\"testCollection\" VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		insertReq := types.MustMakeDocument(
 			"insert", "testCollection",
@@ -62,7 +62,7 @@ func TestMsgInsert(t *testing.T) {
 	t.Run("insert a document. Not unique id", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"}).AddRow(123)
 
-		mock.ExpectQuery("SELECT _id FROM testDatabase.testCollection  WHERE \"_id\" = 123").WillReturnRows(idRow)
+		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"testCollection\"  WHERE \"_id\" = 123").WillReturnRows(idRow)
 
 		insertReq := types.MustMakeDocument(
 			"insert", "testCollection",
@@ -84,7 +84,7 @@ func TestMsgInsert(t *testing.T) {
 
 		msg, err := storage.MsgInsert(ctx, &reqMsg)
 		assert.Nil(t, msg)
-		assert.EqualError(t, err, `E11000 duplicate key error collection: testDatabase.testCollection index: _id_ dup key: { _id: 123 }`)
+		assert.EqualError(t, err, "E11000 duplicate key error collection: \"testDatabase\".\"testCollection\" index: _id_ dup key: { _id: 123 }")
 
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)

@@ -20,8 +20,8 @@ func TestMsgUpdate(t *testing.T) {
 	t.Run("updateMany", func(t *testing.T) {
 		row := mock.NewRows([]string{"count"}).AddRow(1)
 
-		mock.ExpectQuery("SELECT count(*) FROM testDatabase.testCollection WHERE \"item\" = 'test'").WillReturnRows(row)
-		mock.ExpectExec("UPDATE testDatabase.testCollection  SET \"item\" = 'new test'  WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT count(*) FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test'").WillReturnRows(row)
+		mock.ExpectExec("UPDATE \"testDatabase\".\"testCollection\"  SET \"item\" = 'new test'  WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		updateReq := types.MustMakeDocument(
 			"update", "testCollection",
@@ -69,9 +69,9 @@ func TestMsgUpdate(t *testing.T) {
 		countRow := sqlmock.NewRows([]string{"count"}).AddRow(1)
 		idRow := sqlmock.NewRows([]string{"_id"}).AddRow("{\"_id\": 123}")
 
-		mock.ExpectQuery("SELECT count(*) FROM testDatabase.testCollection WHERE \"item\" = 'test'").WillReturnRows(countRow)
-		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM testDatabase.testCollection WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnRows(idRow)
-		mock.ExpectExec("UPDATE testDatabase.testCollection  SET \"item\" = 'new test' WHERE \"_id\" = 123").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT count(*) FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test'").WillReturnRows(countRow)
+		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test' AND ( NOT (   \"item\" = 'new test') OR (\"item\" IS UNSET )) ").WillReturnRows(idRow)
+		mock.ExpectExec("UPDATE \"testDatabase\".\"testCollection\"  SET \"item\" = 'new test' WHERE \"_id\" = 123").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		updateReq := types.MustMakeDocument(
 			"update", "testCollection",
