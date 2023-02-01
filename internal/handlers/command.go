@@ -198,6 +198,12 @@ var commands = map[string]command{
 		help:           "Returns documents matched by the custom query.",
 		storageHandler: (common.Storage).MsgFindOrCount,
 	},
+	"findandmodify": {
+		// db.collection.findandmodify()
+		name:           "findandmodify",
+		help:           "find one document, modifies it and return either the old document or the new document.",
+		storageHandler: (common.Storage).MsgFindAndModify,
+	},
 	"count": {
 		// db.collection.find().count()
 		name:           "count",
