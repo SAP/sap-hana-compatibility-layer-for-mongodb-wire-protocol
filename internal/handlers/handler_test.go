@@ -595,7 +595,7 @@ func TestQueryCmd(t *testing.T) {
 	ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
 
 	reqDoc := types.MustMakeDocument(
-		"ismaster", int32(1),
+		"isMaster", int32(1),
 	)
 
 	reqHeader := wire.MsgHeader{
