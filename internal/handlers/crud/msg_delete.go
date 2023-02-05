@@ -94,7 +94,7 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 				return nil, err
 			}
 
-			deleteId, err := getUpdateValue(id.(types.Document).Map()["_id"])
+			deleteId, err := common.GetUpdateValue(id.(types.Document).Map()["_id"])
 			if err != nil {
 				return nil, err
 			}

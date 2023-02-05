@@ -75,6 +75,7 @@ func New(opts *NewOpts) *Handler {
 //
 //nolint:lll // arguments are long
 func (h *Handler) Handle(ctx context.Context, reqHeader *wire.MsgHeader, reqBody wire.MsgBody) (resHeader *wire.MsgHeader, resBody wire.MsgBody, closeConn bool) {
+	fmt.Println(("handler"))
 	resHeader = new(wire.MsgHeader)
 	var err error
 
@@ -172,7 +173,7 @@ func (h *Handler) handleOpMsg(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg
 		return cmd.storageHandler(storage, ctx, msg)
 	}
 
-	return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: '%s'", cmd)
+	return nil, common.NewErrorMessage(common.ErrCommandNotFound, "findAndModifyand: '%s'", cmd)
 }
 
 func (h *Handler) handleOpQuery(ctx context.Context, query *wire.OpQuery) (*wire.OpReply, error) {
@@ -187,6 +188,7 @@ func (h *Handler) handleOpQuery(ctx context.Context, query *wire.OpQuery) (*wire
 }
 
 func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Storage, error) {
+	fmt.Println("msgStorage")
 	available, err := h.hanaPool.JSONDocumentStoreAvailable(ctx)
 	if err != nil {
 		return nil, err
@@ -199,17 +201,22 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	if err != nil {
 		return nil, fmt.Errorf("Handler.msgStorage: %w", err)
 	}
-
+	fmt.Println("msgStorage1")
 	m := document.Map()
 	command := document.Command()
 
+	fmt.Println("msgStorage2")
+	fmt.Println(command)
+	fmt.Println(m[command])
+	fmt.Println(m["findAndModify"])
+	fmt.Println(m["$db"])
 	if command == "createindexes" {
 		return h.crud, nil
 	}
-
+	fmt.Println("msgStorage3")
 	collection := m[command].(string)
 	db := m["$db"].(string)
-
+	fmt.Println("msgStorage4")
 	var jsonbTableExist bool
 	sql := "SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = $1 AND table_name = $2 AND TABLE_TYPE = 'COLLECTION'"
 	rows, err := h.hanaPool.QueryContext(ctx, sql, strings.ToUpper(db), strings.ToUpper(collection))
@@ -217,7 +224,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 	}
 	defer rows.Close()
-
+	fmt.Println("msgStorage5")
 	var address string
 	for rows.Next() {
 		err = rows.Scan(&address)
@@ -225,14 +232,16 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 	}
+	fmt.Println("msgStorage6")
 	if address != "" {
 		jsonbTableExist = true
 	} else {
 		jsonbTableExist = false
 	}
-
+	fmt.Println("msgStorage7")
 	switch command {
-	case "delete", "find", "count":
+	case "delete", "find", "count", "findAndModify":
+		fmt.Println("hey1")
 		if jsonbTableExist {
 			return h.crud, nil
 		} else if collection == "system.js" || collection == "system.version" {
@@ -242,6 +251,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		return nil, fmt.Errorf("Collection %s does not exist", strings.ToUpper(collection))
 
 	case "insert", "update":
+		fmt.Println("hey2")
 		if jsonbTableExist {
 			return h.crud, nil
 		}

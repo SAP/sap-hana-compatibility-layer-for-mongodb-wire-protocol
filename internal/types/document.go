@@ -20,7 +20,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
 	"unicode/utf8"
 )
 
@@ -172,7 +171,7 @@ func (d Document) Keys() []string {
 
 // Command returns the first document's key, this is often used as a command name.
 func (d Document) Command() string {
-	return strings.ToLower(d.keys[0])
+	return d.keys[0]
 }
 
 func (d *Document) add(key string, value any) error {

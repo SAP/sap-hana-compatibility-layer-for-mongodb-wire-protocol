@@ -15,7 +15,9 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 )
 
-// IsIdUnique will check if _id for a document is unique before insertion
+// IsIdUnique will check if _id for a document is unique before insertion.
+// - err is an error thrown by a function used.
+// - errMsg is the error message used if id is not unique.
 func IsIdUnique(id any, db, collection string, ctx context.Context, hanapool *hana.Hpool) (unique bool, errMsg error, err error) {
 	sql := "SELECT _id FROM %s.%s "
 

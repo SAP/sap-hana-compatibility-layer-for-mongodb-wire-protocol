@@ -20,6 +20,7 @@ type findAndModifyParams struct {
 	filter     *types.Document
 	update     *types.Document
 	sort       *types.Document
+	replace    bool
 	remove     bool
 	new        bool
 	docID      any
@@ -30,9 +31,8 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
-
+	fmt.Println("msgfindandmodify")
 	unimplementedFields := []string{
-		"upsert",
 		"arrayFilter",
 		"commented",
 		"fields",
@@ -43,45 +43,51 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 		return nil, err
 	}
 
+	fmt.Println("msgfindandmodify1")
+
 	ignoredFields := []string{
+		"upsert",
 		"bypassDocumentValidation",
 		"writeConcern",
 		"collation",
 		"hint",
 	}
 	common.Ignored(&document, h.l, ignoredFields...)
-
+	fmt.Println("msgfindandmodify2")
 	var params findAndModifyParams
 	err = params.fillFindAndModifyParams(&document)
+	fmt.Println(params)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("msgfindandmodify3")
 	doc, err := findDocument(ctx, &params, h.hanaPool)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("msgfindandmodify4")
 	resp := &wire.OpMsg{}
 	if doc != nil {
 		err = modifyDocument(ctx, &params, h.hanaPool)
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("msgfindandmodify5")
 		if params.new {
 			doc, err = findNewDocument(ctx, &params, h.hanaPool)
 			if err != nil {
 				return nil, err
 			}
 		}
-
+		fmt.Println("msgfindandmodify6")
 		if params.remove {
+			fmt.Println("creating remove resp")
 			err = resp.SetSections(wire.OpMsgSection{
 				Documents: []types.Document{types.MustMakeDocument(
 					"lastErrorObject", types.MustMakeDocument(
 						"n", int32(1),
 					),
-					"value", doc,
+					"value", *doc,
 					"ok", float64(1),
 				)},
 			})
@@ -95,7 +101,7 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 						"n", int32(1),
 						"updatedExisting", true,
 					),
-					"value", doc,
+					"value", &doc,
 					"ok", float64(1),
 				)},
 			})
@@ -132,7 +138,8 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 			}
 		}
 	}
-
+	fmt.Println("sending resp")
+	fmt.Println(resp)
 	return resp, nil
 }
 
@@ -142,6 +149,8 @@ func findDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpo
 	if err != nil {
 		return nil, lazyerrors.Error(err)
 	}
+
+	fmt.Println(sql)
 
 	var docByte []byte
 	row := db.QueryRowContext(ctx, sql)
@@ -155,8 +164,7 @@ func findDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpo
 	}
 
 	var doc bson.Document
-	var b []byte
-	if err := doc.UnmarshalJSON(b); err != nil {
+	if err := doc.UnmarshalJSON(docByte); err != nil {
 		return nil, lazyerrors.Error(err)
 	}
 
@@ -173,22 +181,30 @@ func findDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpo
 
 func modifyDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
 	var err error
-	var sql string
+	//var sql string
+	fmt.Println("modifyDocuemnt1")
 	if params.remove {
-		sql, err = createRemoveSQL(params)
+		fmt.Println("modifyDocuemnt1Remove")
+		err = removeDocument(ctx, params, db)
+	} else if params.replace {
+		fmt.Println("modifyDocumentReplace")
+		err = replaceDocument(ctx, params, db)
 	} else {
-		sql, err = createUpdateSQL(params)
-	}
-	if err != nil {
-		return err
+		fmt.Println("modifyDocuemnt1update")
+		err = updateDocument(ctx, params, db)
 	}
 
-	_, err = db.ExecContext(ctx, sql)
-	if err != nil {
-		return lazyerrors.Error(err)
-	}
+	// fmt.Println(sql)
 
-	return nil
+	// _, err = db.ExecContext(ctx, sql)
+	// fmt.Println("modifyDocuemnt2")
+	// if err != nil {
+	// 	fmt.Println("modifyDocuemnt3")
+	// 	return lazyerrors.Error(err)
+	// }
+	// fmt.Println("modifyDocuemnt4")
+
+	return err
 }
 
 func findNewDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) (*types.Document, error) {
@@ -224,11 +240,15 @@ func findNewDocument(ctx context.Context, params *findAndModifyParams, db *hana.
 func createQuery(ctx context.Context, params *findAndModifyParams) (string, error) {
 
 	sql := fmt.Sprintf("SELECT * FROM \"%s\".\"%s\"", params.db, params.collection)
-
+	fmt.Println(params.filter)
+	fmt.Println(&params.filter)
+	fmt.Println(*params.filter)
 	whereSQL, err := common.CreateWhereClause(*params.filter)
 	if err != nil {
 		return "", lazyerrors.Error(err)
 	}
+
+	fmt.Println(whereSQL)
 
 	orderSQL, err := createOrderBy(params)
 	if err != nil {
@@ -286,67 +306,165 @@ func createOrderBy(params *findAndModifyParams) (sql string, err error) {
 	return
 }
 
-func createRemoveSQL(params *findAndModifyParams) (string, error) {
+func removeDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
 
-	sql := fmt.Sprintf("DELETE FROM \"%s\".\"%s\"")
+	sql := fmt.Sprintf("DELETE FROM \"%s\".\"%s\"", params.db, params.collection)
 
 	whereSQL, err := common.CreateWhereClause(types.MustMakeDocument("_id", params.docID))
 	if err != nil {
-		return "", lazyerrors.Error(err)
+		return lazyerrors.Error(err)
 	}
 
 	sql += whereSQL
 
-	return sql, nil
+	fmt.Println(sql)
+
+	_, err = db.ExecContext(ctx, sql)
+	fmt.Println("modifyDocuemnt2")
+
+	return err
 }
 
-func createUpdateSQL(params *findAndModifyParams) (string, error) {
+func updateDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
 
 	sql := fmt.Sprintf("UPDATE \"%s\".\"%s\"", params.db, params.collection)
 
 	whereSQL, err := common.CreateWhereClause(types.MustMakeDocument("_id", params.docID))
 	if err != nil {
-		return "", lazyerrors.Error(err)
+		return lazyerrors.Error(err)
 	}
 
-	sql += whereSQL
+	updateSQL, _, err := common.Update(*params.filter)
+	if err != nil {
+		return lazyerrors.Error(err)
+	}
 
-	return sql, nil
+	sql += updateSQL + whereSQL
+
+	fmt.Println(sql)
+
+	_, err = db.ExecContext(ctx, sql)
+	fmt.Println("modifyDocuemnt2")
+
+	return err
+}
+
+func replaceDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
+
+	err := removeDocument(ctx, params, db)
+	if err != nil {
+		return err
+	}
+	err = insertDocument(ctx, params, db)
+
+	return err
+}
+
+func insertDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
+
+	var err error
+	var id any
+
+	if id, err = params.update.Get("_id"); err == nil {
+		uniqueId, errMsg, err := common.IsIdUnique(id, params.db, params.collection, ctx, db)
+		if err != nil {
+			return err
+		}
+		if !uniqueId {
+			return errMsg
+		}
+	}
+
+	doc := params.update
+
+	if id != nil {
+		params.docID = id
+		doc.Set("_id", id)
+	}
+
+	sql := fmt.Sprintf("INSERT INTO \"%s\".\"%s\" VALUES ($1)", params.db, params.collection)
+
+	b, err := bson.MustConvertDocument(doc).MarshalJSONHANA()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, sql, b)
+
+	return err
 }
 
 func (params *findAndModifyParams) fillFindAndModifyParams(doc *types.Document) error {
+	fmt.Println("in fillfindandmodifyparams")
 	var ok bool
 	docMap := doc.Map()
 
 	command := doc.Command()
+	fmt.Println("in fillfindandmodifyparams1")
 	params.db, ok = docMap["$db"].(string)
 	if !ok {
 		return fmt.Errorf("key $db not found in document")
 	}
+	fmt.Println("in fillfindandmodifyparams2")
 	params.collection, ok = docMap[command].(string)
 	if !ok {
 		return fmt.Errorf("key %s not found in document", command)
 	}
-	params.filter, ok = docMap["query"].(*types.Document)
+	fmt.Println("in fillfindandmodifyparams3")
+	filter, ok := docMap["query"].(types.Document)
 	if !ok {
 		return fmt.Errorf("key \"query\" not found in document")
 	}
-	params.update, ok = docMap["update"].(*types.Document)
+	params.filter = &filter
+	fmt.Println("in fillfindandmodifyparams4")
+	update, ok := docMap["update"].(types.Document)
 	if !ok {
-		return fmt.Errorf("key \"update\" not found in document")
+		params.remove, ok = docMap["remove"].(bool)
+		if !ok {
+			return fmt.Errorf("found neither remove nor update for findandmodify")
+		}
+	} else {
+		params.remove, ok = docMap["remove"].(bool)
+		if ok {
+			return fmt.Errorf("found both remove nor update for findandmodify")
+		}
+		params.update = &update
+		var err error
+		params.replace, err = checkIfReplace(params.update)
+		if err != nil {
+			return err
+		}
 	}
-	params.sort, ok = docMap["sort"].(*types.Document)
-	if !ok {
-		return fmt.Errorf("key \"sort\" not found in document")
+	fmt.Println("in fillfindandmodifyparams5")
+	var sortDoc types.Document
+	sort, ok := docMap["sort"]
+	if ok {
+		sortDoc, ok = sort.(types.Document)
+		if !ok {
+			fmt.Errorf("expected sort to be document but got %s as %T", sort, sort)
+		}
 	}
-	params.remove, ok = docMap["remove"].(bool)
-	if !ok {
-		return fmt.Errorf("key \"remove\" not found in document")
-	}
-	params.new, ok = docMap["new"].(bool)
-	if !ok {
-		return fmt.Errorf("key \"new\" not found in document")
-	}
+	params.sort = &sortDoc
+	fmt.Println("in fillfindandmodifyparams6")
+
+	fmt.Println("in fillfindandmodifyparams7")
+	params.new, _ = docMap["new"].(bool)
 
 	return nil
+}
+
+func checkIfReplace(doc *types.Document) (bool, error) {
+	supportedUpdateCmds := map[string]struct{}{"$set": {}, "$unset": {}}
+
+	for k, _ := range doc.Map() {
+		if strings.HasPrefix(k, "$") {
+			if _, ok := supportedUpdateCmds[strings.ToLower(k)]; !ok {
+				return false, fmt.Errorf("%s is not supported in update document", k)
+			}
+
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
