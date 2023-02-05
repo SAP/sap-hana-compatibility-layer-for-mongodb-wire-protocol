@@ -21,7 +21,6 @@
 package handlers
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
@@ -31,17 +30,10 @@ import (
 )
 
 func TestCommands(t *testing.T) {
-	t.Run("Command key is all lowercase", func(t *testing.T) {
-		t.Parallel()
-		for key := range commands {
-			assert.Equal(t, key, strings.ToLower(key))
-		}
-	})
-
 	t.Run("Command name matches key", func(t *testing.T) {
 		t.Parallel()
 		for key, command := range commands {
-			assert.Equal(t, key, strings.ToLower(command.name))
+			assert.Equal(t, key, command.name)
 		}
 	})
 }
@@ -99,11 +91,14 @@ func TestSupportedCommands(t *testing.T) {
 			"isMaster", types.MustMakeDocument(
 				"help", "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
 			),
-			"whatsmyuri", types.MustMakeDocument(
+			"whatsMyUri", types.MustMakeDocument(
 				"help", "An internal command.",
 			),
 			"find", types.MustMakeDocument(
 				"help", "Returns documents matched by the custom query.",
+			),
+			"findAndModify", types.MustMakeDocument(
+				"help", "find one document, modifies it and return either the old document or the new document.",
 			),
 			"count", types.MustMakeDocument(
 				"help", "Returns the count of documents that's matched by the query.",
@@ -120,16 +115,16 @@ func TestSupportedCommands(t *testing.T) {
 			"listDatabases", types.MustMakeDocument(
 				"help", "Returns a summary of all the databases.",
 			),
-			"getlasterror", types.MustMakeDocument(
+			"getLastError", types.MustMakeDocument(
 				"help", "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 			),
-			"usersinfo", types.MustMakeDocument(
+			"usersInfo", types.MustMakeDocument(
 				"help", "Returns user USERNAME. Is used as a workaround to allow use of some GUIs",
 			),
-			"rolesinfo", types.MustMakeDocument(
+			"rolesInfo", types.MustMakeDocument(
 				"help", "Return role readWrite. Is used as a workaround to allow use of some GUIs",
 			),
-			"connectionstatus", types.MustMakeDocument(
+			"connectionStatus", types.MustMakeDocument(
 				"help", "checks connection",
 			),
 			"dbStats", types.MustMakeDocument(

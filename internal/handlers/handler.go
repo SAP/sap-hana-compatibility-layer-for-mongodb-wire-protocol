@@ -173,7 +173,7 @@ func (h *Handler) handleOpMsg(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg
 		return cmd.storageHandler(storage, ctx, msg)
 	}
 
-	return nil, common.NewErrorMessage(common.ErrCommandNotFound, "findAndModifyand: '%s'", cmd)
+	return nil, common.NewErrorMessage(common.ErrCommandNotFound, "no such command: '%s'", cmd)
 }
 
 func (h *Handler) handleOpQuery(ctx context.Context, query *wire.OpQuery) (*wire.OpReply, error) {
