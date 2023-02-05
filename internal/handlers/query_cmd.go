@@ -30,7 +30,7 @@ import (
 
 func (h *Handler) QueryCmd(ctx context.Context, query *wire.OpQuery) (*wire.OpReply, error) {
 	switch cmd := query.Query.Command(); cmd {
-	case "isMaster":
+	case "ismaster":
 		// TODO merge with MsgHello
 		reply := &wire.OpReply{
 			NumberReturned: 1,
@@ -53,7 +53,7 @@ func (h *Handler) QueryCmd(ctx context.Context, query *wire.OpQuery) (*wire.OpRe
 			},
 		}
 		return reply, nil
-	case "getLastError":
+	case "getlasterror":
 		reply := &wire.OpReply{
 			NumberReturned: 1,
 			Documents: []types.Document{
