@@ -66,7 +66,7 @@ func TestMsgDelete(t *testing.T) {
 	ctx, storage, mock, err := setupTestUtil(t)
 	require.NoError(t, err)
 	t.Run("deleteMany", func(t *testing.T) {
-		mock.ExpectExec("DELETE FROM testDatabase.testCollection WHERE \"item\" = 'test'").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("DELETE FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test'").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		deleteReq := types.MustMakeDocument(
 			"delete", "testCollection",
@@ -107,8 +107,8 @@ func TestMsgDelete(t *testing.T) {
 	t.Run("deleteOne", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"}).AddRow("{\"_id\": 123}")
 
-		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM testDatabase.testCollection WHERE \"item\" = 'test' LIMIT 1").WillReturnRows(idRow)
-		mock.ExpectExec("DELETE FROM testDatabase.testCollection WHERE \"_id\" = 123").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test' LIMIT 1").WillReturnRows(idRow)
+		mock.ExpectExec("DELETE FROM \"testDatabase\".\"testCollection\" WHERE \"_id\" = 123").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		deleteReq := types.MustMakeDocument(
 			"delete", "testCollection",

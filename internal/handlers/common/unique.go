@@ -19,7 +19,7 @@ import (
 // - err is an error thrown by a function used.
 // - errMsg is the error message used if id is not unique.
 func IsIdUnique(id any, db, collection string, ctx context.Context, hanapool *hana.Hpool) (unique bool, errMsg error, err error) {
-	sql := "SELECT _id FROM %s.%s "
+	sql := "SELECT _id FROM \"%s\".\"%s\" "
 
 	whereSQL, errSQL := CreateWhereClause(types.MustMakeDocument([]any{"_id", id}...))
 	if errSQL != nil {
@@ -48,7 +48,7 @@ func IsIdUnique(id any, db, collection string, ctx context.Context, hanapool *ha
 		return
 	}
 
-	msg := fmt.Sprintf("E11000 duplicate key error collection: %s.%s index: _id_ dup key: { _id: %s }", db, collection, string(byteID))
+	msg := fmt.Sprintf("E11000 duplicate key error collection: \"%s\".\"%s\" index: _id_ dup key: { _id: %s }", db, collection, string(byteID))
 	if strings.Contains(msg, "{\"oid\":") {
 		msg = strings.Replace(msg, "{\"oid\":", "", 1)
 		msg = strings.Replace(msg, "}", "", 1)

@@ -18,7 +18,7 @@ func TestMsgFindOrCound(t *testing.T) {
 	require.NoError(t, err)
 	t.Run("find documents", func(t *testing.T) {
 		docRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 44, 32, 34, 105, 116, 101, 109, 34, 58, 32, 34, 116, 101, 115, 116, 34, 125})
-		mock.ExpectQuery("SELECT * FROM testDatabase.testCollection").WillReturnRows(docRow)
+		mock.ExpectQuery("SELECT * FROM \"testDatabase\".\"testCollection\"").WillReturnRows(docRow)
 
 		deleteReq := types.MustMakeDocument(
 			"find", "testCollection",
@@ -59,7 +59,7 @@ func TestMsgFindOrCound(t *testing.T) {
 
 	t.Run("count", func(t *testing.T) {
 		countRow := mock.NewRows([]string{"count"}).AddRow(3)
-		mock.ExpectQuery("SELECT COUNT(*) FROM testDatabase.testCollection").WillReturnRows(countRow)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"testDatabase\".\"testCollection\"").WillReturnRows(countRow)
 
 		deleteReq := types.MustMakeDocument(
 			"count", "testCollection",
@@ -91,7 +91,7 @@ func TestMsgFindOrCound(t *testing.T) {
 
 	t.Run("find documents with where, order by, limit, and projection", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 125})
-		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM testDatabase.testCollection WHERE \"item\" = 'test' ORDER BY  \"phone\".\"number\" ASC LIMIT 1").WillReturnRows(idRow)
+		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test' ORDER BY  \"phone\".\"number\" ASC LIMIT 1").WillReturnRows(idRow)
 
 		deleteReq := types.MustMakeDocument(
 			"find", "testCollection",

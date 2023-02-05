@@ -72,7 +72,7 @@ func (h *Handler) MsgCreate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 
 	if err = h.hanaPool.CreateCollection(ctx, db, collection); err != nil {
 		if err == hana.ErrAlreadyExist {
-			return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: %s.%s", db, collection)
+			return nil, common.NewErrorMessage(common.ErrNamespaceExists, "Collection already exists. NS: \"%s\".\"%s\"", db, collection)
 		}
 		return nil, lazyerrors.Error(err)
 	}

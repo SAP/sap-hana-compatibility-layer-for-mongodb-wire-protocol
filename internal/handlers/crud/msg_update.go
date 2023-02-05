@@ -79,7 +79,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		}
 
 		// Get amount of documents that fits the filter. MatchCount
-		countSQL := fmt.Sprintf("SELECT count(*) FROM %s.%s", db, collection) + whereSQL
+		countSQL := fmt.Sprintf("SELECT count(*) FROM \"%s\".\"%s\"", db, collection) + whereSQL
 		countRow := h.hanaPool.QueryRowContext(ctx, countSQL)
 
 		err = countRow.Scan(&matched)
@@ -91,7 +91,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 		if docM["multi"] != true { // If updateOne()
 
 			// We get the _id of the one document to update.
-			sql := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM %s.%s", db, collection)
+			sql := fmt.Sprintf("SELECT {\"_id\": \"_id\"} FROM \"%s\".\"%s\"", db, collection)
 			sql += whereSQL + notWhereSQL + " LIMIT 1"
 			row := h.hanaPool.QueryRowContext(ctx, sql)
 
@@ -120,7 +120,7 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 			notWhereSQL = ""
 		}
 
-		sql := fmt.Sprintf("UPDATE %s.%s ", db, collection)
+		sql := fmt.Sprintf("UPDATE \"%s\".\"%s\" ", db, collection)
 
 		sql += updateSQL + " " + fmt.Sprintf(whereSQL, args...) + notWhereSQL
 

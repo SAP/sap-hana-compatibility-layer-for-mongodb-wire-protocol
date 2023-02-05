@@ -218,8 +218,8 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	db := m["$db"].(string)
 	fmt.Println("msgStorage4")
 	var jsonbTableExist bool
-	sql := "SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = $1 AND table_name = $2 AND TABLE_TYPE = 'COLLECTION'"
-	rows, err := h.hanaPool.QueryContext(ctx, sql, strings.ToUpper(db), strings.ToUpper(collection))
+	sql := fmt.Sprintf("SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = '%s' AND table_name = '%s' AND TABLE_TYPE = 'COLLECTION'", db, collection)
+	rows, err := h.hanaPool.QueryContext(ctx, sql)
 	if err != nil {
 		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 	}
@@ -248,7 +248,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return h.crud, nil
 		}
 
-		return nil, fmt.Errorf("Collection %s does not exist", strings.ToUpper(collection))
+		return nil, fmt.Errorf("Collection %s does not exist", collection)
 
 	case "insert", "update":
 		fmt.Println("hey2")
@@ -257,7 +257,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		}
 
 		if strings.EqualFold(command, "update") {
-			return nil, lazyerrors.Errorf("Collection %s does not exist", strings.ToUpper(collection))
+			return nil, lazyerrors.Errorf("Collection %s does not exist", collection)
 		}
 
 		if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {

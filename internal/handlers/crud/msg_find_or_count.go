@@ -174,11 +174,11 @@ func createSqlBaseStmt(docMap map[string]any, ctx *locatCtx) (sql string, err er
 
 		ctx.collection = docMap["find"].(string)
 		ctx.filter, _ = docMap["filter"].(types.Document)
-		sql = fmt.Sprintf(`SELECT %s FROM %s.%s`, projectionSQL, ctx.db, ctx.collection)
+		sql = fmt.Sprintf("SELECT %s FROM \"%s\".\"%s\"", projectionSQL, ctx.db, ctx.collection)
 	} else { // enters here if count
 		ctx.collection = docMap["count"].(string)
 		ctx.filter, _ = docMap["query"].(types.Document)
-		sql = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, ctx.db, ctx.collection)
+		sql = fmt.Sprintf("SELECT COUNT(*) FROM \"%s\".\"%s\"", ctx.db, ctx.collection)
 	}
 	return
 }
