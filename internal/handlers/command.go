@@ -60,6 +60,11 @@ var commands = map[string]command{
 		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 		handler: (*Handler).MsgGetLastError,
 	},
+	"getLastError": {
+		name:    "getLastError",
+		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
+		handler: (*Handler).MsgGetLastError,
+	},
 	"connectionStatus": {
 		name:    "connectionStatus",
 		help:    "checks connection",
@@ -167,9 +172,9 @@ var commands = map[string]command{
 		help:    "Returns a pong response. Used for testing purposes.",
 		handler: (*Handler).MsgPing,
 	},
-	"whatsMyUri": {
+	"whatsmyuri": {
 		//  db.runCommand( { whatsmyuri: 1 } )
-		name:    "whatsMyUri",
+		name:    "whatsmyuri",
 		help:    "An internal command.",
 		handler: (*Handler).MsgWhatsMyURI,
 	},

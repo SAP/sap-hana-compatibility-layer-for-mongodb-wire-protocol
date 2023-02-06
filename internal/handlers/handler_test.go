@@ -448,13 +448,13 @@ func TestDatabaseCommand(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("whatsMyUri", func(t *testing.T) {
+	t.Run("whatsmyuri", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)
 
 		reqDoc := types.MustMakeDocument(
-			"whatsMyUri", int32(1),
+			"whatsmyuri", int32(1),
 			"$db", "testDatabase",
 		)
 

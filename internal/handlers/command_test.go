@@ -91,7 +91,7 @@ func TestSupportedCommands(t *testing.T) {
 			"isMaster", types.MustMakeDocument(
 				"help", "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
 			),
-			"whatsMyUri", types.MustMakeDocument(
+			"whatsmyuri", types.MustMakeDocument(
 				"help", "An internal command.",
 			),
 			"find", types.MustMakeDocument(
@@ -116,6 +116,9 @@ func TestSupportedCommands(t *testing.T) {
 				"help", "Returns a summary of all the databases.",
 			),
 			"getlasterror", types.MustMakeDocument(
+				"help", "Does not return last error. Is used as a workaround to allow use of some GUIs.",
+			),
+			"getLastError", types.MustMakeDocument(
 				"help", "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 			),
 			"usersInfo", types.MustMakeDocument(
