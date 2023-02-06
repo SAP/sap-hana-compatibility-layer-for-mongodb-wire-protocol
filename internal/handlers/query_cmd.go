@@ -20,6 +20,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/bson"
@@ -29,7 +30,7 @@ import (
 )
 
 func (h *Handler) QueryCmd(ctx context.Context, query *wire.OpQuery) (*wire.OpReply, error) {
-	switch cmd := query.Query.Command(); cmd {
+	switch cmd := strings.ToLower(query.Query.Command()); cmd {
 	case "ismaster":
 		// TODO merge with MsgHello
 		reply := &wire.OpReply{
