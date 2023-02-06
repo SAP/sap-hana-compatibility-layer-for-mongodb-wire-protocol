@@ -5,6 +5,7 @@
 package crud
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -174,4 +175,121 @@ func TestMsgFindAndModify(t *testing.T) {
 			t.Errorf("there were unfulfilled expectations: %s", err)
 		}
 	})
+
+	t.Run("find, remove and return old document - No document found", func(t *testing.T) {
+
+		mock.ExpectQuery("SELECT * FROM \"testDB\".\"testCollection\" WHERE \"_id\" = 123 LIMIT 1").WillReturnError(sql.ErrNoRows)
+
+		req := types.MustMakeDocument(
+			"findAndModify", "testCollection",
+			"query", types.MustMakeDocument(
+				"_id", int32(123),
+			),
+			"remove", true,
+			"new", false,
+			"upsert", false,
+			"$db", "testDB",
+		)
+
+		var reqMsg wire.OpMsg
+		err = reqMsg.SetSections(wire.OpMsgSection{
+			Documents: []types.Document{req},
+		})
+		require.NoError(t, err)
+
+		resp, err := storage.MsgFindAndModify(ctx, &reqMsg)
+		expected := types.MustMakeDocument(
+			"lastErrorObject", types.MustMakeDocument(
+				"n", int32(0),
+			),
+			"ok", float64(1),
+		)
+
+		actual, _ := resp.Document()
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("find, update and return new document - No document found", func(t *testing.T) {
+
+		mock.ExpectQuery("SELECT * FROM \"testDB\".\"testCollection\" WHERE \"_id\" = 123 LIMIT 1").WillReturnError(sql.ErrNoRows)
+
+		req := types.MustMakeDocument(
+			"findAndModify", "testCollection",
+			"query", types.MustMakeDocument(
+				"_id", int32(123),
+			),
+			"remove", false,
+			"new", true,
+			"upsert", false,
+			"update", types.MustMakeDocument(
+				"$set", types.MustMakeDocument(
+					"name", "test name",
+				),
+			),
+
+			"$db", "testDB",
+		)
+
+		var reqMsg wire.OpMsg
+		err = reqMsg.SetSections(wire.OpMsgSection{
+			Documents: []types.Document{req},
+		})
+		require.NoError(t, err)
+
+		resp, err := storage.MsgFindAndModify(ctx, &reqMsg)
+		expected := types.MustMakeDocument(
+			"lastErrorObject", types.MustMakeDocument(
+				"n", int32(0),
+				"updatedExisting", false,
+			),
+			"value", nil,
+			"ok", float64(1),
+		)
+
+		actual, _ := resp.Document()
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("upsert not supported", func(t *testing.T) {
+		req := types.MustMakeDocument(
+			"findAndModify", "testCollection",
+			"query", types.MustMakeDocument(
+				"_id", int32(123),
+			),
+			"remove", false,
+			"new", true,
+			"upsert", true,
+			"update", types.MustMakeDocument(
+				"$set", types.MustMakeDocument(
+					"name", "test name",
+				),
+			),
+
+			"$db", "testDB",
+		)
+
+		var reqMsg wire.OpMsg
+		err = reqMsg.SetSections(wire.OpMsgSection{
+			Documents: []types.Document{req},
+		})
+		require.NoError(t, err)
+
+		resp, err := storage.MsgFindAndModify(ctx, &reqMsg)
+
+		assert.Nil(t, resp)
+		assert.ErrorContains(t, err, "upsert is not yet supported")
+	})
+
 }

@@ -55,8 +55,8 @@ var commands = map[string]command{
 		help:    "Return role readWrite. Is used as a workaround to allow use of some GUIs",
 		handler: (*Handler).MsgRolesInfo,
 	},
-	"getLastError": {
-		name:    "getLastError",
+	"getlasterror": {
+		name:    "getlasterror",
 		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 		handler: (*Handler).MsgGetLastError,
 	},

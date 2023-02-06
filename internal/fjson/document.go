@@ -226,10 +226,8 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 
 	buf.WriteByte('{')
 
-	objectId, _ := td.Get("_id")
-	// Puts field _id in the front of the document
-	switch objectId := objectId.(type) {
-	case types.ObjectID:
+	// Puts field _id as first key-value pair in document
+	if objectId, err := td.Get("_id"); err == nil {
 		buf.Write([]byte("\"_id\""))
 		buf.WriteByte(':')
 		b, err = MarshalHANA(objectId)
@@ -241,8 +239,6 @@ func (doc *Document) MarshalJSONHANA() ([]byte, error) {
 		buf.Write(b)
 
 		idInserted = true
-	default:
-		idInserted = false
 	}
 
 	i := 0

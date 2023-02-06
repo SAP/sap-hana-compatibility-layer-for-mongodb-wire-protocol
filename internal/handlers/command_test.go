@@ -115,7 +115,7 @@ func TestSupportedCommands(t *testing.T) {
 			"listDatabases", types.MustMakeDocument(
 				"help", "Returns a summary of all the databases.",
 			),
-			"getLastError", types.MustMakeDocument(
+			"getlasterror", types.MustMakeDocument(
 				"help", "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 			),
 			"usersInfo", types.MustMakeDocument(
