@@ -46,7 +46,7 @@ func TestProjection(t *testing.T) {
 		},
 		{
 			name: "unimplemented operation error test", r: types.MustMakeDocument("$elemMatch", true),
-			e: expected{sql: "", exclusion: false, err: fmt.Errorf("NotImplemented (238): $elemmatch: support for field \"$elemMatch\" is not implemented yet")},
+			e: expected{sql: "", exclusion: false, err: fmt.Errorf("NotImplemented (238): $elemMatch: support for field \"$elemMatch\" is not implemented yet")},
 		},
 	}
 

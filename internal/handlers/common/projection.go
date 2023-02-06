@@ -21,7 +21,6 @@
 package common
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -188,7 +187,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 	}
 
 	sql += "}"
-	fmt.Println(sql)
+
 	return
 }
 

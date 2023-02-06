@@ -283,13 +283,13 @@ func TestInsert(t *testing.T) {
 }
 
 func TestDatabaseCommand(t *testing.T) {
-	t.Run("buildinfo", func(t *testing.T) {
+	t.Run("buildInfo", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, handler, _ := setup(t, nil)
 
 		reqDoc := types.MustMakeDocument(
-			"buildinfo", int32(1),
+			"buildInfo", int32(1),
 			"$db", "testDatabase",
 		)
 
@@ -448,7 +448,7 @@ func TestDatabaseCommand(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("whatsMyUri", func(t *testing.T) {
+	t.Run("whatsmyuri", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, handler, _ := setup(t, QueryMatcherEqualBytes)

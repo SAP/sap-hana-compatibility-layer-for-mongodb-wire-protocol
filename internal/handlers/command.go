@@ -39,19 +39,19 @@ type command struct {
 
 // Commented out commands are not supported yet
 var commands = map[string]command{
-	"buildinfo": {
+	"buildInfo": {
 		// db.runCommand({buildInfo: 1})
 		name:    "buildInfo",
 		help:    "Returns a summary of the build information.",
 		handler: (*Handler).MsgBuildInfo,
 	},
-	"usersinfo": {
-		name:    "usersinfo",
+	"usersInfo": {
+		name:    "usersInfo",
 		help:    "Returns user USERNAME. Is used as a workaround to allow use of some GUIs",
 		handler: (*Handler).MsgUsersInfo,
 	},
-	"rolesinfo": {
-		name:    "rolesinfo",
+	"rolesInfo": {
+		name:    "rolesInfo",
 		help:    "Return role readWrite. Is used as a workaround to allow use of some GUIs",
 		handler: (*Handler).MsgRolesInfo,
 	},
@@ -60,8 +60,13 @@ var commands = map[string]command{
 		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
 		handler: (*Handler).MsgGetLastError,
 	},
-	"connectionstatus": {
-		name:    "connectionstatus",
+	"getLastError": {
+		name:    "getLastError",
+		help:    "Does not return last error. Is used as a workaround to allow use of some GUIs.",
+		handler: (*Handler).MsgGetLastError,
+	},
+	"connectionStatus": {
+		name:    "connectionStatus",
 		help:    "checks connection",
 		handler: (*Handler).MsgConnectionStatus,
 	},
@@ -90,7 +95,7 @@ var commands = map[string]command{
 	// 	help:    "Returns the size of the collection in bytes.",
 	// 	handler: (*Handler).MsgDataSize,
 	// },
-	"dbstats": {
+	"dbStats": {
 		// db.runCommand({dbStats: 1})
 		name:    "dbStats",
 		help:    "Returns the statistics of the database.",
@@ -102,7 +107,7 @@ var commands = map[string]command{
 		help:    "Drops the collection.",
 		handler: (*Handler).MsgDrop,
 	},
-	"dropdatabase": {
+	"dropDatabase": {
 		// db.dropDatabase()
 		name:    "dropDatabase",
 		help:    "Deletes the database.",
@@ -114,7 +119,7 @@ var commands = map[string]command{
 	// 	help:    "Returns a summary of all runtime and configuration options.",
 	// 	handler: (*Handler).MsgGetCmdLineOpts,
 	// },
-	"getlog": {
+	"getLog": {
 		// db.adminCommand( { getLog: "startupWarnings" } )
 		name:    "getLog",
 		help:    "Returns the most recent logged events from memory.",
@@ -126,13 +131,13 @@ var commands = map[string]command{
 	// 	help:    "Returns the value of the parameter.",
 	// 	handler: (*Handler).MsgGetParameter,
 	// },
-	"hostinfo": {
+	"hostInfo": {
 		// db.hostInfo()
 		name:    "hostInfo",
 		help:    "Returns a summary of the system information.",
 		handler: (*Handler).MsgHostInfo,
 	},
-	"ismaster": {
+	"isMaster": {
 		// db.isMaster()
 		name:    "isMaster",
 		help:    "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
@@ -144,19 +149,19 @@ var commands = map[string]command{
 		help:    "Returns the role of the SAP HANA compatibility layer for MongoDB Wire Protocol instance.",
 		handler: (*Handler).MsgHello,
 	},
-	"listcollections": {
+	"listCollections": {
 		// db.getCollectionNames() or show collections
 		name:    "listCollections",
 		help:    "Returns the information of the collections and views in the database.",
 		handler: (*Handler).MsgListCollections,
 	},
-	"listdatabases": {
+	"listDatabases": {
 		// db.adminCommand( { listDatabases: 1 } ) or show dbs
 		name:    "listDatabases",
 		help:    "Returns a summary of all the databases.",
 		handler: (*Handler).MsgListDatabases,
 	},
-	"listcommands": {
+	"listCommands": {
 		// db.listCommands()
 		name: "listCommands",
 		help: "Returns information about the currently supported commands.",
@@ -197,6 +202,12 @@ var commands = map[string]command{
 		name:           "find",
 		help:           "Returns documents matched by the custom query.",
 		storageHandler: (common.Storage).MsgFindOrCount,
+	},
+	"findAndModify": {
+		// db.collection.findandmodify()
+		name:           "findAndModify",
+		help:           "find one document, modifies it and return either the old document or the new document.",
+		storageHandler: (common.Storage).MsgFindAndModify,
 	},
 	"count": {
 		// db.collection.find().count()

@@ -53,7 +53,19 @@ func (h *Handler) QueryCmd(ctx context.Context, query *wire.OpQuery) (*wire.OpRe
 			},
 		}
 		return reply, nil
-
+	case "getlasterror":
+		reply := &wire.OpReply{
+			NumberReturned: 1,
+			Documents: []types.Document{
+				types.MustMakeDocument(
+					"errmsg", "This a custom error. Only used in GUI's as a workaround-",
+					"code", int32(59),
+					"codeName", "internalError",
+					"ok", float64(1),
+				),
+			},
+		}
+		return reply, nil
 	default:
 		return nil, common.NewErrorMessage(common.ErrNotImplemented, "QueryCmd: unhandled command %q", cmd)
 	}

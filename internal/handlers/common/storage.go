@@ -28,6 +28,7 @@ type Storage interface {
 	MsgCreateIndexes(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 	MsgDelete(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 	MsgFindOrCount(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
+	MsgFindAndModify(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 	MsgInsert(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 	MsgUpdate(context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 }

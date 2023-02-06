@@ -225,6 +225,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
 		}
 	}
+
 	if address != "" {
 		jsonbTableExist = true
 	} else {
@@ -232,7 +233,7 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 	}
 
 	switch command {
-	case "delete", "find", "count":
+	case "delete", "find", "count", "findAndModify":
 		if jsonbTableExist {
 			return h.crud, nil
 		} else if collection == "system.js" || collection == "system.version" {
