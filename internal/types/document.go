@@ -127,6 +127,15 @@ func MustMakeDocument(pairs ...any) Document {
 	return doc
 }
 
+// MustMakeDocument is a MakeDocument that panics in case of error.
+func MustMakeDocumentPointer(pairs ...any) *Document {
+	doc, err := MakeDocument(pairs...)
+	if err != nil {
+		panic(err)
+	}
+	return &doc
+}
+
 func (d Document) compositeType() {}
 
 // validate checks if the document is valid.

@@ -27,6 +27,8 @@ type findAndModifyParams struct {
 	replace    bool
 	remove     bool
 	new        bool
+	upsert     bool
+	upsertDoc  *types.Document
 	docID      any
 }
 
@@ -39,7 +41,6 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 	unimplementedFields := []string{
 		"arrayFilter",
 		"commented",
-		"fields",
 		"let",
 		"maxTimeMS",
 	}
@@ -48,7 +49,7 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 	}
 
 	ignoredFields := []string{
-		"upsert",
+		"fields",
 		"bypassDocumentValidation",
 		"writeConcern",
 		"collation",
@@ -68,7 +69,7 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 	}
 
 	resp := &wire.OpMsg{}
-	if doc != nil {
+	if doc != nil || params.upsert {
 		err = modifyDocument(ctx, &params, h.hanaPool)
 		if err != nil {
 			return nil, err
@@ -88,6 +89,21 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 						"n", int32(1),
 					),
 					"value", *doc,
+					"ok", float64(1),
+				)},
+			})
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
+		} else if doc == nil {
+			// find better value for nil
+			err = resp.SetSections(wire.OpMsgSection{
+				Documents: []types.Document{types.MustMakeDocument(
+					"lastErrorObject", types.MustMakeDocument(
+						"n", int32(0),
+						"updatedExisting", false,
+					),
+					"value", nil,
 					"ok", float64(1),
 				)},
 			})
@@ -179,12 +195,20 @@ func findDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpo
 func modifyDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
 	var err error
 
-	if params.remove {
+	if params.docID == nil {
+		params.upsertDoc, err = common.Upsert(params.update, params.filter, params.replace)
+		if err != nil {
+			return lazyerrors.Error(err)
+		}
+		err = upsertDocument(ctx, params, db)
+	} else if params.remove {
 		err = removeDocument(ctx, params, db)
 	} else if params.replace {
 		err = replaceDocument(ctx, params, db)
-	} else {
+	} else if params.update != nil {
 		err = updateDocument(ctx, params, db)
+	} else {
+		return common.NewErrorMessage(common.ErrBadValue, "Usage of findAndModify seems incorrect")
 	}
 
 	return err
@@ -368,6 +392,38 @@ func insertDocument(ctx context.Context, params *findAndModifyParams, db *hana.H
 	return err
 }
 
+func upsertDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
+
+	var err error
+	var id any
+
+	if id, err = params.upsertDoc.Get("_id"); err == nil {
+		uniqueId, errMsg, err := common.IsIdUnique(id, params.db, params.collection, ctx, db)
+		if err != nil {
+			return lazyerrors.Error(err)
+		}
+		if !uniqueId {
+			return errMsg
+		}
+	} else {
+		return fmt.Errorf("upsert document contains no object id")
+	}
+	if params.new {
+		params.docID = id
+	}
+
+	sql := fmt.Sprintf("INSERT INTO \"%s\".\"%s\" VALUES ($1)", params.db, params.collection)
+
+	b, err := bson.MustConvertDocument(params.upsertDoc).MarshalJSONHANA()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, sql, b)
+
+	return err
+}
+
 func (params *findAndModifyParams) fillFindAndModifyParams(doc *types.Document) error {
 	var ok bool
 	docMap := doc.Map()
@@ -430,9 +486,13 @@ func (params *findAndModifyParams) fillFindAndModifyParams(doc *types.Document) 
 
 	params.new, _ = docMap["new"].(bool)
 
-	upsert, _ := docMap["upsert"].(bool)
-	if upsert {
-		return common.NewErrorMessage(common.ErrNotImplemented, "upsert is not yet supported")
+	params.upsert, _ = docMap["upsert"].(bool)
+
+	fields, ok := docMap["fields"].(types.Document)
+	if ok {
+		if len(fields.Keys()) != 0 {
+			return common.NewErrorMessage(common.ErrNotImplemented, "argument \"fields\" is not implemented yet")
+		}
 	}
 
 	return nil
