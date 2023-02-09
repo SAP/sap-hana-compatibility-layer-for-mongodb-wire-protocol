@@ -95,6 +95,21 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 			if err != nil {
 				return nil, lazyerrors.Error(err)
 			}
+		} else if doc == nil {
+			// find better value for nil
+			err = resp.SetSections(wire.OpMsgSection{
+				Documents: []types.Document{types.MustMakeDocument(
+					"lastErrorObject", types.MustMakeDocument(
+						"n", int32(0),
+						"updatedExisting", false,
+					),
+					"value", nil,
+					"ok", float64(1),
+				)},
+			})
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
 		} else {
 			err = resp.SetSections(wire.OpMsgSection{
 				Documents: []types.Document{types.MustMakeDocument(
@@ -378,6 +393,25 @@ func insertDocument(ctx context.Context, params *findAndModifyParams, db *hana.H
 }
 
 func upsertDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) error {
+
+	var err error
+	var id any
+
+	if id, err = params.upsertDoc.Get("_id"); err == nil {
+		uniqueId, errMsg, err := common.IsIdUnique(id, params.db, params.collection, ctx, db)
+		if err != nil {
+			return lazyerrors.Error(err)
+		}
+		if !uniqueId {
+			return errMsg
+		}
+	} else {
+		return fmt.Errorf("upsert document contains no object id")
+	}
+	if params.new {
+		params.docID = id
+	}
+
 	sql := fmt.Sprintf("INSERT INTO \"%s\".\"%s\" VALUES ($1)", params.db, params.collection)
 
 	b, err := bson.MustConvertDocument(params.upsertDoc).MarshalJSONHANA()
@@ -454,9 +488,11 @@ func (params *findAndModifyParams) fillFindAndModifyParams(doc *types.Document) 
 
 	params.upsert, _ = docMap["upsert"].(bool)
 
-	_, ok = docMap["fields"].(types.Document)
+	fields, ok := docMap["fields"].(types.Document)
 	if ok {
-		return common.NewErrorMessage(common.ErrNotImplemented, "argument \"fields\" is not implemented yet")
+		if len(fields.Keys()) != 0 {
+			return common.NewErrorMessage(common.ErrNotImplemented, "argument \"fields\" is not implemented yet")
+		}
 	}
 
 	return nil

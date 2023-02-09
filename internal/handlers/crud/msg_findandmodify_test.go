@@ -262,7 +262,15 @@ func TestMsgFindAndModify(t *testing.T) {
 		}
 	})
 
-	t.Run("upsert not supported", func(t *testing.T) {
+	t.Run("find, update and return new document - No document found - upsert", func(t *testing.T) {
+
+		upsertDoc := mock.NewRows([]string{"document"}).AddRow([]byte("{\"_id\": 123, \"name\": \"test name\"}"))
+
+		mock.ExpectQuery("SELECT * FROM \"testDB\".\"testCollection\" WHERE \"_id\" = 123 LIMIT 1").WillReturnError(sql.ErrNoRows)
+		mock.ExpectQuery("SELECT _id FROM \"testDB\".\"testCollection\"  WHERE \"_id\" = 123 LIMIT 1").WillReturnError(sql.ErrNoRows)
+		mock.ExpectExec("INSERT INTO \"testDB\".\"testCollection\" VALUES ($1) ").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT * FROM \"testDB\".\"testCollection\" WHERE \"_id\" = 123 LIMIT 1").WillReturnRows(upsertDoc)
+
 		req := types.MustMakeDocument(
 			"findAndModify", "testCollection",
 			"query", types.MustMakeDocument(
@@ -287,9 +295,25 @@ func TestMsgFindAndModify(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := storage.MsgFindAndModify(ctx, &reqMsg)
+		expected := types.MustMakeDocument(
+			"lastErrorObject", types.MustMakeDocument(
+				"n", int32(1),
+				"updatedExisting", true,
+			),
+			"value", types.MustMakeDocument(
+				"_id", int32(123),
+				"name", "test name",
+			),
+			"ok", float64(1),
+		)
 
-		assert.Nil(t, resp)
-		assert.ErrorContains(t, err, "upsert is not yet supported")
+		actual, _ := resp.Document()
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
 	})
-
 }

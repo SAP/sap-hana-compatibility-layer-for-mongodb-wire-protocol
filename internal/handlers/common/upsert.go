@@ -36,21 +36,22 @@ import (
 func Upsert(updateDoc *types.Document, filter *types.Document, replace bool) (*types.Document, error) {
 	var doc *types.Document
 	var d *types.Document
-	var idFilter bool
-	var idUpdate bool
 	var err error
 
 	if replace {
 		doc = updateDoc
 	} else {
-		d, idFilter, err = filterUpsert(filter)
+		d, err = filterUpsert(filter)
 		if err != nil {
 			return nil, lazyerrors.Error(err)
 		}
-		doc, idUpdate, err = updateUpsert(updateDoc, idFilter, d)
+		doc, err = updateUpsert(updateDoc, d)
+		if err != nil {
+			return nil, lazyerrors.Error(err)
+		}
 	}
 
-	if !idFilter && !idUpdate {
+	if _, err := doc.Get("_id"); err != nil {
 		objId := generateObjectID()
 		doc.Set("_id", objId)
 	}
@@ -58,9 +59,8 @@ func Upsert(updateDoc *types.Document, filter *types.Document, replace bool) (*t
 	return doc, nil
 }
 
-func filterUpsert(filter *types.Document) (*types.Document, bool, error) {
-	var doc types.Document
-	var idFilter bool
+func filterUpsert(filter *types.Document) (*types.Document, error) {
+	doc := types.MustMakeDocument()
 
 	for key, value := range filter.Map() {
 		if strings.HasPrefix(key, "$") {
@@ -72,31 +72,32 @@ func filterUpsert(filter *types.Document) (*types.Document, bool, error) {
 		if _, ok := value.(types.Array); ok {
 			continue
 		}
-		if key == "_id" {
-			idFilter = true
+		if strings.Contains(key, ".") {
+			continue
 		}
 
 		err := doc.Set(key, value)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
-
 	}
 
-	return &doc, idFilter, nil
+	return &doc, nil
 }
 
-func updateUpsert(updateDoc *types.Document, idFilter bool, d *types.Document) (*types.Document, bool, error) {
-	var idUpdate bool
+func updateUpsert(updateDoc *types.Document, d *types.Document) (*types.Document, error) {
 	updateMap := updateDoc.Map()
 
 	setDoc, ok := updateMap["$set"].(types.Document)
 	if !ok {
-		return d, false, nil
+		return d, nil
 	}
 
 	for key, value := range setDoc.Map() {
 		if strings.HasPrefix(key, "$") {
+			continue
+		}
+		if strings.Contains(key, ".") {
 			continue
 		}
 
@@ -105,22 +106,18 @@ func updateUpsert(updateDoc *types.Document, idFilter bool, d *types.Document) (
 			if reflect.DeepEqual(value, dValue) {
 				continue
 			} else {
-				return nil, false, lazyerrors.Errorf("Key-value pair %s:%s from query document is not equal to same key-value pair %s:%s in update document", key, dValue, key, value)
+				return nil, lazyerrors.Errorf("Key-value pair %s:%s from query document is not equal to same key-value pair %s:%s in update document", key, dValue, key, value)
 			}
-		}
-
-		if key == "_id" {
-			idUpdate = true
 		}
 
 		err := d.Set(key, value)
 		if err != nil {
-			return nil, false, lazyerrors.Error(err)
+			return nil, lazyerrors.Error(err)
 		}
 
 	}
 
-	return d, idUpdate, nil
+	return d, nil
 }
 
 func generateObjectID() types.ObjectID {
