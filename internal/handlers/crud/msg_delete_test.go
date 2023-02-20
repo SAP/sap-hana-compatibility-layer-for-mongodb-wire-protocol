@@ -66,6 +66,11 @@ func TestMsgDelete(t *testing.T) {
 	ctx, storage, mock, err := setupTestUtil(t)
 	require.NoError(t, err)
 	t.Run("deleteMany", func(t *testing.T) {
+		row1 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row2 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'testDatabase'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'testDatabase' AND table_name = 'testCollection' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row2)
 		mock.ExpectExec("DELETE FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test'").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		deleteReq := types.MustMakeDocument(
@@ -106,7 +111,11 @@ func TestMsgDelete(t *testing.T) {
 
 	t.Run("deleteOne", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"}).AddRow("{\"_id\": 123}")
+		row1 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row2 := sqlmock.NewRows([]string{"count"}).AddRow(1)
 
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'testDatabase'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'testDatabase' AND table_name = 'testCollection' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row2)
 		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test' LIMIT 1").WillReturnRows(idRow)
 		mock.ExpectExec("DELETE FROM \"testDatabase\".\"testCollection\" WHERE \"_id\" = 123").WillReturnResult(sqlmock.NewResult(1, 1))
 

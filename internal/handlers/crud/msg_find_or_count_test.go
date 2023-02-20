@@ -18,6 +18,11 @@ func TestMsgFindOrCound(t *testing.T) {
 	require.NoError(t, err)
 	t.Run("find documents", func(t *testing.T) {
 		docRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 44, 32, 34, 105, 116, 101, 109, 34, 58, 32, 34, 116, 101, 115, 116, 34, 125})
+		row1 := mock.NewRows([]string{"count"}).AddRow(1)
+		row2 := mock.NewRows([]string{"count"}).AddRow(1)
+
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'testDatabase'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'testDatabase' AND table_name = 'testCollection' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row2)
 		mock.ExpectQuery("SELECT * FROM \"testDatabase\".\"testCollection\"").WillReturnRows(docRow)
 
 		deleteReq := types.MustMakeDocument(
@@ -59,6 +64,11 @@ func TestMsgFindOrCound(t *testing.T) {
 
 	t.Run("count", func(t *testing.T) {
 		countRow := mock.NewRows([]string{"count"}).AddRow(3)
+		row1 := mock.NewRows([]string{"count"}).AddRow(1)
+		row2 := mock.NewRows([]string{"count"}).AddRow(1)
+
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'testDatabase'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'testDatabase' AND table_name = 'testCollection' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row2)
 		mock.ExpectQuery("SELECT COUNT(*) FROM \"testDatabase\".\"testCollection\"").WillReturnRows(countRow)
 
 		deleteReq := types.MustMakeDocument(
@@ -91,6 +101,11 @@ func TestMsgFindOrCound(t *testing.T) {
 
 	t.Run("find documents with where, order by, limit, and projection", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"document"}).AddRow([]byte{123, 34, 95, 105, 100, 34, 58, 32, 49, 50, 51, 125})
+		row1 := mock.NewRows([]string{"count"}).AddRow(1)
+		row2 := mock.NewRows([]string{"count"}).AddRow(1)
+
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'testDatabase'").WillReturnRows(row1)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'testDatabase' AND table_name = 'testCollection' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row2)
 		mock.ExpectQuery("SELECT {\"_id\": \"_id\"} FROM \"testDatabase\".\"testCollection\" WHERE \"item\" = 'test' ORDER BY  \"phone\".\"number\" ASC LIMIT 1").WillReturnRows(idRow)
 
 		deleteReq := types.MustMakeDocument(

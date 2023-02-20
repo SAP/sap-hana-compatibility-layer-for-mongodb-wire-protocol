@@ -45,7 +45,7 @@ func TestHanapool(t *testing.T) {
 
 		row := sqlmock.NewRows([]string{"table_name"}).AddRow("testTable")
 		args := []driver.Value{"testDatabase"}
-		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnError(fmt.Errorf("error"))
+
 		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(row)
 
 		h := Hpool{
@@ -65,7 +65,6 @@ func TestHanapool(t *testing.T) {
 		nilRow := sqlmock.NewRows([]string{"table_name"}).AddRow(nil)
 		args = []driver.Value{"testDatabase"}
 
-		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnError(fmt.Errorf("error"))
 		mock.ExpectQuery("SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';").WithArgs(args...).WillReturnRows(nilRow)
 
 		tables, err = h.Tables(ctx, "testDatabase")

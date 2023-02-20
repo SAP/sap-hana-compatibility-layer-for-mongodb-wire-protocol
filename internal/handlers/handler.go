@@ -23,7 +23,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync/atomic"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
@@ -200,69 +199,11 @@ func (h *Handler) msgStorage(ctx context.Context, msg *wire.OpMsg) (common.Stora
 		return nil, fmt.Errorf("Handler.msgStorage: %w", err)
 	}
 
-	m := document.Map()
 	command := document.Command()
 
-	if command == "createindexes" {
-		return h.crud, nil
-	}
-
-	collection := m[command].(string)
-	db := m["$db"].(string)
-
-	var jsonbTableExist bool
-	sql := fmt.Sprintf("SELECT Table_name FROM PUBLIC.M_TABLES WHERE SCHEMA_NAME = '%s' AND table_name = '%s' AND TABLE_TYPE = 'COLLECTION'", db, collection)
-	rows, err := h.hanaPool.QueryContext(ctx, sql)
-	if err != nil {
-		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-	}
-	defer rows.Close()
-
-	var address string
-	for rows.Next() {
-		err = rows.Scan(&address)
-		if err != nil {
-			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		}
-	}
-
-	if address != "" {
-		jsonbTableExist = true
-	} else {
-		jsonbTableExist = false
-	}
-
 	switch command {
-	case "delete", "find", "count", "findAndModify":
-		if jsonbTableExist {
-			return h.crud, nil
-		} else if collection == "system.js" || collection == "system.version" {
-			return h.crud, nil
-		}
-
-		return nil, fmt.Errorf("Collection %s does not exist", collection)
-
-	case "insert", "update":
-		if jsonbTableExist {
-			return h.crud, nil
-		}
-
-		if strings.EqualFold(command, "update") {
-			return nil, lazyerrors.Errorf("Collection %s does not exist", collection)
-		}
-
-		if err := h.hanaPool.CreateSchema(ctx, db); err != nil && err != hana.ErrAlreadyExist {
-			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		}
-
-		// create table
-		if err := h.hanaPool.CreateCollection(ctx, db, collection); err != nil {
-			return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-		}
-
-		h.l.Info("Created collection.", zap.String("schema", db), zap.String("table", collection))
+	case "delete", "find", "count", "findAndModify", "update", "insert", "createindexes":
 		return h.crud, nil
-
 	default:
 		panic(fmt.Sprintf("unhandled command %q", command))
 	}

@@ -21,6 +21,8 @@ package handlers
 import (
 	"context"
 
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/wire"
@@ -44,6 +46,8 @@ func (h *Handler) MsgDropDatabase(ctx context.Context, msg *wire.OpMsg) (*wire.O
 	switch err {
 	case nil:
 		res.Set("dropped", db)
+	case hana.ErrNotExist:
+		return nil, common.NewErrorMessage(common.ErrNamespaceNotFound, "Database does not exist")
 	default:
 		return nil, lazyerrors.Error(err)
 	}

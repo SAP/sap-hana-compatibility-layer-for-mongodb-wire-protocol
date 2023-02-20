@@ -50,6 +50,10 @@ func (h *storage) MsgInsert(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	collection := m[document.Command()].(string)
 	db := m["$db"].(string)
 
+	if err = h.hanaPool.CreateNamespaceIfNotExists(ctx, db, collection); err != nil {
+		return nil, err
+	}
+
 	docs, _ := m["documents"].(*types.Array)
 
 	var inserted int32

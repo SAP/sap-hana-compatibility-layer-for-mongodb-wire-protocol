@@ -38,6 +38,7 @@ type locatCtx struct {
 	filter     types.Document
 	db         string
 	collection string
+	count      bool
 }
 
 // MsgFindOrCount finds documents in a collection or view and returns a cursor to the selected documents
@@ -78,7 +79,20 @@ func (h *storage) MsgFindOrCount(ctx context.Context, msg *wire.OpMsg) (*wire.Op
 	}
 
 	var localCtx locatCtx
-	localCtx.db = docMap["$db"].(string)
+	// localCtx.db = docMap["$db"].(string)
+	if err = localCtx.setDBAndCollection(docMap); err != nil {
+		return nil, err
+	}
+
+	// If namespace does not exist return 0 for count or nothing for find
+	if namespaceExists, err := h.hanaPool.NamespaceExists(ctx, localCtx.db, localCtx.collection); err == nil {
+		if !namespaceExists {
+			return namespaceNotExisting(&localCtx)
+		}
+	} else {
+		return nil, err
+	}
+
 	sql, err := createSqlStmt(docMap, &localCtx)
 	if err != nil {
 		return nil, err
@@ -301,6 +315,35 @@ func createResponse(docMap map[string]any, rows *sql.Rows, localCtx *locatCtx) (
 	return
 }
 
+func namespaceNotExisting(localCtx *locatCtx) (*wire.OpMsg, error) {
+	resp := &wire.OpMsg{}
+	var err error
+	if localCtx.count {
+		err = resp.SetSections(wire.OpMsgSection{
+			Documents: []types.Document{types.MustMakeDocument(
+				"n", int32(0),
+				"ok", float64(1),
+			)},
+		})
+	} else {
+		err = resp.SetSections(wire.OpMsgSection{
+			Documents: []types.Document{types.MustMakeDocument(
+				"cursor", types.MustMakeDocument(
+					"firstBatch", types.MustNewArray(),
+					"id", int64(0), // TODO
+					"ns", localCtx.db+"."+localCtx.collection,
+				),
+				"ok", float64(1),
+			)},
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // Checks if command PrintShardingStatus is being used.
 func isPrintShardingStatus(docMap map[string]any) bool {
 	if docMap["find"] == "shards" && docMap["$db"] == "config" {
@@ -322,4 +365,21 @@ func anyIsInt(n any) (ok bool) {
 		ok = false
 	}
 	return ok
+}
+
+func (localCtx *locatCtx) setDBAndCollection(docMap map[string]any) error {
+	var ok bool
+
+	if localCtx.db, ok = docMap["$db"].(string); !ok {
+		return fmt.Errorf("database not found or wrong type")
+	}
+
+	if localCtx.collection, ok = docMap["find"].(string); !ok {
+		localCtx.count = true
+		if localCtx.collection, ok = docMap["count"].(string); !ok {
+			return fmt.Errorf("Collection not given or wrong type")
+		}
+	}
+
+	return nil
 }

@@ -57,7 +57,18 @@ func (h *storage) MsgUpdate(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	m := document.Map()
 	collection := m["update"].(string)
 	db := m["$db"].(string)
-	docs, _ := m["updates"].(*types.Array)
+	docs, ok := m["updates"].(*types.Array)
+	if !ok {
+		return nil, fmt.Errorf("wrong use of update")
+	}
+
+	if exists, err := h.hanaPool.NamespaceExists(ctx, db, collection); err == nil {
+		if !exists {
+			docs = types.MustNewArray()
+		}
+	} else {
+		return nil, err
+	}
 
 	var selected, updated, matched int32
 	for i := 0; i < docs.Len(); i++ {
