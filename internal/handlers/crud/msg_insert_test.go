@@ -22,6 +22,8 @@ func TestMsgInsert(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"})
 		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 50, 51, 44, 34, 105, 116, 101, 109, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
 
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"testCollection\"").WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"testCollection\"  WHERE \"_id\" = 123").WillReturnRows(idRow)
 		mock.ExpectExec("INSERT INTO \"testDatabase\".\"testCollection\" VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -62,6 +64,8 @@ func TestMsgInsert(t *testing.T) {
 	t.Run("insert a document. Not unique id", func(t *testing.T) {
 		idRow := mock.NewRows([]string{"_id"}).AddRow(123)
 
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"testCollection\"").WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"testCollection\"  WHERE \"_id\" = 123").WillReturnRows(idRow)
 
 		insertReq := types.MustMakeDocument(

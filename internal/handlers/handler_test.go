@@ -136,11 +136,14 @@ func TestFind(t *testing.T) {
 		)
 
 		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
-		row2 := sqlmock.NewRows([]string{"object_count"}).AddRow("actor")
-		row3 := sqlmock.NewRows([]string{"document"})
+		row2 := sqlmock.NewRows([]string{"document"})
+		row3 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row4 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
-		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
-		mock.ExpectQuery("SELECT * FROM \"databaseName\".\"actor\" WHERE \"last_name\" = 'Doe' AND \"actor_id\" \u003e 50 AND \"actor_id\" \u003c 100").WillReturnRows(row3)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'databaseName'").WillReturnRows(row3)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'databaseName' AND table_name = 'actor' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row4)
+		mock.ExpectQuery("SELECT * FROM \"databaseName\".\"actor\" WHERE \"last_name\" = 'Doe' AND \"actor_id\" \u003e 50 AND \"actor_id\" \u003c 100").WillReturnRows(row2)
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
@@ -166,7 +169,7 @@ func TestFind(t *testing.T) {
 
 		reqDoc := types.MustMakeDocument(
 			"find", "actor",
-			"$db", "databaseName",
+			"$db", "database",
 			"filter", types.MustMakeDocument(
 				"last_name", "Doe",
 				"actor_id", types.MustMakeDocument(
@@ -177,17 +180,21 @@ func TestFind(t *testing.T) {
 		)
 
 		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
-		row2 := sqlmock.NewRows([]string{"Table_name"})
+		row2 := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		row3 := sqlmock.NewRows([]string{"count"}).AddRow(0)
 
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
-		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = 'database'").WillReturnRows(row2)
+		mock.ExpectQuery("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = 'database' AND table_name = 'actor' AND TABLE_TYPE = 'COLLECTION'").WillReturnRows(row3)
 
 		actual := handle(ctx, t, handler, reqDoc)
 		expected := types.MustMakeDocument(
-			"ok", float64(0),
-			"errmsg", "Collection actor does not exist",
-			"code", int32(1),
-			"codeName", "InternalError",
+			"cursor", types.MustMakeDocument(
+				"firstBatch", types.MustNewArray(),
+				"id", int64(0),
+				"ns", "database.actor",
+			),
+			"ok", float64(1),
 		)
 
 		assert.Equal(t, expected, actual)
@@ -217,12 +224,10 @@ func TestInsert(t *testing.T) {
 		)
 
 		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
-		row2 := sqlmock.NewRows([]string{"Table_name"})
 		row3 := sqlmock.NewRows([]string{"_id"})
 		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 44, 34, 110, 101, 119, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
 
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
-		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
 		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"test\"").WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"test\"  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
@@ -259,13 +264,14 @@ func TestInsert(t *testing.T) {
 		)
 
 		row1 := sqlmock.NewRows([]string{"object_count"}).AddRow(10)
-		row2 := sqlmock.NewRows([]string{"Table_name"}).AddRow("test")
-		row3 := sqlmock.NewRows([]string{"_id"})
+		row2 := sqlmock.NewRows([]string{"_id"})
+
 		args := []driver.Value{[]byte{123, 34, 95, 105, 100, 34, 58, 49, 44, 34, 110, 101, 119, 34, 58, 34, 116, 101, 115, 116, 34, 125}}
 
 		mock.ExpectQuery("SELECT object_count FROM m_feature_usage WHERE component_name = 'DOCSTORE' AND feature_name = 'COLLECTIONS'").WillReturnRows(row1)
-		mock.ExpectQuery("SELECT Table_name FROM PUBLIC.M_TABLES WHERE ").WillReturnRows(row2)
-		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"test\"  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row3)
+		mock.ExpectExec("CREATE SCHEMA \"testDatabase\"").WillReturnError(fmt.Errorf("386: cannot use duplicate schema name"))
+		mock.ExpectExec("CREATE COLLECTION \"testDatabase\".\"test\"").WillReturnError(fmt.Errorf("288: cannot use duplicate table name"))
+		mock.ExpectQuery("SELECT _id FROM \"testDatabase\".\"test\"  WHERE \"_id\" = 1 LIMIT 1").WillReturnRows(row2)
 		mock.ExpectExec("INSERT INTO \"testDatabase\".\"test\" VALUES ($1)").WithArgs(args...).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		actual := handle(ctx, t, handler, reqDoc)

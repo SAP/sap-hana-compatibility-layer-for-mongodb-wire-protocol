@@ -11,6 +11,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 	"go.uber.org/zap"
@@ -68,10 +69,6 @@ func CreatePool(connectString string, logger *zap.Logger, lazy bool) (*Hpool, er
 
 // Tables returns a sorted list of SAP HANA JSON Document Store collection names.
 func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) {
-	if err := hanaPool.CreateSchema(ctx, db); err != nil && err != ErrAlreadyExist {
-		return nil, lazyerrors.Errorf("Handler.msgStorage: %w", err)
-	}
-
 	sql := "SELECT TABLE_NAME FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = $1 AND TABLE_TYPE = 'COLLECTION';"
 	rows, err := hanaPool.QueryContext(ctx, sql, db)
 	if err != nil {
@@ -97,10 +94,12 @@ func (hanaPool *Hpool) Tables(ctx context.Context, db string) ([]string, error) 
 
 // CreateSchema creates a schema in SAP HANA JSON Document Store.
 func (hanaPool *Hpool) CreateSchema(ctx context.Context, db string) error {
-	sql := fmt.Sprintf("CREATE SCHEMA \"%s\"", db)
-	_, err := hanaPool.ExecContext(ctx, sql)
+	sqlStmt := fmt.Sprintf("CREATE SCHEMA \"%s\"", db)
+	_, err := hanaPool.ExecContext(ctx, sqlStmt)
 	if err != nil {
-		return ErrAlreadyExist
+		if strings.Contains(err.Error(), "386: cannot use duplicate schema name") {
+			return ErrAlreadyExist
+		}
 	}
 
 	return err
@@ -113,7 +112,9 @@ func (hanaPool *Hpool) CreateCollection(ctx context.Context, db, collection stri
 	sql := fmt.Sprintf("CREATE COLLECTION \"%s\".\"%s\"", db, collection)
 	_, err := hanaPool.ExecContext(ctx, sql)
 	if err != nil {
-		return ErrAlreadyExist
+		if strings.Contains(err.Error(), "288: cannot use duplicate table name") {
+			return ErrAlreadyExist
+		}
 	}
 
 	return err
@@ -142,6 +143,21 @@ func (hanaPool *Hpool) Schemas(ctx context.Context) ([]string, error) {
 	}
 
 	return res, nil
+}
+
+// CreateNamespaceIfNotExists creates the database or/and the collection if not existing
+func (hanaPool *Hpool) CreateNamespaceIfNotExists(ctx context.Context, db, collection string) error {
+	err := hanaPool.CreateSchema(ctx, db)
+	if err != nil && err != ErrAlreadyExist {
+		return err
+	}
+
+	err = hanaPool.CreateCollection(ctx, db, collection)
+	if err != nil && err != ErrAlreadyExist {
+		return err
+	}
+
+	return nil
 }
 
 // TableStats returns a set of statistics for a table.
@@ -219,6 +235,13 @@ func (hanaPool *Hpool) DropTable(ctx context.Context, db, collection string) err
 func (hanaPool *Hpool) DropSchema(ctx context.Context, db string) error {
 	sql := fmt.Sprintf("DROP SCHEMA \"%s\" CASCADE", db)
 	_, err := hanaPool.ExecContext(ctx, sql)
+	if err == nil {
+		return nil
+	}
+
+	if strings.Contains(err.Error(), "362: invalid schema name") {
+		return ErrNotExist
+	}
 
 	return err
 }
@@ -245,4 +268,62 @@ func (hanaPool *Hpool) JSONDocumentStoreAvailable(ctx context.Context) (availabl
 
 	err = lazyerrors.Errorf("No clear answer on whether DocStore is activated or not")
 	return
+}
+
+// NamespaceExists checks if the database or the collections exists
+func (hanaPool *Hpool) NamespaceExists(ctx context.Context, db, collection string) (bool, error) {
+
+	dbExists, err := hanaPool.DatabaseExists(ctx, db)
+	if err != nil {
+		return false, err
+	}
+
+	if !dbExists {
+		return false, nil
+	}
+
+	collectionExists, err := hanaPool.CollectionsExists(ctx, db, collection)
+	if err != nil {
+		return false, err
+	}
+
+	if !collectionExists {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// DatabaseExists checks if the database exists
+func (hanaPool *Hpool) DatabaseExists(ctx context.Context, db string) (bool, error) {
+	sql := fmt.Sprintf("SELECT COUNT(*) FROM \"PUBLIC\".\"SCHEMAS\" WHERE SCHEMA_NAME = '%s'", db)
+
+	var count int
+	err := hanaPool.QueryRowContext(ctx, sql).Scan(&count)
+	if err != nil {
+		return false, lazyerrors.Error(err)
+	}
+
+	if count > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// CollectionsExists checks if the collection exists
+func (hanaPool *Hpool) CollectionsExists(ctx context.Context, db, collection string) (bool, error) {
+	sql := fmt.Sprintf("SELECT COUNT(*) FROM \"PUBLIC\".\"M_TABLES\" WHERE SCHEMA_NAME = '%s' AND table_name = '%s' AND TABLE_TYPE = 'COLLECTION'", db, collection)
+
+	var count int
+	err := hanaPool.QueryRowContext(ctx, sql).Scan(&count)
+	if err != nil {
+		return false, lazyerrors.Error(err)
+	}
+
+	if count > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

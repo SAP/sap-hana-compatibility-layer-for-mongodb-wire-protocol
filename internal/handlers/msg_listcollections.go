@@ -21,6 +21,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/hana"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/handlers/common"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/types"
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
@@ -53,7 +54,12 @@ func (h *Handler) MsgListCollections(ctx context.Context, msg *wire.OpMsg) (*wir
 
 	db, ok := m["$db"].(string)
 	if !ok {
-		return nil, lazyerrors.New("no db")
+		return nil, lazyerrors.New("no db specified")
+	}
+
+	err = h.hanaPool.CreateSchema(ctx, db)
+	if err != nil && err != hana.ErrAlreadyExist {
+		return nil, err
 	}
 
 	names, err := h.hanaPool.Tables(ctx, db)

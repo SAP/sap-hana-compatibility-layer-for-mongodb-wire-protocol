@@ -48,6 +48,25 @@ func (h *storage) MsgDelete(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, 
 	collection := m[document.Command()].(string)
 	db := m["$db"].(string)
 
+	// If namespace does not exist, return
+	if exists, err := h.hanaPool.NamespaceExists(ctx, db, collection); err == nil {
+		if !exists {
+			var reply wire.OpMsg
+			err = reply.SetSections(wire.OpMsgSection{
+				Documents: []types.Document{types.MustMakeDocument(
+					"n", int32(0),
+					"ok", float64(1),
+				)},
+			})
+			if err != nil {
+				return nil, lazyerrors.Error(err)
+			}
+			return &reply, nil
+		}
+	} else {
+		return nil, err
+	}
+
 	docs, _ := m["deletes"].(*types.Array)
 
 	var deleted int32

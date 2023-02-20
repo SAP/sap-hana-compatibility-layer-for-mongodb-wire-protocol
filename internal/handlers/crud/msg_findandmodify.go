@@ -97,13 +97,19 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 			}
 		} else if doc == nil {
 			// find better value for nil
+			var value any
+			if len(params.sort.Keys()) != 0 {
+				value = types.MustMakeDocument()
+			} else {
+				value = nil
+			}
 			err = resp.SetSections(wire.OpMsgSection{
 				Documents: []types.Document{types.MustMakeDocument(
 					"lastErrorObject", types.MustMakeDocument(
 						"n", int32(0),
 						"updatedExisting", false,
 					),
-					"value", nil,
+					"value", value,
 					"ok", float64(1),
 				)},
 			})
@@ -160,6 +166,18 @@ func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.
 }
 
 func findDocument(ctx context.Context, params *findAndModifyParams, db *hana.Hpool) (*types.Document, error) {
+	if exists, err := db.NamespaceExists(ctx, params.db, params.collection); err == nil {
+		if !exists {
+			if params.upsert {
+				err = db.CreateNamespaceIfNotExists(ctx, params.db, params.collection)
+				return nil, err
+			}
+			return nil, nil
+		}
+	} else {
+		return nil, err
+	}
+
 	sql, err := createQuery(ctx, params)
 	if err != nil {
 		return nil, err
