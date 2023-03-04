@@ -7,14 +7,14 @@ echo $current_dir
 mkdir tmpDir 
 ls
 echo 1
-curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz --output tmpDir/hanaclient.tar.gz 
+wget https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -P tmpDir/hanaclient.tar.gz 
 echo 2
-tar -xzvf tmpDir/hanaclient.tar.gz  
 cd tmpDir
+tar -zxvf hanaclient*.tar.gz
 ls
 cd ..
 echo 3
-tmpDir/client/./hdbinst --batch --ignore=check_diskspace
+client/./hdbinst --batch --ignore=check_diskspace
 echo 4
 mv /home/runner/sap/hdbclient/golang/src/SAP /opt/hostedtoolcache/go/1.20.1/x64/src/
 echo 5
