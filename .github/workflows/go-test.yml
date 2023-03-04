@@ -13,6 +13,14 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.6
+      
+      - name: Set enviroment variables
+        run: |
+          echo "CGO_LDFLAGS=/home/runner/sap/hdbclient/libdbcapiHDB.so" >> $GITHUB_ENV
+          echo "GO111MODULE=auto" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/home/runner/sap/hdbclient" >> $GITHUB_ENV
+          echo "/home/runner/sap/hdbclient" >> $GITHUB_PATH
+
       - name: install
         run: |
          chmod +x install.sh

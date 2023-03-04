@@ -2,6 +2,7 @@
 
 work_dir=$(dirname $(dirname "$(pwd)"))
 echo $work_dir
+echo $HOME
 
 prefix="GOROOT=\""
 suffix="\""
