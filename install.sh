@@ -7,7 +7,7 @@ echo $current_dir
 mkdir tmpDir 
 ls
 echo 1
-wget https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -P tmpDir/hanaclient.tar.gz 
+wget https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -P tmpDir
 echo 2
 cd tmpDir
 tar -zxvf hanaclient*.tar.gz
