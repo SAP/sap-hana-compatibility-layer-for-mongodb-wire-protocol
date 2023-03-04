@@ -3,6 +3,13 @@
 work_dir=$(dirname $(dirname "$(pwd)"))
 echo $work_dir
 
+prefix="GOROOT=\""
+suffix="\""
+gorootStr="$(go env | grep GOROOT)"
+goroot=${gorootStr#"$prefix"}
+goroot=${goroot%"$suffix"}
+echo $goroot
+
 cd "${work_dir}"
 
 mkdir hanaDriver
@@ -12,23 +19,17 @@ curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.
 tar -xzvf hanaDriver/hanaclient.tar.gz -C hanaDriver
 
 hanaDriver/client/./hdbinst --batch --ignore=check_diskspace
-echo 1
-ls
-echo 2
-cd ..
-ls 
-echo 3
-cd ..
-ls
-echo 4
-mv "${work_dir}"hanaDriver/golang/src/SAP /opt/hostedtoolcache/go/1.20.1/x64/src/
 
-cd "${work_dir}"hanaDriver/golang/src/ 
+install_dir=$(dirname "${work_dir}")
+
+mv "${install_dir}"/sap/hdbclient/golang/src/SAP "{goroot}"/1.18.6/x64/src/
+
+cd "${install_dir}"/sap/hdbclient/golang/src
 
 go install SAP/go-hdb/driver
 
 
-export PATH=$PATH:/home/runner/sap/hdbclient
-export CGO_LDFLAGS=/home/runner/sap/hdbclient/libdbcapiHDB.so
+export PATH=$PATH:"${install_dir}"/sap/hdbclient
+export CGO_LDFLAGS="${install_dir}"/sap/hdbclient/libdbcapiHDB.so
 export GO111MODULE=auto
-export LD_LIBRARY_PATH=/home/runner/hdbclient/
+export LD_LIBRARY_PATH="${install_dir}"/sap/hdbclient
