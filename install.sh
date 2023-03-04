@@ -10,6 +10,7 @@ echo 1
 wget https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -P tmpDir
 echo 2
 cd tmpDir
+file hanaclient-latest-linux-x64.tar.gz
 tar -zxvf hanaclient*.tar.gz
 ls
 cd ..
