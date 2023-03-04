@@ -26,10 +26,9 @@ sudo mv "${install_dir}"/sap/hdbclient/golang/src/SAP "${goroot}"/src/
 
 cd "${install_dir}"/sap/hdbclient/golang/src
 
-go install SAP/go-hdb/driver
-
-
 export PATH=$PATH:"${install_dir}"/sap/hdbclient
 export CGO_LDFLAGS="${install_dir}"/sap/hdbclient/libdbcapiHDB.so
 export GO111MODULE=auto
 export LD_LIBRARY_PATH="${install_dir}"/sap/hdbclient
+
+go install SAP/go-hdb/driver
