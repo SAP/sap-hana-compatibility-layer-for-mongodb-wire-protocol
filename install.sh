@@ -7,7 +7,7 @@ cd "${work_dir}"
 
 mkdir hanaDriver
 
-curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -H 'Cookie: eula_3_1_agreed=tools.hana.ondemand.com/developer-license-3_1.txt'  --output hanadriver/hanaclint.tar.gz
+curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -H 'Cookie: eula_3_1_agreed=tools.hana.ondemand.com/developer-license-3_1.txt'  --output hanaDriver/hanaclint.tar.gz
 
 tar -xzvf hanaDriver/hanaclient.tar.gz -C hanaDriver
 
