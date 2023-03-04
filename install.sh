@@ -11,6 +11,8 @@ goroot=${goroot%"$suffix"}
 home_dir=$HOME
 echo $home_dir
 
+cd "${home_dir}"
+
 # Create folder for downloading and installing the HANA Go driver
 mkdir hanaDriver
 
