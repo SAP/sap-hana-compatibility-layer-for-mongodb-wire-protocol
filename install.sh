@@ -9,7 +9,7 @@ ls
 echo 1
 curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz --output tmpDir/hanaclient.tar.gz 
 echo 2
-tar -xzvf tmpDir/hanaclient.tar.gz -C tmpDir 
+tar -xzvf tmpDir/hanaclient.tar.gz  
 cd tmpDir
 ls
 cd ..
