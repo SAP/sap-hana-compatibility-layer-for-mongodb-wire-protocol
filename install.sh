@@ -1,28 +1,28 @@
 #!/bin/bash
 
-current_dir="$(pwd)"
+work_dir=$(dirname $(dirname "$(pwd)"))
+echo $work_dir
 
-echo $current_dir
+cd "${work_dir}"
 
-mkdir tmpDir 
-ls
-echo 1
-wget https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -P tmpDir
-echo 2
-cd tmpDir
-file hanaclient-latest-linux-x64.tar.gz
-tar -zxvf hanaclient*.tar.gz
+mkdir hanaDriver
+
+curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz -H 'Cookie: eula_3_1_agreed=tools.hana.ondemand.com/developer-license-3_1.txt'  --output hanadriver/hanaclint.tar.gz
+
+tar -xzvf hanaDriver/hanaclient.tar.gz -C hanaDriver
+
+hanaDriver/client/./hdbinst --batch --ignore=check_diskspace
 ls
 cd ..
-echo 3
-client/./hdbinst --batch --ignore=check_diskspace
-echo 4
-mv /home/runner/sap/hdbclient/golang/src/SAP /opt/hostedtoolcache/go/1.20.1/x64/src/
-echo 5
-cd home/runner/sap/hdbclient/golang/src/ 
-echo 6
+ls 
+cd ..
+ls
+mv "${work_dir}"hanaDriver/golang/src/SAP /opt/hostedtoolcache/go/1.20.1/x64/src/
+
+cd "${work_dir}"hanaDriver/golang/src/ 
+
 go install SAP/go-hdb/driver
-echo 7
+
 
 export PATH=$PATH:/home/runner/sap/hdbclient
 export CGO_LDFLAGS=/home/runner/sap/hdbclient/libdbcapiHDB.so
