@@ -13,17 +13,22 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.6
+      - name: install
+        run: |
+         chmod +x install.sh
+         ./install.sh
+        shell: bash
 
       - name: Run init
         run: make init
 
-        # Avoids problem with SAP/go-hdb/driver not being in GOROOT
-      - name: Make empty driver package
-        run: mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP ; 
-             mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb ;
-             mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver ;
-             touch /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go ;
-             echo 'package driver' >> /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go
+      #   # Avoids problem with SAP/go-hdb/driver not being in GOROOT
+      # - name: Make empty driver package
+      #   run: mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP ; 
+      #        mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb ;
+      #        mkdir /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver ;
+      #        touch /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go ;
+      #        echo 'package driver' >> /opt/hostedtoolcache/go/1.18.6/x64/src/SAP/go-hdb/driver/trick.go
 
       - name: Run tests
         run: make test
