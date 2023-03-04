@@ -22,7 +22,7 @@ hanaDriver/client/./hdbinst --batch --ignore=check_diskspace
 
 install_dir=$(dirname "${work_dir}")
 
-mv "${install_dir}"/sap/hdbclient/golang/src/SAP "${goroot}"/src/
+sudo mv "${install_dir}"/sap/hdbclient/golang/src/SAP "${goroot}"/src/
 
 cd "${install_dir}"/sap/hdbclient/golang/src
 
