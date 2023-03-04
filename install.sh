@@ -10,6 +10,9 @@ echo 1
 curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.gz --output tmpDir/hanaclient.tar.gz 
 echo 2
 tar -xzvf tmpDir/hanaclient.tar.gz -C tmpDir 
+cd tmpDir
+ls
+cd ..
 echo 3
 tmpDir/client/./hdbinst --batch --ignore=check_diskspace
 echo 4
