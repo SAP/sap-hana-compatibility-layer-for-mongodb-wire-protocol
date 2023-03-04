@@ -10,6 +10,19 @@ goroot=${goroot%"$suffix"}
 # Get work directory and navigate to it
 work_dir=$(dirname $(dirname "$(pwd)"))
 cd "${work_dir}"
+echo 1
+echo $work_dir
+echo 2
+ls
+cd ..
+echo 3
+ls 
+cd ..
+echo 4
+ls
+cd ..
+echo 5
+
 
 # Create folder for downloading and installing the HANA Go driver
 mkdir hanaDriver
