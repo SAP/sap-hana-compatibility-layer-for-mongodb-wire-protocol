@@ -12,11 +12,15 @@ curl https://tools.hana.ondemand.com/additional/hanaclient-latest-linux-x64.tar.
 tar -xzvf hanaDriver/hanaclient.tar.gz -C hanaDriver
 
 hanaDriver/client/./hdbinst --batch --ignore=check_diskspace
+echo 1
 ls
+echo 2
 cd ..
 ls 
+echo 3
 cd ..
 ls
+echo 4
 mv "${work_dir}"hanaDriver/golang/src/SAP /opt/hostedtoolcache/go/1.20.1/x64/src/
 
 cd "${work_dir}"hanaDriver/golang/src/ 
