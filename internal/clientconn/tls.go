@@ -6,22 +6,50 @@ package clientconn
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"os"
 
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-func generateX509Cert(certFilePath string, keyFilePath string) (*tls.Config, error) {
-	if certFilePath == "" {
-		return nil, lazyerrors.Errorf("No path was given for the certificate file for TLS")
-	} else if keyFilePath == "" {
-		return nil, lazyerrors.Errorf("No path was given for the key file for TLS")
+type certConfig struct {
+	caPath   string
+	certPath string
+	keyPath  string
+}
+
+func generateTLSConfig(c certConfig) (*tls.Config, error) {
+	if _, err := os.Stat(c.certPath); err != nil {
+		return nil, lazyerrors.Errorf("TLS certificate file does not exist at path %q", c.certPath)
+	}
+	if _, err := os.Stat(c.keyPath); err != nil {
+		return nil, lazyerrors.Errorf("TLS key file does not exist at path %q", c.keyPath)
 	}
 
-	cert, err := tls.LoadX509KeyPair(certFilePath, keyFilePath)
+	cert, err := tls.LoadX509KeyPair(c.certPath, c.keyPath)
 	if err != nil {
-		return nil, lazyerrors.Errorf("Following error occured when loading the x509 key and cert files: %w", err)
+		return nil, lazyerrors.Errorf("Could not load X.509 key pair: %w", err)
 	}
 	config := &tls.Config{Certificates: []tls.Certificate{cert}}
 
-	return config, err
+	if c.caPath != "" {
+		if _, err := os.Stat(c.caPath); err != nil {
+			return nil, lazyerrors.Errorf("TLS root CA file does not exist at path %q", c.caPath)
+		}
+
+		rootCA, err := os.ReadFile(c.caPath)
+		if err != nil {
+			return nil, lazyerrors.Errorf("Could not read root CA file: %w", err)
+		}
+
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM(rootCA); !ok {
+			return nil, lazyerrors.Errorf("Could not parse root certificate: %w", err)
+		}
+
+		config.ClientAuth = tls.RequireAndVerifyClientCert
+		config.ClientCAs = caCertPool
+	}
+
+	return config, nil
 }

@@ -47,6 +47,7 @@ type NewListenerOpts struct {
 	TLS             bool
 	TLSCertFilePath string
 	TLSKeyFilePath  string
+	TLSCAFilePath   string
 	ProxyAddr       string
 	Mode            Mode
 	HanaPool        *hana.Hpool
@@ -73,11 +74,16 @@ func (l *Listener) Run(ctx context.Context) error {
 	l.opts.Logger.Sugar().Infof("Listening on %s ...", l.opts.ListenAddr)
 
 	if l.opts.TLS {
-		tlsConfig, err := generateX509Cert(l.opts.TLSCertFilePath, l.opts.TLSKeyFilePath)
+		tlsConfig, err := generateTLSConfig(certConfig{
+			l.opts.TLSCAFilePath,
+			l.opts.TLSCertFilePath,
+			l.opts.TLSKeyFilePath,
+		})
 		if err != nil {
-			return err
+			return lazyerrors.Errorf("Failed to create tls config: %w", err)
 		}
 
+		l.opts.Logger.Info("Starting server with tls enabled")
 		lis = tls.NewListener(lis, tlsConfig)
 	}
 
