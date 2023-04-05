@@ -49,6 +49,7 @@ var (
 	tlsF             = flag.Bool("tls", false, "enable TLS")
 	tlsCertFilePathF = flag.String("certFile", "", "path to file containing certificate for TLS")
 	tlsKeyFilePathF  = flag.String("keyFile", "", "path to file containing key for TLS")
+	tlsCAFilePathF   = flag.String("caFile", "", "path to file containing the CA for the TLS certificates")
 	versionF         = flag.Bool("version", false, "print version to stdout (full version, commit, branch, dirty flag) and exit")
 	testConnTimeoutF = flag.Duration("test-conn-timeout", 0, "test: set connection timeout")
 	saphanaURL       = flag.String("HANAConnectString", "", "SAP HANA Cloud instance connect string")
@@ -113,6 +114,7 @@ func main() {
 		TLS:             *tlsF,
 		TLSCertFilePath: *tlsCertFilePathF,
 		TLSKeyFilePath:  *tlsKeyFilePathF,
+		TLSCAFilePath:   *tlsCAFilePathF,
 		ProxyAddr:       *proxyAddrF,
 		Mode:            clientconn.Mode(*modeF),
 		HanaPool:        hanaPool,
