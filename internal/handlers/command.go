@@ -37,7 +37,7 @@ type command struct {
 	storageHandler func(common.Storage, context.Context, *wire.OpMsg) (*wire.OpMsg, error)
 }
 
-// Commented out commands are not supported yet
+// Commented out commands are not supported yet.
 var commands = map[string]command{
 	"buildInfo": {
 		// db.runCommand({buildInfo: 1})

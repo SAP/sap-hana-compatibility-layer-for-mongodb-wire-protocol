@@ -138,7 +138,7 @@ func isProjectionInclusion(projection types.Document) (inclusion bool, err error
 	return
 }
 
-// inclusionProjection prepares the SQL statement for inclusion. This is using the json projection
+// inclusionProjection prepares the SQL statement for inclusion. This is using the json projection.
 func inclusionProjection(projection types.Document) (sql string) {
 	sql = "{"
 	if id, err := projection.Get("_id"); err == nil {
@@ -192,7 +192,7 @@ func inclusionProjection(projection types.Document) (sql string) {
 }
 
 // ProjectDocuments will be used if it is an exclusion to performs the exclusion
-// on each document together with the function projectDocument
+// on each document together with the function projectDocument.
 func ProjectDocuments(docs *types.Array, projection types.Document) (err error) {
 	for i := 0; i < docs.Len(); i++ {
 		doc, errGet := docs.GetPointer(i)
@@ -213,7 +213,7 @@ func ProjectDocuments(docs *types.Array, projection types.Document) (err error) 
 	return nil
 }
 
-// projectDocument removes the fields of a document specified in the exclusion
+// projectDocument removes the fields of a document specified in the exclusion.
 func projectDocument(doc *types.Document, projection types.Document) (err error) {
 	projectionMap := projection.Map()
 	for field := range projectionMap {
