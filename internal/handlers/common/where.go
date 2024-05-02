@@ -58,7 +58,7 @@ func CreateWhereClause(filter types.Document) (sql string, err error) {
 	return
 }
 
-// wherePair takes a {field: value} and converts it to SQL
+// wherePair takes a {field: value} and converts it to SQL.
 func wherePair(key string, value any) (kvSQL string, err error) {
 	if strings.HasPrefix(key, "$") { // {$: value}
 
@@ -100,7 +100,7 @@ func wherePair(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// whereKey prepares the key (field) for SQL
+// whereKey prepares the key (field) for SQL.
 func whereKey(key string) (kSQL string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -140,7 +140,7 @@ func whereKey(key string) (kSQL string, err error) {
 	return
 }
 
-// whereValue prepares the value for SQL
+// whereValue prepares the value for SQL.
 func whereValue(value any) (vSQL string, sign string, err error) {
 	var args []any
 	switch value := value.(type) {
@@ -268,7 +268,7 @@ func whereDocument(doc types.Document) (docSQL string, err error) {
 	return
 }
 
-// PrepareArrayForSQL prepares an array which is inside of a document for SQL
+// PrepareArrayForSQL prepares an array which is inside of a document for SQL.
 func PrepareArrayForSQL(a *types.Array) (sqlArray string, err error) {
 	var value any
 	var args []any
@@ -550,7 +550,7 @@ func fieldExpression(key string, value any) (kvSQL string, err error) {
 	return
 }
 
-// filterArray implements $all and $elemMatch using the FOR ANY
+// filterArray implements $all and $elemMatch using the FOR ANY.
 func filterArray(field string, arrayOperator string, filters any) (kvSQL string, err error) {
 	switch filters := filters.(type) {
 	case types.Document:
@@ -645,7 +645,7 @@ func filterArray(field string, arrayOperator string, filters any) (kvSQL string,
 	return
 }
 
-// regex converts $regex to the SQL equivalent regular expressions
+// regex converts $regex to the SQL equivalent regular expressions.
 func regex(value any) (vSQL string, err error) {
 	if regex, ok := value.(types.Regex); ok {
 		value = regex.Pattern

@@ -16,7 +16,7 @@ import (
 	"github.com/SAP/sap-hana-compatibility-layer-for-mongodb-wire-protocol/internal/util/lazyerrors"
 )
 
-// update creates needed SQL parts for SQL update statement
+// Update creates needed SQL parts for SQL update statement.
 func Update(updateDoc types.Document) (updateSQL string, notWhereSQL string, err error) {
 	uninmplementedFields := []string{
 		"$currentDate",
@@ -146,7 +146,7 @@ func createSetandUnsetSqlStmnt(doc types.Document, set bool) (updateSQL string, 
 	return
 }
 
-// getUpdateKey prepares the key (field) for SQL statement
+// getUpdateKey prepares the key (field) for SQL statement.
 func getUpdateKey(key string) (updateKey string, err error) {
 	if strings.Contains(key, ".") {
 		splitKey := strings.Split(key, ".")
@@ -181,7 +181,7 @@ func getUpdateKey(key string) (updateKey string, err error) {
 	return
 }
 
-// getUpdateValue prepares the value for SQL statement
+// getUpdateValue prepares the value for SQL statement.
 func GetUpdateValue(value any) (updateValue string, err error) {
 	var updateArgs []any
 	switch value := value.(type) {
@@ -234,7 +234,7 @@ func GetUpdateValue(value any) (updateValue string, err error) {
 	return
 }
 
-// updateDocument prepares a document for being used as value for updating a field
+// updateDocument prepares a document for being used as value for updating a field.
 func updateDocument(doc types.Document) (docSQL string, err error) {
 	docSQL += "{"
 	var value any

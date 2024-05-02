@@ -32,6 +32,7 @@ type findAndModifyParams struct {
 	docID      any
 }
 
+// MsgFindAndModify finds documents in a collection or view and modifys or deletes them.
 func (h *storage) MsgFindAndModify(ctx context.Context, msg *wire.OpMsg) (*wire.OpMsg, error) {
 	document, err := msg.Document()
 	if err != nil {
