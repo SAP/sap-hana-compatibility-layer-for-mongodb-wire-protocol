@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/AlekSi/pointer v1.2.0
-	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_golang v1.17.0
